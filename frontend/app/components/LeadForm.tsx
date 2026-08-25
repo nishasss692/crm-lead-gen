@@ -37,11 +37,10 @@ export default function LeadForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [submittedLead, setSubmittedLead] = useState<SubmittedLead | null>(null);
 
-  // Handle standard input updates
+  // Handle input updates
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear field-specific validation error on change
     if (errors[name]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -116,7 +115,6 @@ export default function LeadForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle FastAPI standard error responses (detail field)
         const errorMsg =
           typeof data.detail === "string"
             ? data.detail
@@ -136,7 +134,6 @@ export default function LeadForm() {
     }
   };
 
-  // Reset form to start a new submission
   const handleReset = () => {
     setFormData({
       first_name: "",
@@ -151,34 +148,32 @@ export default function LeadForm() {
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl shadow-2xl shadow-indigo-500/10 overflow-hidden transition-all duration-300">
+    <div className="w-full max-w-lg mx-auto bg-[#171f33]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] overflow-hidden transition-all duration-300 font-sans">
       {/* Top Header & Progress Bar */}
-      <div className="px-8 pt-8 pb-6 bg-gradient-to-b from-indigo-50/50 to-transparent dark:from-indigo-950/20 dark:to-transparent border-b border-zinc-100 dark:border-zinc-800/60">
-        <div className="flex items-center justify-between mb-4">
+      <div className="px-8 pt-8 pb-6 bg-[#222a3d]/40 border-b border-white/5">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase bg-indigo-100 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/50">
-              {submittedLead
-                ? "Verification Complete"
-                : `Step ${step} of 2`}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider bg-[#81b562]/15 text-[#9fd57e] border border-[#81b562]/30">
+              {submittedLead ? "Verification Complete" : `Step ${step} of 2`}
             </span>
           </div>
           {!submittedLead && (
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              {step === 1 ? "50% Complete" : "Almost Done"}
+            <span className="text-xs font-mono text-[#c2c9b8]">
+              {step === 1 ? "50% Completed" : "Almost Done"}
             </span>
           )}
         </div>
 
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h2 className="text-2xl font-bold tracking-tight text-white">
           {submittedLead
-            ? "Lead Registered!"
+            ? "Lead Profile Registered"
             : step === 1
             ? "Tell us about yourself"
             : "Where should we reach you?"}
         </h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-xs text-[#c2c9b8]">
           {submittedLead
-            ? "Your lead profile has been synchronized with the CRM."
+            ? "Your lead profile has been synchronized with the PostgreSQL database."
             : step === 1
             ? "Enter your basic contact and company information."
             : "Provide your primary work email to complete your registration."}
@@ -186,18 +181,18 @@ export default function LeadForm() {
 
         {/* Stepper Progress Bar */}
         {!submittedLead && (
-          <div className="mt-6">
-            <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+          <div className="mt-5">
+            <div className="w-full bg-[#0b1326] h-1.5 rounded-full overflow-hidden">
               <div
-                className="bg-gradient-to-r from-indigo-600 to-violet-600 h-full rounded-full transition-all duration-500 ease-out"
+                className="bg-gradient-to-r from-[#81b562] to-[#9fd57e] h-full rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_#9fd57e]"
                 style={{ width: step === 1 ? "50%" : "100%" }}
               />
             </div>
-            <div className="flex justify-between mt-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              <span className={step >= 1 ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}>
+            <div className="flex justify-between mt-2 text-[11px] font-mono text-[#8c9384]">
+              <span className={step >= 1 ? "text-[#9fd57e] font-bold" : ""}>
                 1. Personal Details
               </span>
-              <span className={step === 2 ? "text-indigo-600 dark:text-indigo-400 font-semibold" : ""}>
+              <span className={step === 2 ? "text-[#9fd57e] font-bold" : ""}>
                 2. Contact & Email
               </span>
             </div>
@@ -209,23 +204,11 @@ export default function LeadForm() {
       <div className="p-8">
         {/* Server Error Alert */}
         {serverError && (
-          <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 flex items-start gap-3 text-red-700 dark:text-red-300 animate-in fade-in slide-in-from-top-2 duration-200">
-            <svg
-              className="w-5 h-5 mt-0.5 shrink-0 text-red-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div className="text-sm">
-              <p className="font-semibold">Submission Failed</p>
-              <p className="mt-0.5 text-xs text-red-600 dark:text-red-300/90">{serverError}</p>
+          <div className="mb-6 p-4 rounded-xl bg-[#93000a]/20 border border-[#ffb4ab]/30 flex items-start gap-3 text-[#ffb4ab] animate-in fade-in duration-200">
+            <span className="material-symbols-outlined text-lg mt-0.5">warning</span>
+            <div className="text-xs">
+              <p className="font-bold">Submission Failed</p>
+              <p className="mt-0.5 opacity-90">{serverError}</p>
             </div>
           </div>
         )}
@@ -233,56 +216,44 @@ export default function LeadForm() {
         {/* Success View */}
         {submittedLead ? (
           <div className="space-y-6 animate-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center text-center p-6 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50">
-              <div className="w-14 h-14 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
-                <svg
-                  className="w-8 h-8"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+            <div className="flex flex-col items-center text-center p-6 rounded-xl bg-[#0b1326] border border-[#81b562]/30">
+              <div className="w-12 h-12 rounded-full bg-[#81b562]/20 text-[#9fd57e] flex items-center justify-center mb-3">
+                <span className="material-symbols-outlined text-2xl">check_circle</span>
               </div>
-              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+              <h3 className="text-base font-bold text-white">
                 Lead Created Successfully
               </h3>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                A CRM record has been generated and ready for outreach.
+              <p className="text-xs text-[#c2c9b8] mt-1">
+                Database record generated and synced to live pipeline.
               </p>
             </div>
 
             {/* Lead Details Card */}
-            <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700/60 space-y-3">
-              <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60 dark:border-zinc-700/60">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Full Name</span>
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <div className="p-4 rounded-xl bg-[#0b1326] border border-white/5 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                <span className="text-[#8c9384]">Full Name</span>
+                <span className="font-bold text-white">
                   {submittedLead.first_name} {submittedLead.last_name}
                 </span>
               </div>
-              <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60 dark:border-zinc-700/60">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Email Address</span>
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
+              <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                <span className="text-[#8c9384]">Email</span>
+                <span className="font-mono text-white">
                   {submittedLead.email}
                 </span>
               </div>
               {submittedLead.company_name && (
-                <div className="flex justify-between items-center pb-2 border-b border-zinc-200/60 dark:border-zinc-700/60">
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Company</span>
-                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                  <span className="text-[#8c9384]">Company</span>
+                  <span className="font-semibold text-white">
                     {submittedLead.company_name}
                   </span>
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">Status</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse"></span>
+                <span className="text-[#8c9384]">Status</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#81b562]/20 text-[#9fd57e]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#9fd57e] animate-pulse"></span>
                   {submittedLead.status.toUpperCase()}
                 </span>
               </div>
@@ -290,36 +261,34 @@ export default function LeadForm() {
 
             <button
               onClick={handleReset}
-              className="w-full py-3.5 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:shadow-indigo-500/40 active:scale-[0.99] cursor-pointer"
+              className="w-full py-3 px-4 rounded-lg font-mono text-xs uppercase tracking-wider font-bold bg-[#81b562] hover:bg-[#9fd57e] text-[#1a4600] shadow-[0_0_15px_rgba(129,181,98,0.3)] transition-all cursor-pointer"
             >
-              Add Another Lead
+              Submit Another Lead
             </button>
           </div>
         ) : (
           /* Multi-Step Form */
           <form
             onSubmit={step === 1 ? handleNext : handleSubmit}
-            className="space-y-5"
+            className="space-y-4"
             noValidate
           >
             {/* Step 1 Fields */}
             {step === 1 && (
               <div className="space-y-4 animate-in fade-in duration-300">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* First Name */}
                   <div>
                     <label
                       htmlFor="first_name"
-                      className="block text-xs font-semibold tracking-wide text-zinc-700 dark:text-zinc-300 mb-1.5"
+                      className="block text-xs font-semibold text-[#dae2fd] mb-1"
                     >
-                      First Name <span className="text-red-500">*</span>
+                      First Name <span className="text-[#ffb4ab]">*</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8c9384]">
+                        <span className="material-symbols-outlined text-sm">person</span>
+                      </span>
                       <input
                         id="first_name"
                         name="first_name"
@@ -327,15 +296,15 @@ export default function LeadForm() {
                         value={formData.first_name}
                         onChange={handleChange}
                         placeholder="Jane"
-                        className={`w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border bg-zinc-50/70 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 outline-none transition-all ${
+                        className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border bg-[#0b1326] text-white placeholder-[#8c9384]/60 outline-none transition-all ${
                           errors.first_name
-                            ? "border-red-400 ring-2 ring-red-400/20"
-                            : "border-zinc-200 dark:border-zinc-700 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/20"
+                            ? "border-[#ffb4ab] ring-1 ring-[#ffb4ab]"
+                            : "border-[#42493c] focus:border-[#9fd57e] focus:ring-1 focus:ring-[#9fd57e]"
                         }`}
                       />
                     </div>
                     {errors.first_name && (
-                      <p className="mt-1 text-xs text-red-500 font-medium">{errors.first_name}</p>
+                      <p className="mt-1 text-[11px] text-[#ffb4ab]">{errors.first_name}</p>
                     )}
                   </div>
 
@@ -343,16 +312,14 @@ export default function LeadForm() {
                   <div>
                     <label
                       htmlFor="last_name"
-                      className="block text-xs font-semibold tracking-wide text-zinc-700 dark:text-zinc-300 mb-1.5"
+                      className="block text-xs font-semibold text-[#dae2fd] mb-1"
                     >
-                      Last Name <span className="text-red-500">*</span>
+                      Last Name <span className="text-[#ffb4ab]">*</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8c9384]">
+                        <span className="material-symbols-outlined text-sm">person</span>
+                      </span>
                       <input
                         id="last_name"
                         name="last_name"
@@ -360,38 +327,36 @@ export default function LeadForm() {
                         value={formData.last_name}
                         onChange={handleChange}
                         placeholder="Doe"
-                        className={`w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border bg-zinc-50/70 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 outline-none transition-all ${
+                        className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border bg-[#0b1326] text-white placeholder-[#8c9384]/60 outline-none transition-all ${
                           errors.last_name
-                            ? "border-red-400 ring-2 ring-red-400/20"
-                            : "border-zinc-200 dark:border-zinc-700 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/20"
+                            ? "border-[#ffb4ab] ring-1 ring-[#ffb4ab]"
+                            : "border-[#42493c] focus:border-[#9fd57e] focus:ring-1 focus:ring-[#9fd57e]"
                         }`}
                       />
                     </div>
                     {errors.last_name && (
-                      <p className="mt-1 text-xs text-red-500 font-medium">{errors.last_name}</p>
+                      <p className="mt-1 text-[11px] text-[#ffb4ab]">{errors.last_name}</p>
                     )}
                   </div>
                 </div>
 
-                {/* Company Name (Optional) */}
+                {/* Company Name */}
                 <div>
-                  <div className="flex justify-between items-center mb-1.5">
+                  <div className="flex justify-between items-center mb-1">
                     <label
                       htmlFor="company_name"
-                      className="block text-xs font-semibold tracking-wide text-zinc-700 dark:text-zinc-300"
+                      className="block text-xs font-semibold text-[#dae2fd]"
                     >
                       Company Name
                     </label>
-                    <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
-                      Optional
+                    <span className="text-[10px] font-mono text-[#8c9384]">
+                      OPTIONAL
                     </span>
                   </div>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8c9384]">
+                      <span className="material-symbols-outlined text-sm">domain</span>
+                    </span>
                     <input
                       id="company_name"
                       name="company_name"
@@ -399,7 +364,7 @@ export default function LeadForm() {
                       value={formData.company_name}
                       onChange={handleChange}
                       placeholder="Acme Innovations Inc."
-                      className="w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50/70 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/20 outline-none transition-all"
+                      className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-[#42493c] bg-[#0b1326] text-white placeholder-[#8c9384]/60 focus:border-[#9fd57e] focus:ring-1 focus:ring-[#9fd57e] outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -407,12 +372,10 @@ export default function LeadForm() {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:shadow-indigo-500/40 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                    className="w-full py-2.5 px-4 rounded-lg font-mono text-xs font-bold uppercase tracking-wider bg-[#81b562] hover:bg-[#9fd57e] text-[#1a4600] shadow-[0_0_15px_rgba(129,181,98,0.25)] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <span>Continue to Step 2</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
                   </button>
                 </div>
               </div>
@@ -420,19 +383,19 @@ export default function LeadForm() {
 
             {/* Step 2 Fields */}
             {step === 2 && (
-              <div className="space-y-5 animate-in fade-in duration-300">
+              <div className="space-y-4 animate-in fade-in duration-300">
                 {/* Summary Pill */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/60">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-300 font-bold text-xs flex items-center justify-center">
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#0b1326] border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#81b562]/20 text-[#9fd57e] font-bold text-xs flex items-center justify-center">
                       {formData.first_name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      <p className="text-xs font-semibold text-white">
                         {formData.first_name} {formData.last_name}
                       </p>
                       {formData.company_name && (
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        <p className="text-[10px] text-[#8c9384]">
                           {formData.company_name}
                         </p>
                       )}
@@ -441,9 +404,9 @@ export default function LeadForm() {
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                    className="text-[11px] font-mono text-[#9fd57e] hover:underline cursor-pointer"
                   >
-                    Edit Info
+                    Edit
                   </button>
                 </div>
 
@@ -451,16 +414,14 @@ export default function LeadForm() {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-xs font-semibold tracking-wide text-zinc-700 dark:text-zinc-300 mb-1.5"
+                    className="block text-xs font-semibold text-[#dae2fd] mb-1"
                   >
-                    Work Email Address <span className="text-red-500">*</span>
+                    Work Email Address <span className="text-[#ffb4ab]">*</span>
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-[#8c9384]">
+                      <span className="material-symbols-outlined text-sm">mail</span>
+                    </span>
                     <input
                       id="email"
                       name="email"
@@ -469,68 +430,46 @@ export default function LeadForm() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="jane.doe@company.com"
-                      className={`w-full pl-10 pr-3.5 py-2.5 text-sm rounded-xl border bg-zinc-50/70 dark:bg-zinc-800/70 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:bg-white dark:focus:bg-zinc-800 outline-none transition-all ${
+                      className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border bg-[#0b1326] text-white placeholder-[#8c9384]/60 outline-none transition-all ${
                         errors.email
-                          ? "border-red-400 ring-2 ring-red-400/20"
-                          : "border-zinc-200 dark:border-zinc-700 focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/20"
+                          ? "border-[#ffb4ab] ring-1 ring-[#ffb4ab]"
+                          : "border-[#42493c] focus:border-[#9fd57e] focus:ring-1 focus:ring-[#9fd57e]"
                       }`}
                     />
                   </div>
                   {errors.email && (
-                    <p className="mt-1 text-xs text-red-500 font-medium">{errors.email}</p>
+                    <p className="mt-1 text-[11px] text-[#ffb4ab]">{errors.email}</p>
                   )}
-                  <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    We value your privacy. No spam or third-party sharing.
+                  <p className="mt-2 text-[10px] text-[#8c9384] flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs text-[#9fd57e]">lock</span>
+                    Enterprise encryption. No spam or 3rd-party sharing.
                   </p>
                 </div>
 
                 {/* Actions: Back & Submit */}
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex items-center gap-2 pt-2">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
                     disabled={isLoading}
-                    className="w-1/3 py-3 px-3 rounded-xl font-semibold text-xs border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-1/3 py-2.5 px-3 rounded-lg font-mono text-xs text-[#c2c9b8] border border-[#42493c] hover:bg-white/5 transition-all cursor-pointer disabled:opacity-50"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-2/3 py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:shadow-indigo-500/40 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-2/3 py-2.5 px-4 rounded-lg font-mono text-xs font-bold uppercase tracking-wider bg-[#81b562] hover:bg-[#9fd57e] text-[#1a4600] shadow-[0_0_15px_rgba(129,181,98,0.25)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                   >
                     {isLoading ? (
                       <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
-                        </svg>
-                        <span>Submitting...</span>
+                        <span className="w-3.5 h-3.5 border-2 border-[#1a4600] border-t-transparent rounded-full animate-spin"></span>
+                        <span>Saving...</span>
                       </>
                     ) : (
                       <>
                         <span>Submit Lead</span>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                        <span className="material-symbols-outlined text-sm">check</span>
                       </>
                     )}
                   </button>
