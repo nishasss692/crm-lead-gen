@@ -7,12 +7,14 @@ from sqlalchemy import text
 try:
     from app.core.database import engine, Base, AsyncSessionLocal
     from app.api.routes import router as api_router
+    from app.api.upload import router as upload_router
     # Import models so Base.metadata is aware of all tables during create_all
     import app.models.lead
     from app.core.lead_engine import seed_territories_and_agents
 except ImportError:
     from backend.app.core.database import engine, Base, AsyncSessionLocal
     from backend.app.api.routes import router as api_router
+    from backend.app.api.upload import router as upload_router
     import backend.app.models.lead
     from backend.app.core.lead_engine import seed_territories_and_agents
 
@@ -53,8 +55,8 @@ async def lifespan(app: FastAPI):
 # Initialize FastAPI application
 app = FastAPI(
     title="CRM Lead Generation API",
-    description="Backend API with Strict Hierarchical Territories (Circle -> Region -> Division) and Round-Robin Lead Distribution",
-    version="2.0.0",
+    description="Backend API with Strict Hierarchical Territories (Circle -> Region -> Division), Round-Robin Distribution, and Excel Ingestion Engine",
+    version="2.1.0",
     lifespan=lifespan,
 )
 
@@ -67,8 +69,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include API router with prefix
+# Include API routers with prefix
 app.include_router(api_router, prefix="/api")
+app.include_router(upload_router, prefix="/api")
 
 
 @app.get("/", tags=["Health"])
@@ -76,6 +79,7 @@ async def root():
     return {
         "message": "CRM Lead Generation API is running",
         "territory_model": "Circle -> Region -> Division",
+        "endpoints": ["/api/leads", "/api/leads/upload-excel", "/api/territories/circles", "/api/agents"],
     }
 
 
