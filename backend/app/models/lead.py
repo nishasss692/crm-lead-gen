@@ -1,12 +1,92 @@
 # backend/app/models/lead.py
 import uuid
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 try:
     from app.core.database import Base
 except ImportError:
     from backend.app.core.database import Base
+
+
+class Circle(Base):
+    __tablename__ = "circles"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(100), unique=True, nullable=False)
+    code = Column(String(50), unique=True, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # 1-to-many relationship: Circle -> Regions
+    regions = relationship(
+        "Region",
+        back_populates="circle",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class Region(Base):
+    __tablename__ = "regions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    circle_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("circles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name = Column(String(100), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships: Region belongs to Circle, has many Divisions
+    circle = relationship("Circle", back_populates="regions", lazy="selectin")
+    divisions = relationship(
+        "Division",
+        back_populates="region",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class Division(Base):
+    __tablename__ = "divisions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    region_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("regions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name = Column(String(100), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships: Division belongs to Region, has many Leads & Agents
+    region = relationship("Region", back_populates="divisions", lazy="selectin")
+    leads = relationship("Lead", back_populates="division", lazy="selectin")
+    agents = relationship("Agent", back_populates="division", lazy="selectin")
+
+
+class Agent(Base):
+    __tablename__ = "agents"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(100), nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    division_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("divisions.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    is_active = Column(Boolean, default=True, nullable=False)
+    last_assigned_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    division = relationship("Division", back_populates="agents", lazy="selectin")
+    leads = relationship("Lead", back_populates="assigned_agent", lazy="selectin")
+
 
 class Lead(Base):
     __tablename__ = "leads"
@@ -17,14 +97,45 @@ class Lead(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     company_name = Column(String(255), nullable=True)
     status = Column(String(50), default="new")
-    ml_lead_score = Column(Float, nullable=True) 
+    ml_lead_score = Column(Float, nullable=True)
+
+    # Hierarchical territory model: foreign key to Division (no flat geography columns)
+    division_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("divisions.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    assigned_agent_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("agents.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    division = relationship("Division", back_populates="leads", lazy="selectin")
+    assigned_agent = relationship("Agent", back_populates="leads", lazy="selectin")
+    interactions = relationship(
+        "Interaction",
+        back_populates="lead",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
 
 class Interaction(Base):
     __tablename__ = "interactions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    lead_id = Column(UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"))
+    lead_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("leads.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     interaction_type = Column(String(100), nullable=False)
     payload = Column(JSONB, nullable=True)
     occurred_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationship
+    lead = relationship("Lead", back_populates="interactions", lazy="selectin")
