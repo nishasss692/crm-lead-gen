@@ -1,5 +1,5 @@
 # backend/app/schemas/lead.py
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
@@ -15,8 +15,7 @@ class LeadCreate(BaseModel):
 class LeadResponse(LeadCreate):
     id: UUID
     status: str
-    ml_lead_score: Optional[float]
+    ml_lead_score: Optional[float] = None
     created_at: datetime
 
-    class Config:
-        orm_mode = True  # Allows Pydantic to read SQLAlchemy model objects
+    model_config = ConfigDict(from_attributes=True)

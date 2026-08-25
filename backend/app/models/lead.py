@@ -3,7 +3,10 @@ import uuid
 from sqlalchemy import Column, String, Float, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
-from backend.app.core.database import Base
+try:
+    from app.core.database import Base
+except ImportError:
+    from backend.app.core.database import Base
 
 class Lead(Base):
     __tablename__ = "leads"
