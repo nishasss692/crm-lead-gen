@@ -1,68 +1,110 @@
-import React from 'react';
-import Link from 'next/link';
+'use client';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:8000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Login failed');
+      }
+
+      const data = await res.json();
+      toast.success('Logged in successfully!');
+      
+      // Store dummy token
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', data.token);
+      }
+      
+      // Redirect to leads page
+      router.push('/leads');
+    } catch (err) {
+      toast.error('Invalid credentials or server error');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-surface-container-lowest flex items-center justify-center p-4">
-      {/* Container */}
-      <div className="w-full max-w-md">
-        {/* Logo/Brand */}
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 font-body-base">
+      <div className="w-full max-w-md bg-surface-container-lowest border border-outline-variant rounded-xl p-6 md:p-8 shadow-sm">
+        
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center font-display-lg text-display-lg text-surface-container-lowest tracking-tight mx-auto mb-4 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center font-bold text-2xl text-on-primary tracking-tight mx-auto mb-4 shadow-sm">
             R
           </div>
-          <h1 className="font-display-sm text-display-sm text-on-background font-bold tracking-tight">Welcome back</h1>
-          <p className="font-body-base text-body-base text-on-surface-variant mt-2">Sign in to your RevOps account</p>
+          <h1 className="font-display-sm text-display-sm text-on-background font-bold tracking-tight mb-1">Welcome back</h1>
+          <p className="font-body-base text-body-base text-on-surface-variant mt-2">Sign in to your CRM account</p>
         </div>
 
-        {/* Card */}
-        <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-6 md:p-8 shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-          {/* Social Logins */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <button className="flex items-center justify-center py-2.5 px-4 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors font-body-medium text-body-medium text-on-surface">
-              <img alt="Google" className="w-5 h-5 mr-2" src="https://www.svgrepo.com/show/475656/google-color.svg" />
-              Google
-            </button>
-            <button className="flex items-center justify-center py-2.5 px-4 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors font-body-medium text-body-medium text-on-surface">
-              <img alt="Microsoft" className="w-5 h-5 mr-2" src="https://www.svgrepo.com/show/448239/microsoft.svg" />
-              Microsoft
-            </button>
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block font-body-medium text-body-medium text-on-surface-variant mb-1.5" htmlFor="email">Email address</label>
+            <input 
+              id="email" 
+              type="email" 
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-body-medium text-body-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline-variant" 
+              placeholder="name@company.com" 
+            />
+          </div>
+          
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="block font-body-medium text-body-medium text-on-surface-variant" htmlFor="password">Password</label>
+            </div>
+            <input 
+              id="password" 
+              type="password" 
+              required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-body-medium text-body-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline-variant" 
+              placeholder="••••••••" 
+            />
           </div>
 
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-outline-variant/50"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-3 bg-surface-container-lowest font-caption text-caption text-on-surface-variant">Or continue with</span>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form className="space-y-4">
-            <div>
-              <label className="block font-label-md text-label-md text-on-surface mb-1.5" htmlFor="email">Email address</label>
-              <input className="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-lg text-on-surface font-body-base text-body-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" id="email" placeholder="name@company.com" type="email" />
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="block font-label-md text-label-md text-on-surface" htmlFor="password">Password</label>
-                <a className="font-label-md text-label-md text-primary hover:text-primary-container" href="#">Forgot password?</a>
-              </div>
-              <input className="w-full px-4 py-2.5 bg-surface border border-outline-variant rounded-lg text-on-surface font-body-base text-body-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors" id="password" placeholder="••••••••" type="password" />
-            </div>
-
-            <Link href="/dashboard" className="block w-full bg-primary text-on-primary py-2.5 rounded-lg font-label-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm mt-6 mb-4 text-center">
-              Sign In
-            </Link>
-          </form>
-        </div>
-
-        {/* Footer */}
-        <p className="text-center font-body-medium text-body-medium text-on-surface-variant mt-8">
-          Don't have an account? <Link className="text-primary hover:text-primary-container font-semibold" href="#">Request access</Link>
-        </p>
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-medium text-body-medium hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm mt-4 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
+                <span>Signing in...</span>
+              </>
+            ) : (
+              'Sign In'
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );

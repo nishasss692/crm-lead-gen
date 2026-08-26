@@ -33,6 +33,23 @@ except ImportError:
 router = APIRouter()
 
 
+from pydantic import BaseModel
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@router.post("/login", summary="Simple login endpoint")
+async def login(req: LoginRequest):
+    if not req.email or not req.password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email and password are required.",
+        )
+    # Simple login logic without role-based access
+    return {"token": "dummy_jwt_token_123", "message": "Login successful"}
+
+
 @router.post(
     "/leads",
     response_model=LeadResponse,

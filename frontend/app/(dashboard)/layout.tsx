@@ -25,10 +25,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="material-symbols-outlined fill">leaderboard</span>
             <span>Leads</span>
           </Link>
-          <Link href="#" className="flex items-center space-x-3 text-outline-variant hover:text-surface-bright mx-2 px-3 py-2 hover:bg-on-secondary-fixed-variant transition-colors active:scale-95 duration-150 rounded-lg">
-            <span className="material-symbols-outlined">group</span>
-            <span>Contacts</span>
-          </Link>
           <Link href="/analytics" className="flex items-center space-x-3 text-outline-variant hover:text-surface-bright mx-2 px-3 py-2 hover:bg-on-secondary-fixed-variant transition-colors active:scale-95 duration-150 rounded-lg">
             <span className="material-symbols-outlined">assessment</span>
             <span>Reports</span>
@@ -46,10 +42,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link href="#" className="flex items-center space-x-3 text-outline-variant hover:text-surface-bright mx-2 px-3 py-2 hover:bg-on-secondary-fixed-variant transition-colors active:scale-95 duration-150 rounded-lg">
             <span className="material-symbols-outlined">settings</span>
             <span>Settings</span>
-          </Link>
-          <Link href="#" className="flex items-center space-x-3 text-outline-variant hover:text-surface-bright mx-2 px-3 py-2 hover:bg-on-secondary-fixed-variant transition-colors active:scale-95 duration-150 rounded-lg">
-            <span className="material-symbols-outlined">help</span>
-            <span>Support</span>
           </Link>
         </div>
       </nav>

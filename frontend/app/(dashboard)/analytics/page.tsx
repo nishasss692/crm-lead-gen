@@ -159,7 +159,7 @@ export default function AnalyticsPage() {
       {/* Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* KPI Row (Full Width) */}
-        <div className="col-span-1 lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="col-span-1 lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* KPI 1 */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-5 ambient-shadow flex flex-col justify-between h-32 relative overflow-hidden group hover:border-primary/50 transition-colors">
             <div className="flex justify-between items-start">
@@ -179,26 +179,6 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <div className="absolute bottom-0 right-0 w-24 h-12 opacity-10 bg-gradient-to-tl from-primary to-transparent rounded-tl-full pointer-events-none group-hover:opacity-20 transition-opacity"></div>
-          </div>
-
-          {/* KPI 2 */}
-          <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-5 ambient-shadow flex flex-col justify-between h-32 relative overflow-hidden group hover:border-primary/50 transition-colors">
-            <div className="flex justify-between items-start">
-              <span className="font-body-medium text-body-medium text-on-surface-variant">Conversion Rate</span>
-              <div className="bg-tertiary/10 p-1.5 rounded-md">
-                <span className="material-symbols-outlined text-tertiary text-[20px]">percent</span>
-              </div>
-            </div>
-            <div>
-              <div className="font-stat-lg text-stat-lg text-on-background">
-                {loading ? '...' : (data?.conversion_rate || '0%')}
-              </div>
-              <div className="flex items-center mt-1 space-x-1">
-                <span className="material-symbols-outlined text-tertiary-fixed-dim text-[16px]">trending_up</span>
-                <span className="font-caption text-caption text-tertiary font-medium">+2.1%</span>
-                <span className="font-caption text-caption text-outline">vs last month</span>
-              </div>
-            </div>
           </div>
 
           {/* KPI 3 */}
@@ -239,7 +219,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Lead Volume (Line Chart) */}
-        <div className="col-span-1 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-lg ambient-shadow flex flex-col">
+        <div className="col-span-1 lg:col-span-12 bg-surface-container-lowest border border-outline-variant rounded-lg ambient-shadow flex flex-col">
           <div className="p-5 border-b border-outline-variant flex justify-between items-center">
             <h3 className="font-title-lg text-title-lg text-on-background">Monthly Lead Volume</h3>
             <button className="text-on-surface-variant hover:text-primary transition-colors p-1 rounded-md hover:bg-surface-container-high focus:outline-none">
@@ -251,76 +231,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Conversion Funnel */}
-        <div className="col-span-1 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-lg ambient-shadow flex flex-col">
-          <div className="p-5 border-b border-outline-variant flex justify-between items-center">
-            <h3 className="font-title-lg text-title-lg text-on-background">Conversion Funnel</h3>
-            <button className="text-on-surface-variant hover:text-primary transition-colors p-1 rounded-md hover:bg-surface-container-high focus:outline-none">
-              <span className="material-symbols-outlined text-[20px]">filter_list</span>
-            </button>
-          </div>
-          <div className="p-5 flex-1 flex flex-col justify-center space-y-4">
-            {/* Funnel Stage 1 */}
-            <div className="relative w-full">
-              <div className="flex justify-between text-body-medium font-body-medium mb-1">
-                <span className="text-on-background">Awareness (New)</span>
-                <span className="text-on-surface-variant">100%</span>
-              </div>
-              <div className="w-full bg-surface-container h-6 rounded-sm overflow-hidden">
-                <div className="bg-primary h-full rounded-sm" style={{ width: '100%' }}></div>
-              </div>
-              <div className="text-right text-caption font-caption text-outline mt-0.5">2,451 leads</div>
-            </div>
 
-            {/* Funnel Stage 2 */}
-            <div className="relative w-full mx-auto" style={{ width: '85%' }}>
-              <div className="flex justify-between text-body-medium font-body-medium mb-1">
-                <span className="text-on-background">Interest (Qualified)</span>
-                <span className="text-on-surface-variant">68%</span>
-              </div>
-              <div className="w-full bg-surface-container h-6 rounded-sm overflow-hidden">
-                <div className="bg-primary/80 h-full rounded-sm" style={{ width: '100%' }}></div>
-              </div>
-              <div className="text-right text-caption font-caption text-outline mt-0.5">1,666 leads</div>
-            </div>
-
-            {/* Funnel Stage 3 */}
-            <div className="relative w-full mx-auto" style={{ width: '55%' }}>
-              <div className="flex justify-between text-body-medium font-body-medium mb-1">
-                <span className="text-on-background">Consideration (Proposal)</span>
-                <span className="text-on-surface-variant">42%</span>
-              </div>
-              <div className="w-full bg-surface-container h-6 rounded-sm overflow-hidden">
-                <div className="bg-primary/60 h-full rounded-sm" style={{ width: '100%' }}></div>
-              </div>
-              <div className="text-right text-caption font-caption text-outline mt-0.5">1,029 leads</div>
-            </div>
-
-            {/* Funnel Stage 4 */}
-            <div className="relative w-full mx-auto" style={{ width: '30%' }}>
-              <div className="flex justify-between text-body-medium font-body-medium mb-1">
-                <span className="text-on-background">Intent (Negotiation)</span>
-                <span className="text-on-surface-variant">25%</span>
-              </div>
-              <div className="w-full bg-surface-container h-6 rounded-sm overflow-hidden">
-                <div className="bg-tertiary/70 h-full rounded-sm" style={{ width: '100%' }}></div>
-              </div>
-              <div className="text-right text-caption font-caption text-outline mt-0.5">612 leads</div>
-            </div>
-
-            {/* Funnel Stage 5 */}
-            <div className="relative w-full mx-auto" style={{ width: '18.5%' }}>
-              <div className="flex justify-between text-body-medium font-body-medium mb-1">
-                <span className="text-on-background font-bold">Won</span>
-                <span className="text-tertiary font-bold">18.5%</span>
-              </div>
-              <div className="w-full bg-surface-container h-8 rounded-sm overflow-hidden shadow-inner">
-                <div className="bg-tertiary h-full rounded-sm" style={{ width: '100%' }}></div>
-              </div>
-              <div className="text-right text-caption font-caption text-outline mt-0.5 font-bold">453 closed</div>
-            </div>
-          </div>
-        </div>
 
         {/* Leaderboard */}
         <div className="col-span-1 lg:col-span-12 bg-surface-container-lowest border border-outline-variant rounded-lg ambient-shadow overflow-hidden">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import DataGrid from '../../components/DataGrid';
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -89,80 +90,14 @@ export default function LeadsPage() {
 
       {/* Data Table Container */}
       <div className="bg-white border border-slate-200 rounded-xl shadow-[0_1px_3px_0_rgba(0,0,0,0.04)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/50">
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold w-12 sticky left-0 bg-slate-50/95 z-10">
-                  <input className="rounded border-slate-300 text-primary focus:ring-primary/20 cursor-pointer" type="checkbox" />
-                </th>
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold">Exporter Name</th>
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold">Contact Person</th>
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold">Phone / Email</th>
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold">Division</th>
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold">Service Using</th>
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold">Volume</th>
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold">Outcome / Status</th>
-                <th className="py-3 px-4 font-label-caps text-label-caps text-secondary uppercase tracking-wider font-semibold">Remarks</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-body-base text-body-base text-on-surface">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={9} className="py-8 text-center text-secondary">
-                    <div className="flex items-center justify-center space-x-2">
-                      <span className="material-symbols-outlined animate-spin">sync</span>
-                      <span>Loading leads...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : leads.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-8 text-center text-secondary">
-                    No leads found.
-                  </td>
-                </tr>
-              ) : (
-                leads.map((lead, idx) => (
-                  <tr key={lead.id || idx} className="hover:bg-slate-50/80 transition-colors h-[48px] group">
-                    <td className="py-2 px-4 sticky left-0 bg-white group-hover:bg-slate-50/80 z-10 transition-colors">
-                      <input className="rounded border-slate-300 text-primary focus:ring-primary/20 cursor-pointer" type="checkbox" />
-                    </td>
-                    <td className="py-2 px-4 font-medium text-on-background max-w-[200px] truncate" title={lead.exporter_name || lead.company_name}>
-                      {lead.exporter_name || lead.company_name || '-'}
-                    </td>
-                    <td className="py-2 px-4 text-secondary max-w-[150px] truncate">
-                      {`${lead.first_name || ''} ${lead.last_name || ''}`.trim() || '-'}
-                    </td>
-                    <td className="py-2 px-4 text-secondary">
-                      <div className="flex flex-col text-[13px]">
-                        <span>{lead.contact_number || '-'}</span>
-                        <span className="text-slate-400 max-w-[150px] truncate" title={lead.email || lead.email_id}>{lead.email || lead.email_id || '-'}</span>
-                      </div>
-                    </td>
-                    <td className="py-2 px-4 text-secondary max-w-[150px] truncate" title={lead.division_name}>
-                      {lead.division_name || '-'}
-                    </td>
-                    <td className="py-2 px-4 text-secondary max-w-[150px] truncate" title={lead.service_presently_using}>
-                      {lead.service_presently_using || '-'}
-                    </td>
-                    <td className="py-2 px-4 text-secondary max-w-[100px] truncate">
-                      {lead.monthly_appx_volume || '-'}
-                    </td>
-                    <td className="py-2 px-4">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 truncate max-w-[120px]" title={lead.meeting_outcome || lead.status}>
-                        {lead.meeting_outcome || lead.status || '-'}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 text-secondary max-w-[200px] truncate" title={lead.remarks}>
-                      {lead.remarks || '-'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DataGrid 
+          leads={leads} 
+          loading={isLoading} 
+          onLeadUpdated={() => {
+            // Trigger a re-fetch or simply keep local state handled by DataGrid
+            // The DataGrid component handles local state updates, but we can refresh if needed
+          }} 
+        />
 
         {/* Pagination */}
         <div className="bg-white px-4 py-3 border-t border-slate-200 flex items-center justify-between sm:px-6">
