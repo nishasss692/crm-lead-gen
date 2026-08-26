@@ -36,17 +36,47 @@ router = APIRouter()
 from pydantic import BaseModel
 
 class LoginRequest(BaseModel):
-    email: str
+    employee_id: str
     password: str
+
+class OTPRequest(BaseModel):
+    mobile_number: str
+
+class OTPVerifyRequest(BaseModel):
+    mobile_number: str
+    otp: str
 
 @router.post("/login", summary="Simple login endpoint")
 async def login(req: LoginRequest):
-    if not req.email or not req.password:
+    if not req.employee_id or not req.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email and password are required.",
+            detail="Employee ID and password are required.",
         )
     # Simple login logic without role-based access
+    return {"token": "dummy_jwt_token_123", "message": "Login successful"}
+
+@router.post("/login/otp/request", summary="Request OTP for login")
+async def request_otp(req: OTPRequest):
+    if not req.mobile_number:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mobile number is required.",
+        )
+    return {"message": "OTP sent successfully"}
+
+@router.post("/login/otp/verify", summary="Verify OTP for login")
+async def verify_otp(req: OTPVerifyRequest):
+    if not req.mobile_number or not req.otp:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mobile number and OTP are required.",
+        )
+    if req.otp != "123456": # Mock OTP validation
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid OTP. Use 123456 for testing.",
+        )
     return {"token": "dummy_jwt_token_123", "message": "Login successful"}
 
 

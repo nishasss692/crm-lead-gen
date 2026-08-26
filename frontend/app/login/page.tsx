@@ -5,44 +5,95 @@ import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'employee' | 'otp'>('employee');
+  
+  // Employee Login State
+  const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
+  
+  // OTP Login State
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  
+  // Shared State
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleEmployeeLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast.error('Please enter both email and password');
+    if (!employeeId || !password) {
+      toast.error('Please enter both Employee ID and password');
       return;
     }
-
     setLoading(true);
     try {
       const res = await fetch('http://localhost:8000/api/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ employee_id: employeeId, password }),
       });
-
-      if (!res.ok) {
-        throw new Error('Login failed');
-      }
-
+      if (!res.ok) throw new Error('Login failed');
       const data = await res.json();
       toast.success('Logged in successfully!');
-      
-      // Store dummy token
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', data.token);
-      }
-      
-      // Redirect to leads page
+      if (typeof window !== 'undefined') localStorage.setItem('token', data.token);
       router.push('/leads');
     } catch (err) {
       toast.error('Invalid credentials or server error');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mobileNumber) {
+      toast.error('Please enter your mobile number');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:8000/api/login/otp/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile_number: mobileNumber }),
+      });
+      if (!res.ok) throw new Error('Failed to request OTP');
+      toast.success('OTP sent successfully (Use 123456 for testing)');
+      setOtpSent(true);
+    } catch (err) {
+      toast.error('Error requesting OTP');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp) {
+      toast.error('Please enter the OTP');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:8000/api/login/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile_number: mobileNumber, otp }),
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || 'Invalid OTP');
+      }
+      const data = await res.json();
+      toast.success('Logged in successfully!');
+      if (typeof window !== 'undefined') localStorage.setItem('token', data.token);
+      router.push('/leads');
+    } catch (err: any) {
+      toast.error(err.message || 'Invalid OTP or server error');
       console.error(err);
     } finally {
       setLoading(false);
@@ -61,50 +112,134 @@ export default function LoginPage() {
           <p className="font-body-base text-body-base text-on-surface-variant mt-2">Sign in to your CRM account</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block font-body-medium text-body-medium text-on-surface-variant mb-1.5" htmlFor="email">Email address</label>
-            <input 
-              id="email" 
-              type="email" 
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-body-medium text-body-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline-variant" 
-              placeholder="name@company.com" 
-            />
-          </div>
-          
-          <div>
-            <div className="flex justify-between items-center mb-1.5">
-              <label className="block font-body-medium text-body-medium text-on-surface-variant" htmlFor="password">Password</label>
-            </div>
-            <input 
-              id="password" 
-              type="password" 
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-body-medium text-body-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline-variant" 
-              placeholder="••••••••" 
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-medium text-body-medium hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm mt-4 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        <div className="flex border-b border-outline-variant mb-6">
+          <button
+            className={`flex-1 pb-3 font-body-medium text-body-medium transition-colors ${activeTab === 'employee' ? 'text-primary border-b-2 border-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
+            onClick={() => {
+              setActiveTab('employee');
+              setOtpSent(false); // Reset OTP state if they switch back and forth
+            }}
           >
-            {loading ? (
-              <>
-                <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
-                <span>Signing in...</span>
-              </>
-            ) : (
-              'Sign In'
-            )}
+            Employee ID
           </button>
-        </form>
+          <button
+            className={`flex-1 pb-3 font-body-medium text-body-medium transition-colors ${activeTab === 'otp' ? 'text-primary border-b-2 border-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
+            onClick={() => setActiveTab('otp')}
+          >
+            OTP Login
+          </button>
+        </div>
+
+        {activeTab === 'employee' && (
+          <form onSubmit={handleEmployeeLogin} className="space-y-5">
+            <div>
+              <label className="block font-body-medium text-body-medium text-on-surface-variant mb-1.5" htmlFor="employeeId">Employee ID</label>
+              <input 
+                id="employeeId" 
+                type="text" 
+                required
+                value={employeeId}
+                onChange={e => setEmployeeId(e.target.value)}
+                className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-body-medium text-body-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline-variant" 
+                placeholder="EMP-12345" 
+              />
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block font-body-medium text-body-medium text-on-surface-variant" htmlFor="password">Password</label>
+              </div>
+              <input 
+                id="password" 
+                type="password" 
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-body-medium text-body-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline-variant" 
+                placeholder="••••••••" 
+              />
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-medium text-body-medium hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm mt-4 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+          </form>
+        )}
+
+        {activeTab === 'otp' && (
+          <form onSubmit={otpSent ? handleVerifyOtp : handleRequestOtp} className="space-y-5">
+            <div>
+              <label className="block font-body-medium text-body-medium text-on-surface-variant mb-1.5" htmlFor="mobileNumber">Mobile Number</label>
+              <input 
+                id="mobileNumber" 
+                type="tel" 
+                required
+                disabled={otpSent}
+                value={mobileNumber}
+                onChange={e => setMobileNumber(e.target.value)}
+                className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-body-medium text-body-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline-variant disabled:bg-surface-container disabled:text-on-surface-variant" 
+                placeholder="+1 (555) 000-0000" 
+              />
+            </div>
+            
+            {otpSent && (
+              <div>
+                <label className="block font-body-medium text-body-medium text-on-surface-variant mb-1.5" htmlFor="otp">One-Time Password (OTP)</label>
+                <input 
+                  id="otp" 
+                  type="text" 
+                  required
+                  value={otp}
+                  onChange={e => setOtp(e.target.value)}
+                  className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface font-body-medium text-body-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder-outline-variant" 
+                  placeholder="123456" 
+                />
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-primary text-on-primary py-2.5 rounded-lg font-body-medium text-body-medium hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm mt-4 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
+                  <span>{otpSent ? 'Verifying...' : 'Sending...'}</span>
+                </>
+              ) : (
+                otpSent ? 'Verify & Sign In' : 'Send OTP'
+              )}
+            </button>
+            
+            {otpSent && (
+              <div className="text-center mt-4">
+                <button 
+                  type="button" 
+                  className="text-primary font-body-medium text-sm hover:underline"
+                  onClick={() => {
+                    setOtpSent(false);
+                    setOtp('');
+                  }}
+                >
+                  Change mobile number
+                </button>
+              </div>
+            )}
+          </form>
+        )}
+
       </div>
     </div>
   );
