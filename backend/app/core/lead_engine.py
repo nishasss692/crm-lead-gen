@@ -194,12 +194,23 @@ async def seed_territories_and_agents(db: AsyncSession) -> None:
 
 async def assign_lead_round_robin(lead: Lead, db: AsyncSession) -> Optional[Agent]:
     """
-    Distribute incoming lead among active agents sharing the same division_id
+    Distribute incoming lead among active agents sharing the same division
     using a deterministic Round-Robin strategy (ordered by last_assigned_at ASC, nulls first).
     """
-    if not lead.division_id:
+    if not lead.division_name:
         logger.warning(
-            f"Lead {lead.id or lead.email} has no division_id specified. Skipping round-robin."
+            f"Lead {lead.id or lead.email} has no division_name specified. Skipping round-robin."
+        )
+        return None
+
+    # Find division by name
+    div_result = await db.execute(
+        select(Division).where(Division.name == lead.division_name)
+    )
+    division = div_result.scalars().first()
+    if not division:
+        logger.warning(
+            f"Division {lead.division_name} not found. Skipping round-robin."
         )
         return None
 
@@ -208,7 +219,7 @@ async def assign_lead_round_robin(lead: Lead, db: AsyncSession) -> Optional[Agen
     query = (
         select(Agent)
         .where(
-            Agent.division_id == lead.division_id,
+            Agent.division_id == division.id,
             Agent.is_active == True,
         )
         .order_by(
@@ -226,11 +237,11 @@ async def assign_lead_round_robin(lead: Lead, db: AsyncSession) -> Optional[Agen
         # Advance timestamp for round-robin rotation
         eligible_agent.last_assigned_at = datetime.now(timezone.utc)
         logger.info(
-            f"Assigned lead {lead.email} to Agent {eligible_agent.name} (ID: {eligible_agent.id}) in Division {lead.division_id}"
+            f"Assigned lead {lead.email} to Agent {eligible_agent.name} (ID: {eligible_agent.id}) in Division {division.id}"
         )
         return eligible_agent
 
     logger.warning(
-        f"No active agents found in division_id: {lead.division_id} for lead {lead.email}"
+        f"No active agents found in division: {lead.division_name} for lead {lead.email}"
     )
     return None

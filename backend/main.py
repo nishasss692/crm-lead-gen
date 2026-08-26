@@ -31,16 +31,7 @@ async def lifespan(app: FastAPI):
     # 1. Startup: create PostgreSQL tables if they do not exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await conn.execute(
-            text(
-                "ALTER TABLE leads ADD COLUMN IF NOT EXISTS division_id UUID REFERENCES divisions(id) ON DELETE SET NULL;"
-            )
-        )
-        await conn.execute(
-            text(
-                "ALTER TABLE leads ADD COLUMN IF NOT EXISTS assigned_agent_id UUID REFERENCES agents(id) ON DELETE SET NULL;"
-            )
-        )
+
 
     # 2. Seed territory hierarchy & active agents
     async with AsyncSessionLocal() as session:

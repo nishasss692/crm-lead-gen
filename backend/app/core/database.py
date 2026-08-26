@@ -6,7 +6,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 # Fetch the database URL from the environment (defaulting to local if not set)
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql+asyncpg://postgres:localpassword@localhost:5432/crm_leads"
+    "sqlite+aiosqlite:///./crm_leads.db"
 )
 
 # Create the async engine

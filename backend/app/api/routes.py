@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 try:
     from app.core.database import get_db
@@ -11,6 +11,7 @@ try:
     from app.schemas.lead import (
         LeadCreate,
         LeadResponse,
+        LeadUpdate,
         CircleResponse,
         DivisionBase,
         AgentResponse,
@@ -22,6 +23,7 @@ except ImportError:
     from backend.app.schemas.lead import (
         LeadCreate,
         LeadResponse,
+        LeadUpdate,
         CircleResponse,
         DivisionBase,
         AgentResponse,
@@ -56,16 +58,16 @@ async def create_lead(
             detail="A lead with this email already exists.",
         )
 
-    # 2. If division_id is provided, verify it exists
-    if lead_in.division_id:
+    # 2. If division_name is provided, verify it exists (optional check)
+    if lead_in.division_name:
         div_result = await db.execute(
-            select(Division).where(Division.id == lead_in.division_id)
+            select(Division).where(Division.name == lead_in.division_name)
         )
         division = div_result.scalars().first()
         if not division:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Division with ID {lead_in.division_id} not found.",
+                detail=f"Division with name {lead_in.division_name} not found.",
             )
 
     # 3. Instantiate new lead
@@ -77,7 +79,7 @@ async def create_lead(
     await db.flush()
 
     # 4. Perform Round-Robin assignment within the assigned division
-    if new_lead.division_id:
+    if new_lead.division_name:
         await assign_lead_round_robin(new_lead, db)
 
     await db.commit()
@@ -88,29 +90,98 @@ async def create_lead(
 
 @router.get(
     "/leads",
-    response_model=List[LeadResponse],
     summary="Get all leads",
 )
 async def get_leads(
-    skip: int = 0,
-    limit: int = 100,
-    division_id: Optional[UUID] = None,
+    page: int = 1,
+    limit: int = 50,
+    division_name: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
 ):
     """
     Retrieve all leads with optional pagination and division filtering.
     """
     query = select(Lead)
-    if division_id:
-        query = query.where(Lead.division_id == division_id)
+    count_query = select(func.count(Lead.id))
+    
+    if division_name:
+        query = query.where(Lead.division_name == division_name)
+        count_query = count_query.where(Lead.division_name == division_name)
 
-    query = query.order_by(Lead.created_at.desc()).offset(skip).limit(limit)
+    offset = (page - 1) * limit
+    query = query.order_by(Lead.created_at.desc()).offset(offset).limit(limit)
+    
     result = await db.execute(query)
     leads = result.scalars().all()
-    return leads
+    
+    count_result = await db.execute(count_query)
+    total_count = count_result.scalar()
+    
+    return {
+        "data": leads,
+        "total": total_count,
+        "page": page,
+        "limit": limit
+    }
+
+
+@router.patch(
+    "/leads/{lead_id}",
+    response_model=LeadResponse,
+    summary="Update a lead",
+)
+async def update_lead(
+    lead_id: UUID,
+    lead_update: LeadUpdate,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update a specific lead with provided fields from Excel.
+    """
+    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = result.scalars().first()
+    if not lead:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lead not found.",
+        )
+
+    update_data = (
+        lead_update.model_dump(exclude_unset=True) 
+        if hasattr(lead_update, "model_dump") 
+        else lead_update.dict(exclude_unset=True)
+    )
+
+    for key, value in update_data.items():
+        setattr(lead, key, value)
+
+    await db.commit()
+    await db.refresh(lead)
+
+    return lead
 
 
 # --- Territory Hierarchy Endpoints ---
+
+@router.get(
+    "/divisions",
+    response_model=List[str],
+    summary="Get all unique division names",
+)
+async def get_unique_division_names(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Queries the database for all unique division_name values and returns them as a list.
+    """
+    result = await db.execute(
+        select(Lead.division_name)
+        .where(Lead.division_name.is_not(None))
+        .distinct()
+        .order_by(Lead.division_name.asc())
+    )
+    divisions = result.scalars().all()
+    return divisions
 
 
 @router.get(

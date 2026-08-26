@@ -9,6 +9,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import pandas as pd
@@ -32,14 +33,40 @@ def normalize_string(val: Any) -> Optional[str]:
     s = str(val).strip()
     return s if s else None
 
+def clean_division_name(val: Any) -> Optional[str]:
+    """Convert 'Division' column to Title Case, keeping 'BG' uppercase."""
+    s = normalize_string(val)
+    if not s:
+        return None
+    
+    parts = s.split()
+    cleaned_parts = []
+    for p in parts:
+        if p.upper() == "BG":
+            cleaned_parts.append("BG")
+        else:
+            cleaned_parts.append(p.capitalize())
+    return " ".join(cleaned_parts)
+
 
 def resolve_column(df_cols: List[str], candidate_patterns: List[str]) -> Optional[str]:
     """Find a matching column name in DataFrame using pattern regex / substring."""
-    for cand in candidate_patterns:
-        for col in df_cols:
-            clean_col = re.sub(r"[_\s\-]+", " ", str(col)).strip().lower()
-            clean_cand = re.sub(r"[_\s\-]+", " ", cand).strip().lower()
-            if clean_cand == clean_col or clean_cand in clean_col:
+    # Try exact match first
+    for col in df_cols:
+        col_clean = col.lower().strip().replace('_', ' ')
+        for pat in candidate_patterns:
+            pat_clean = pat.lower().strip().replace('_', ' ')
+            if pat_clean == col_clean:
+                return col
+                
+    # Fallback to partial match
+    for col in df_cols:
+        col_lower = col.lower().strip()
+        for pat in candidate_patterns:
+            if pat in col_lower:
+                # Prevent "division" from matching "division id"
+                if pat == "division" and "id" in col_lower:
+                    continue
                 return col
     return None
 
@@ -241,6 +268,24 @@ async def upload_excel_leads(
     country_col = resolve_column(cols, ["country", "destination country", "country name"])
     address_col = resolve_column(cols, ["address", "location", "address 1", "registered address"])
     value_col = resolve_column(cols, ["export value", "fob value", "value", "turnover", "invoice value"])
+    
+    # New columns for exact mapping
+    sl_no_col = resolve_column(cols, ["sl no", "sl_no", "serial"])
+    exporter_name_col = resolve_column(cols, ["exporter name", "exporter_name"])
+    pincode_col = resolve_column(cols, ["pincode", "pin code", "zip"])
+    div_id_col = resolve_column(cols, ["division id", "division_id"])
+    division_col = resolve_column(cols, ["division", "division name", "division_name"])
+    region_col = resolve_column(cols, ["region"])
+    assigned_agent_name_col = resolve_column(cols, ["assigned agent name", "assigned me name", "assigned_agent_name", "assigned me", "assigned_me"])
+    date_of_meeting_col = resolve_column(cols, ["date of meeting", "meeting date", "date_of_meeting"])
+    customer_met_name_col = resolve_column(cols, ["customer met name", "customer met", "customer_met_name", "customer_met"])
+    contact_number_col = resolve_column(cols, ["contact number", "contact_number", "phone", "mobile"])
+    email_id_col = resolve_column(cols, ["email id", "email_id"])
+    service_col = resolve_column(cols, ["service presently using", "service_presently_using", "service using"])
+    volume_col = resolve_column(cols, ["monthly appx volume", "monthly_appx_volume", "monthly volume", "volume"])
+    outcome_col = resolve_column(cols, ["meeting outcome", "meeting_outcome", "outcome"])
+    contract_id_col = resolve_column(cols, ["contract id", "contract_id"])
+    remarks_col = resolve_column(cols, ["remarks"])
 
     # 5. In-memory round-robin assignment trackers per division
     rr_index_per_division: Dict[UUID, int] = defaultdict(int)
@@ -268,20 +313,27 @@ async def upload_excel_leads(
                 normalize_string(row.get(address_col)) if address_col else None,
             ]
             geo_query = " ".join([p for p in geo_parts if p])
-
-            matched_division = map_location_to_division(
-                geo_query, divisions_by_name, default_division
-            )
-            division_id = matched_division.id if matched_division else None
-            division_name = matched_division.name if matched_division else "Unassigned"
+            
+            excel_div_name = clean_division_name(row.get(division_col)) if division_col else None
+            
+            if excel_div_name:
+                division_name = excel_div_name
+                matched = [d for d in divisions if d.name.lower() == excel_div_name.lower()]
+                division_uuid = matched[0].id if matched else None
+            else:
+                matched_division = map_location_to_division(
+                    geo_query, divisions_by_name, default_division
+                )
+                division_uuid = matched_division.id if matched_division else None
+                division_name = matched_division.name if matched_division else "Unassigned"
 
             # Round-Robin assignment in the matched division
             assigned_agent_id = None
-            if division_id and agents_by_division[division_id]:
-                div_agents = agents_by_division[division_id]
-                current_rr_idx = rr_index_per_division[division_id]
+            if division_uuid and agents_by_division.get(division_uuid):
+                div_agents = agents_by_division[division_uuid]
+                current_rr_idx = rr_index_per_division[division_uuid]
                 assigned_agent = div_agents[current_rr_idx % len(div_agents)]
-                rr_index_per_division[division_id] += 1
+                rr_index_per_division[division_uuid] += 1
 
                 assigned_agent_id = assigned_agent.id
                 assigned_agent.last_assigned_at = now_utc
@@ -298,6 +350,11 @@ async def upload_excel_leads(
                 except Exception:
                     deal_val = 75.0
 
+            try:
+                sl_val = int(row.get(sl_no_col)) if sl_no_col and pd.notna(row.get(sl_no_col)) else None
+            except:
+                sl_val = None
+                
             lead = Lead(
                 id=uuid.uuid4(),
                 first_name=first_name,
@@ -306,9 +363,27 @@ async def upload_excel_leads(
                 company_name=company_name,
                 status="new",
                 ml_lead_score=deal_val,
-                division_id=division_id,
+                division_id=normalize_string(row.get(div_id_col)) if div_id_col else None,
+                division_name=division_name,
                 assigned_agent_id=assigned_agent_id,
                 created_at=now_utc,
+                
+                # New exact columns
+                sl_no=sl_val,
+                exporter_name=normalize_string(row.get(exporter_name_col)) if exporter_name_col else normalize_string(row.get(company_col)),
+                address=normalize_string(row.get(address_col)) if address_col else None,
+                pincode=normalize_string(row.get(pincode_col)) if pincode_col else None,
+                region=normalize_string(row.get(region_col)) if region_col else None,
+                assigned_agent_name=normalize_string(row.get(assigned_agent_name_col)) if assigned_agent_name_col else None,
+                date_of_meeting=normalize_string(row.get(date_of_meeting_col)) if date_of_meeting_col else None,
+                customer_met_name=normalize_string(row.get(customer_met_name_col)) if customer_met_name_col else None,
+                contact_number=normalize_string(row.get(contact_number_col)) if contact_number_col else None,
+                email_id=normalize_string(row.get(email_id_col)) if email_id_col else normalize_string(row.get(email_col)),
+                service_presently_using=normalize_string(row.get(service_col)) if service_col else None,
+                monthly_appx_volume=normalize_string(row.get(volume_col)) if volume_col else None,
+                meeting_outcome=normalize_string(row.get(outcome_col)) if outcome_col else None,
+                contract_id=normalize_string(row.get(contract_id_col)) if contract_id_col else None,
+                remarks=normalize_string(row.get(remarks_col)) if remarks_col else None,
             )
             leads_to_insert.append(lead)
 
@@ -343,3 +418,41 @@ async def upload_excel_leads(
         "assignments_per_division": dict(assignments_per_division),
         "assignments_per_agent": dict(assignments_per_agent),
     }
+
+@router.get(
+    "/leads/export-excel",
+    summary="Export all leads to an Excel file",
+)
+async def export_excel_leads(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Lead).order_by(Lead.created_at.desc()))
+    leads = result.scalars().all()
+
+    data = []
+    for lead in leads:
+        data.append({
+            "Lead ID": str(lead.id),
+            "First Name": lead.first_name,
+            "Last Name": lead.last_name,
+            "Email": lead.email,
+            "Company Name": lead.company_name,
+            "Status": lead.status,
+            "Query Notes": lead.query_notes,
+            "Created At": lead.created_at.strftime("%Y-%m-%d %H:%M:%S") if lead.created_at else ""
+        })
+
+    df = pd.DataFrame(data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="Leads")
+
+    output.seek(0)
+
+    headers = {
+        "Content-Disposition": 'attachment; filename="leads_export.xlsx"'
+    }
+
+    return StreamingResponse(
+        output,
+        headers=headers,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
