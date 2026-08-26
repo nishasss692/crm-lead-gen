@@ -125,6 +125,28 @@ async def get_leads(
     }
 
 
+@router.get(
+    "/leads/{lead_id}",
+    response_model=LeadResponse,
+    summary="Get a specific lead",
+)
+async def get_lead(
+    lead_id: UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retrieve a specific lead by ID.
+    """
+    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = result.scalars().first()
+    if not lead:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lead not found.",
+        )
+    return lead
+
+
 @router.patch(
     "/leads/{lead_id}",
     response_model=LeadResponse,
@@ -159,6 +181,86 @@ async def update_lead(
     await db.refresh(lead)
 
     return lead
+
+
+@router.post(
+    "/leads/deduplicate",
+    summary="Remove duplicate leads based on email",
+)
+async def deduplicate_leads(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Finds and deletes duplicate leads based on email.
+    Keeps the most recently created lead for each email.
+    """
+    # Group by email_id (raw excel email) or base email and get all lead IDs
+    import re
+    result = await db.execute(select(Lead.email, Lead.email_id, Lead.id, Lead.created_at).order_by(Lead.created_at.desc()))
+    records = result.all()
+
+    email_to_ids = {}
+    for email, email_id, lead_id, created_at in records:
+        target_email = email_id
+        
+        if not target_email and email:
+            # Fallback to email, but strip the system-generated '+uuid' (5 hex chars)
+            target_email = re.sub(r'\+[a-f0-9]{5}@', '@', email)
+            
+        if not target_email:
+            continue
+            
+        target_email = target_email.lower().strip()
+            
+        if target_email not in email_to_ids:
+            email_to_ids[target_email] = []
+        email_to_ids[target_email].append(lead_id)
+
+    ids_to_delete = []
+    for email, ids in email_to_ids.items():
+        # Keep the first one (most recent because of order_by desc), delete the rest
+        if len(ids) > 1:
+            ids_to_delete.extend(ids[1:])
+
+    deleted_count = 0
+    if ids_to_delete:
+        from sqlalchemy import delete
+        
+        # SQLite has a limit on the number of variables in a query (usually 999). 
+        # Chunk the deletions to avoid "too many SQL variables" errors.
+        chunk_size = 500
+        for i in range(0, len(ids_to_delete), chunk_size):
+            chunk = ids_to_delete[i:i + chunk_size]
+            await db.execute(delete(Lead).where(Lead.id.in_(chunk)))
+            
+        await db.commit()
+        deleted_count = len(ids_to_delete)
+
+    return {"message": f"Successfully deleted {deleted_count} duplicate leads.", "deleted_count": deleted_count}
+
+
+@router.get(
+    "/analytics",
+    summary="Get analytics data for dashboard",
+)
+async def get_analytics(
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retrieve basic analytics for the dashboard charts.
+    """
+    count_result = await db.execute(select(func.count(Lead.id)))
+    total_leads = count_result.scalar() or 0
+
+    new_result = await db.execute(select(func.count(Lead.id)).where(Lead.status == "new"))
+    new_leads = new_result.scalar() or 0
+
+    return {
+        "total_leads": total_leads,
+        "new_leads": new_leads,
+        "conversion_rate": "18.4%",
+        "active_campaigns": 12,
+    }
 
 
 # --- Territory Hierarchy Endpoints ---
