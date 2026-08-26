@@ -8,6 +8,18 @@ interface AnalyticsData {
   new_leads: number;
   conversion_rate: string;
   active_campaigns: number;
+  chart_data?: {
+    labels: string[];
+    data: number[];
+  };
+  leaderboard?: {
+    name: string;
+    role: string;
+    avatar: string;
+    leads_handled: number;
+    win_rate: string;
+    revenue: string;
+  }[];
 }
 
 export default function AnalyticsPage() {
@@ -43,7 +55,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     let chartInstance: Chart | null = null;
-    if (chartRef.current) {
+    if (chartRef.current && data.chart_data) {
       const ctx = chartRef.current.getContext('2d');
       if (ctx) {
         const primaryColor = '#004ac6';
@@ -54,10 +66,10 @@ export default function AnalyticsPage() {
         chartInstance = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+            labels: data.chart_data.labels,
             datasets: [{
               label: 'Qualified Leads',
-              data: [650, 780, 720, 890, 950, 1100, 1050, 1250, 1400],
+              data: data.chart_data.data,
               borderColor: primaryColor,
               backgroundColor: primaryLight,
               borderWidth: 2,
@@ -128,7 +140,7 @@ export default function AnalyticsPage() {
         chartInstance.destroy();
       }
     };
-  }, []);
+  }, [data]);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-[1440px] mx-auto w-full">
@@ -262,55 +274,34 @@ export default function AnalyticsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant font-body-base text-body-base">
-                <tr className="hover:bg-surface-container-lowest/50 transition-colors h-[48px] bg-primary-container/5">
-                  <td className="py-2 px-5 text-center">
-                    <div className="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs mx-auto shadow-sm">1</div>
-                  </td>
-                  <td className="py-2 px-5">
-                    <div className="flex items-center space-x-3">
-                      <img alt="Sarah Jenkins" className="w-8 h-8 rounded-full object-cover border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAE2a_lcA9-Oxhmczp0lHbzRcB3mJCYMjZYbawIbwrivv2Ug-vAunt6CWFSf1-_M5M0X8wXc57FNkhHHPXWjKMJcTeG_L3N2HwUcs0Jz4xrWXaGrz1LW5PZT8cKr1tlZwjmQFY82kQGdPms-L0xubjXpLZOe8PDUyJAn6QEh_xE9TEV_xqvSFye3IrEWQhX_35XszAhCvwkVC7Bre4ntpp5H-fj3R6XIX6IuHxoKyqfJBwu4lO20hU"/>
-                      <div>
-                        <div className="font-medium text-on-background">Sarah Jenkins</div>
-                        <div className="font-caption text-caption text-on-surface-variant">Enterprise AE</div>
+                {data.leaderboard && data.leaderboard.map((agent, idx) => (
+                  <tr key={idx} className={`hover:bg-surface-container-lowest/50 transition-colors h-[48px] ${idx === 0 ? 'bg-primary-container/5' : ''}`}>
+                    <td className="py-2 px-5 text-center">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs mx-auto ${idx === 0 ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-high text-on-surface border border-outline-variant'}`}>
+                        {idx + 1}
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-2 px-5 text-right font-medium text-on-surface">342</td>
-                  <td className="py-2 px-5 text-right">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-tertiary-fixed text-on-tertiary-fixed-variant border border-tertiary-fixed-dim/30">
-                      24.8%
-                    </span>
-                  </td>
-                  <td className="py-2 px-5 text-right font-semibold text-on-background">$1.2M</td>
-                  <td className="py-2 px-5 text-center">
-                    <span className="material-symbols-outlined text-tertiary">trending_up</span>
-                  </td>
-                </tr>
-                {/* Rep 2 */}
-                <tr className="hover:bg-surface-container-lowest/50 transition-colors h-[48px]">
-                  <td className="py-2 px-5 text-center">
-                    <div className="w-6 h-6 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-xs mx-auto border border-outline-variant">2</div>
-                  </td>
-                  <td className="py-2 px-5">
-                    <div className="flex items-center space-x-3">
-                      <img alt="Michael Chen" className="w-8 h-8 rounded-full object-cover border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQjgJwED4tQtnGhUQ5K0v7LUjRuXJ2WHBwKkoiETguFKa5oe2Wxouw9zMJHNrlBnAyyIiiAgUvKThv_GyEpbtIvNYIu5KX4TZ1WwotJcxepVpK04fRALvL6AvJWNg-diKInVhpiqAtlNSIMwDTiheLQpoINRg4Nbb6M_HyXbmOSAqhPyNmG4ikoXdbyFMnl4BEAE87fsNQXTURSjBu9xTvccFrA38fCLQ6gayj0U80rYlx306Dgz4"/>
-                      <div>
-                        <div className="font-medium text-on-background">Michael Chen</div>
-                        <div className="font-caption text-caption text-on-surface-variant">Mid-Market AE</div>
+                    </td>
+                    <td className="py-2 px-5">
+                      <div className="flex items-center space-x-3">
+                        <img alt={agent.name} className="w-8 h-8 rounded-full object-cover border border-outline-variant" src={agent.avatar}/>
+                        <div>
+                          <div className="font-medium text-on-background">{agent.name}</div>
+                          <div className="font-caption text-caption text-on-surface-variant">{agent.role}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-2 px-5 text-right font-medium text-on-surface">415</td>
-                  <td className="py-2 px-5 text-right">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-surface-container text-on-surface border border-outline-variant/30">
-                      19.2%
-                    </span>
-                  </td>
-                  <td className="py-2 px-5 text-right font-semibold text-on-background">$850K</td>
-                  <td className="py-2 px-5 text-center">
-                    <span className="material-symbols-outlined text-tertiary">trending_up</span>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="py-2 px-5 text-right font-medium text-on-surface">{agent.leads_handled}</td>
+                    <td className="py-2 px-5 text-right">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${idx === 0 ? 'bg-tertiary-fixed text-on-tertiary-fixed-variant border border-tertiary-fixed-dim/30' : 'bg-surface-container text-on-surface border border-outline-variant/30'}`}>
+                        {agent.win_rate}
+                      </span>
+                    </td>
+                    <td className="py-2 px-5 text-right font-semibold text-on-background">{agent.revenue}</td>
+                    <td className="py-2 px-5 text-center">
+                      <span className="material-symbols-outlined text-tertiary">trending_up</span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
