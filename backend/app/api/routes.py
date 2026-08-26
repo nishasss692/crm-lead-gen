@@ -311,8 +311,12 @@ async def get_analytics(
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     monthly_counts = defaultdict(int)
     agent_stats = defaultdict(lambda: {"leads": 0, "won": 0})
+    status_counts = defaultdict(int)
     
     for created_at, agent_name, status in leads_data:
+        if status:
+            status_counts[status] += 1
+        
         if created_at:
             month_idx = created_at.month - 1
             monthly_counts[months[month_idx]] += 1
@@ -354,13 +358,17 @@ async def get_analytics(
     return {
         "total_leads": total_leads,
         "new_leads": new_leads,
-        "conversion_rate": "18.4%",
-        "active_campaigns": 12,
+        "conversion_rate": f"{(total_leads - new_leads) / total_leads * 100:.1f}%" if total_leads > 0 else "0%",
+        "active_campaigns": 3, # Dummy
         "chart_data": {
             "labels": chart_labels,
             "data": chart_values
         },
-        "leaderboard": leaderboard[:10]
+        "pie_chart_data": {
+            "labels": list(status_counts.keys()) if status_counts else ["new", "contacted", "qualified", "won", "lost"],
+            "data": list(status_counts.values()) if status_counts else [30, 25, 20, 15, 10]
+        },
+        "leaderboard": leaderboard[:5] if leaderboard else []
     }
 
 

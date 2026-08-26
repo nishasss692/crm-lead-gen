@@ -71,7 +71,9 @@ export default function LeadsPage() {
             <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 text-[20px]">expand_more</span>
           </div>
 
-          <button className="bg-white border border-slate-300 text-slate-700 h-9 px-4 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors hidden sm:flex items-center gap-2">
+          <button 
+            onClick={() => window.open('http://localhost:8000/api/leads/export-excel', '_blank')}
+            className="bg-white border border-slate-300 text-slate-700 h-9 px-4 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors hidden sm:flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px]">download</span>
             Export
           </button>

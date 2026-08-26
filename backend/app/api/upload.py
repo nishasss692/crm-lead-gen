@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import pandas as pd
@@ -437,6 +437,23 @@ async def export_excel_leads(db: AsyncSession = Depends(get_db)):
             "Company Name": lead.company_name,
             "Status": lead.status,
             "Query Notes": lead.query_notes,
+            "SL No": lead.sl_no,
+            "Exporter Name": lead.exporter_name,
+            "Address": lead.address,
+            "PINCODE": lead.pincode,
+            "Division ID": lead.division_id,
+            "Division Name": lead.division_name,
+            "Region": lead.region,
+            "Assigned To (ME)": lead.assigned_agent_name,
+            "Date of Meeting": lead.date_of_meeting,
+            "Customer Met": lead.customer_met_name,
+            "Contact No.": lead.contact_number,
+            "Email ID": lead.email_id,
+            "Service Using": lead.service_presently_using,
+            "Monthly Vol (Rs)": lead.monthly_appx_volume,
+            "Outcome": lead.meeting_outcome,
+            "Contract ID": lead.contract_id,
+            "Remarks": lead.remarks,
             "Created At": lead.created_at.strftime("%Y-%m-%d %H:%M:%S") if lead.created_at else ""
         })
 
@@ -451,8 +468,8 @@ async def export_excel_leads(db: AsyncSession = Depends(get_db)):
         "Content-Disposition": 'attachment; filename="leads_export.xlsx"'
     }
 
-    return StreamingResponse(
-        output,
+    return Response(
+        content=output.getvalue(),
         headers=headers,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

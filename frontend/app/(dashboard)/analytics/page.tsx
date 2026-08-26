@@ -12,6 +12,10 @@ interface AnalyticsData {
     labels: string[];
     data: number[];
   };
+  pie_chart_data?: {
+    labels: string[];
+    data: number[];
+  };
   leaderboard?: {
     name: string;
     role: string;
@@ -24,6 +28,7 @@ interface AnalyticsData {
 
 export default function AnalyticsPage() {
   const chartRef = useRef<HTMLCanvasElement>(null);
+  const pieChartRef = useRef<HTMLCanvasElement>(null);
   const [data, setData] = useState<AnalyticsData>({
     total_leads: 0,
     new_leads: 0,
@@ -135,9 +140,52 @@ export default function AnalyticsPage() {
       }
     }
 
+    let pieChartInstance: Chart | null = null;
+    
+    if (pieChartRef.current && data.pie_chart_data) {
+      const ctx = pieChartRef.current.getContext('2d');
+      if (ctx) {
+        pieChartInstance = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: data.pie_chart_data.labels,
+            datasets: [{
+              data: data.pie_chart_data.data,
+              backgroundColor: [
+                '#004ac6',
+                '#3b82f6',
+                '#93c5fd',
+                '#dbeafe',
+                '#1e3a8a'
+              ],
+              borderWidth: 0,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  usePointStyle: true,
+                  padding: 20,
+                  font: { family: 'Inter', size: 12 }
+                }
+              },
+            },
+            cutout: '70%',
+          }
+        });
+      }
+    }
+
     return () => {
       if (chartInstance) {
         chartInstance.destroy();
+      }
+      if (pieChartInstance) {
+        pieChartInstance.destroy();
       }
     };
   }, [data]);
@@ -161,7 +209,9 @@ export default function AnalyticsPage() {
               <span className="material-symbols-outlined text-sm">expand_more</span>
             </div>
           </div>
-          <button className="bg-surface-container-lowest border border-outline-variant text-on-surface font-body-medium text-body-medium rounded-lg px-4 py-2 flex items-center space-x-2 hover:bg-surface-container-low transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/15 h-9">
+          <button 
+            onClick={() => window.open('http://localhost:8000/api/leads/export-excel', '_blank')}
+            className="bg-surface-container-lowest border border-outline-variant text-on-surface font-body-medium text-body-medium rounded-lg px-4 py-2 flex items-center space-x-2 hover:bg-surface-container-low transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/15 h-9">
             <span className="material-symbols-outlined text-[18px]">download</span>
             <span>Export</span>
           </button>
@@ -231,7 +281,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Lead Volume (Line Chart) */}
-        <div className="col-span-1 lg:col-span-12 bg-surface-container-lowest border border-outline-variant rounded-lg ambient-shadow flex flex-col">
+        <div className="col-span-1 lg:col-span-8 bg-surface-container-lowest border border-outline-variant rounded-lg ambient-shadow flex flex-col">
           <div className="p-5 border-b border-outline-variant flex justify-between items-center">
             <h3 className="font-title-lg text-title-lg text-on-background">Monthly Lead Volume</h3>
             <button className="text-on-surface-variant hover:text-primary transition-colors p-1 rounded-md hover:bg-surface-container-high focus:outline-none">
@@ -240,6 +290,19 @@ export default function AnalyticsPage() {
           </div>
           <div className="p-5 flex-1 min-h-[300px] relative w-full">
             <canvas ref={chartRef}></canvas>
+          </div>
+        </div>
+
+        {/* Status Distribution (Pie Chart) */}
+        <div className="col-span-1 lg:col-span-4 bg-surface-container-lowest border border-outline-variant rounded-lg ambient-shadow flex flex-col">
+          <div className="p-5 border-b border-outline-variant flex justify-between items-center">
+            <h3 className="font-title-lg text-title-lg text-on-background">Lead Status Distribution</h3>
+            <button className="text-on-surface-variant hover:text-primary transition-colors p-1 rounded-md hover:bg-surface-container-high focus:outline-none">
+              <span className="material-symbols-outlined text-[20px]">more_vert</span>
+            </button>
+          </div>
+          <div className="p-5 flex-1 min-h-[300px] relative w-full flex items-center justify-center">
+            <canvas ref={pieChartRef}></canvas>
           </div>
         </div>
 

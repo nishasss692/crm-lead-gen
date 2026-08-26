@@ -46,3 +46,5 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
 pgdata/
+*.db
+*.sqlite3

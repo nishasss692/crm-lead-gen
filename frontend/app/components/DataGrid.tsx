@@ -52,7 +52,7 @@ export default function DataGrid({ leads, loading, onLeadUpdated }: DataGridProp
         if (!leadToSave) return;
         
         // Find the diff to only send changed fields
-        const originalLead = leads.find(l => l.id === id) || {};
+        const originalLead: any = leads.find(l => l.id === id) || {};
         const changedFields: any = {};
         for (const key of Object.keys(leadToSave)) {
           if (leadToSave[key] !== originalLead[key]) {

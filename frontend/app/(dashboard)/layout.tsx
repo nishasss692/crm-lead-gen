@@ -68,16 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <div className="flex items-center space-x-4">
-            <button className="text-on-surface-variant hover:text-primary transition-colors focus-within:ring-2 focus-within:ring-primary/15 rounded-full p-1 relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border border-surface-container-lowest"></span>
-            </button>
-            <button className="text-on-surface-variant hover:text-primary transition-colors focus-within:ring-2 focus-within:ring-primary/15 rounded-full p-1">
-              <span className="material-symbols-outlined">history</span>
-            </button>
-            <div className="h-8 w-8 rounded-full bg-slate-300 overflow-hidden border border-outline-variant ml-2">
-              <img alt="User Avatar" className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgAXCQ6awy4a990gHioOarglWbd5qw95fxEqdPwYpAi2qYy9w2rPP2LEdmxT8hpP6hJFdAo401jH4ahK73ct1fYWg3Rwd_iRVthjbb7Zi90uW0JVDiqumpzV7f_8koJmRkrJuDuNIdhTAP6Ta1nzGqpvYnuuNXPZAVgprJbcBgCHd56eqeIa_UnUAxfJlzVXVSSDMPoeW7r4qYaansacirevvfgCPc_9JnWaA46iz065tG1IPvLsg" />
-            </div>
+            {/* Icons removed as per user request */}
           </div>
         </header>
 

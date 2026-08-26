@@ -61,8 +61,8 @@ app.add_middleware(
 )
 
 # Include API routers with prefix
-app.include_router(api_router, prefix="/api")
 app.include_router(upload_router, prefix="/api")
+app.include_router(api_router, prefix="/api")
 
 
 @app.get("/", tags=["Health"])
