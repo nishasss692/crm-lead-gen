@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+import firebase_admin
+from firebase_admin import credentials
 
 try:
     from app.core.database import engine, Base, AsyncSessionLocal
@@ -31,6 +33,15 @@ async def lifespan(app: FastAPI):
     # 1. Startup: create PostgreSQL tables if they do not exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Initialize Firebase Admin if not already initialized
+    if not firebase_admin._apps:
+        try:
+            # For local dev without creds, use default.
+            # In production, you would pass credentials.Certificate('path/to/key.json')
+            firebase_admin.initialize_app()
+        except Exception as e:
+            print(f"Warning: Firebase Admin initialization failed: {e}")
 
 
     # 2. Seed territory hierarchy & active agents

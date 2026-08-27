@@ -73,6 +73,10 @@ class Agent(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
+    employee_id = Column(String(50), unique=True, index=True, nullable=True)
+    password_hash = Column(String(255), nullable=True)
+    mobile_number = Column(String(20), unique=True, nullable=True)
+    is_first_login = Column(Boolean, default=True, nullable=False)
     division_id = Column(
         UUID(as_uuid=True),
         ForeignKey("divisions.id", ondelete="SET NULL"),

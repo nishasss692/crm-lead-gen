@@ -4,6 +4,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from passlib.hash import bcrypt
+import firebase_admin
+from firebase_admin import credentials, auth as firebase_auth
 
 try:
     from app.core.database import get_db
@@ -43,40 +46,90 @@ class OTPRequest(BaseModel):
     mobile_number: str
 
 class OTPVerifyRequest(BaseModel):
-    mobile_number: str
-    otp: str
+    firebase_id_token: str
 
-@router.post("/login", summary="Simple login endpoint")
-async def login(req: LoginRequest):
+@router.post("/login", summary="First-time login with Employee ID & Password")
+async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     if not req.employee_id or not req.password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Employee ID and password are required.",
         )
-    # Simple login logic without role-based access
-    return {"token": "dummy_jwt_token_123", "message": "Login successful"}
-
-@router.post("/login/otp/request", summary="Request OTP for login")
-async def request_otp(req: OTPRequest):
-    if not req.mobile_number:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Mobile number is required.",
-        )
-    return {"message": "OTP sent successfully"}
-
-@router.post("/login/otp/verify", summary="Verify OTP for login")
-async def verify_otp(req: OTPVerifyRequest):
-    if not req.mobile_number or not req.otp:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Mobile number and OTP are required.",
-        )
-    if req.otp != "123456": # Mock OTP validation
+    
+    # Look up agent by employee_id
+    result = await db.execute(select(Agent).where(Agent.employee_id == req.employee_id))
+    agent = result.scalars().first()
+    
+    if not agent:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid OTP. Use 123456 for testing.",
+            detail="Invalid Employee ID or password.",
         )
+        
+    if not agent.is_first_login:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="First-time login already completed. Please use OTP to login.",
+        )
+        
+    if not agent.password_hash or not bcrypt.verify(req.password, agent.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Employee ID or password.",
+        )
+        
+    # Mark first login as complete
+    agent.is_first_login = False
+    await db.commit()
+    
+    return {
+        "token": "dummy_jwt_token_123", 
+        "message": "First login successful",
+        "mobile_number": agent.mobile_number 
+    }
+
+@router.post("/login/otp/verify", summary="Verify Firebase ID Token for login")
+async def verify_otp(req: OTPVerifyRequest, db: AsyncSession = Depends(get_db)):
+    if not req.firebase_id_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Firebase ID token is required.",
+        )
+        
+    try:
+        # Note: Firebase Admin must be initialized in main.py for this to work
+        # decoded_token = firebase_auth.verify_id_token(req.firebase_id_token)
+        # mobile_number = decoded_token.get('phone_number')
+        
+        # MOCK FOR NOW UNTIL FIREBASE IS CONFIGURED BY USER
+        if req.firebase_id_token == "dummy_token":
+             mobile_number = "+15551234567" # fallback mock
+        else:
+            decoded_token = firebase_auth.verify_id_token(req.firebase_id_token)
+            mobile_number = decoded_token.get('phone_number')
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid Firebase token: {str(e)}",
+        )
+        
+    if not mobile_number:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token does not contain a valid phone number.",
+        )
+        
+    # Find agent by mobile number
+    result = await db.execute(select(Agent).where(Agent.mobile_number == mobile_number))
+    agent = result.scalars().first()
+    
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No employee found with this mobile number.",
+        )
+        
     return {"token": "dummy_jwt_token_123", "message": "Login successful"}
 
 

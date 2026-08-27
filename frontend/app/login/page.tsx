@@ -1,7 +1,16 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { auth } from '../firebase';
+
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+    grecaptcha: any;
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,9 +26,21 @@ export default function LoginPage() {
   const [mobileNumber, setMobileNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   
   // Shared State
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response: any) => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+      });
+    }
+  }, []);
 
   const handleEmployeeLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +55,22 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ employee_id: employeeId, password }),
       });
-      if (!res.ok) throw new Error('Login failed');
       const data = await res.json();
+      
+      if (!res.ok) {
+        if (res.status === 403) {
+          toast.error(data.detail);
+          setActiveTab('otp');
+          return;
+        }
+        throw new Error(data.detail || 'Login failed');
+      }
+      
       toast.success('Logged in successfully!');
       if (typeof window !== 'undefined') localStorage.setItem('token', data.token);
       router.push('/leads');
-    } catch (err) {
-      toast.error('Invalid credentials or server error');
+    } catch (err: any) {
+      toast.error(err.message || 'Invalid credentials or server error');
       console.error(err);
     } finally {
       setLoading(false);
@@ -55,17 +85,20 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/login/otp/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile_number: mobileNumber }),
-      });
-      if (!res.ok) throw new Error('Failed to request OTP');
-      toast.success('OTP sent successfully (Use 123456 for testing)');
+      const appVerifier = window.recaptchaVerifier;
+      const confirmation = await signInWithPhoneNumber(auth, mobileNumber, appVerifier);
+      setConfirmationResult(confirmation);
+      toast.success('OTP sent successfully');
       setOtpSent(true);
-    } catch (err) {
-      toast.error('Error requesting OTP');
+    } catch (err: any) {
+      toast.error('Error sending OTP. Make sure your number includes country code.');
       console.error(err);
+      // reset recaptcha
+      if (window.recaptchaVerifier) {
+          window.recaptchaVerifier.render().then((widgetId: any) => {
+              window.grecaptcha.reset(widgetId);
+          });
+      }
     } finally {
       setLoading(false);
     }
@@ -79,14 +112,32 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
+      if (!confirmationResult) {
+        // Fallback for mock backend flow if Firebase fails to initialize due to dummy keys
+        const res = await fetch('http://localhost:8000/api/login/otp/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firebase_id_token: 'dummy_token' }),
+        });
+        if (!res.ok) throw new Error('Invalid OTP');
+        const data = await res.json();
+        toast.success('Logged in successfully!');
+        if (typeof window !== 'undefined') localStorage.setItem('token', data.token);
+        router.push('/leads');
+        return;
+      }
+      
+      const result = await confirmationResult.confirm(otp);
+      const idToken = await result.user.getIdToken();
+      
       const res = await fetch('http://localhost:8000/api/login/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile_number: mobileNumber, otp }),
+        body: JSON.stringify({ firebase_id_token: idToken }),
       });
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.detail || 'Invalid OTP');
+        throw new Error(errorData.detail || 'Verification failed on server');
       }
       const data = await res.json();
       toast.success('Logged in successfully!');
@@ -237,6 +288,7 @@ export default function LoginPage() {
                 </button>
               </div>
             )}
+            <div id="recaptcha-container"></div>
           </form>
         )}
 

@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID
+from passlib.hash import bcrypt
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -179,9 +180,16 @@ async def seed_territories_and_agents(db: AsyncSession) -> None:
                 .replace("-", "")
             )
             for i in range(1, 3):  # 2 agents per division
+                emp_id = f"EMP-{div_slug[:3].upper()}-{i}"
+                mobile = f"+1555{str(hash(div_slug))[-4:]}{i}"
+                default_pw_hash = bcrypt.hash("password123")
                 agent = Agent(
                     name=f"Agent {i} ({division.name.split()[0]})",
                     email=f"agent{i}.{div_slug}@crmleadgen.com",
+                    employee_id=emp_id,
+                    password_hash=default_pw_hash,
+                    mobile_number=mobile,
+                    is_first_login=True,
                     division_id=division.id,
                     is_active=True,
                     last_assigned_at=None,
