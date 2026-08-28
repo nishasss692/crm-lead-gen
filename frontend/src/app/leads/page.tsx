@@ -177,7 +177,7 @@ export default function LeadsPage() {
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <LeadsTable data={filtered} />
+            <LeadsTable data={filtered} allowEdit={statusFilter !== 'pending'} />
           </div>
         )}
         

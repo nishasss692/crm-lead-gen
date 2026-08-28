@@ -24,9 +24,10 @@ export interface Lead {
 
 interface LeadsTableProps {
   data: Lead[];
+  allowEdit?: boolean;
 }
 
-export default function LeadsTable({ data }: LeadsTableProps) {
+export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -94,9 +95,11 @@ export default function LeadsTable({ data }: LeadsTableProps) {
                   
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => setSelectedLead(lead)} className="px-3 py-1.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded text-xs font-bold transition-colors">
-                        Edit
-                      </button>
+                      {allowEdit && (
+                        <button onClick={() => setSelectedLead(lead)} className="px-3 py-1.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded text-xs font-bold transition-colors">
+                          Edit
+                        </button>
+                      )}
                       <button className="px-3 py-1.5 border border-rose-200 text-rose-700 hover:bg-rose-50 rounded text-xs font-bold transition-colors">
                         Delete
                       </button>
@@ -104,12 +107,18 @@ export default function LeadsTable({ data }: LeadsTableProps) {
                   </td>
                   
                   <td className="px-6 py-4">
-                    <button 
-                      onClick={() => setSelectedLead(lead)} 
-                      className="font-bold text-[#113254] hover:text-indigo-700 hover:underline text-base text-left block w-full truncate max-w-lg transition-colors"
-                    >
-                      {lead.exporterName || 'Unknown Exporter'}
-                    </button>
+                    {allowEdit ? (
+                      <button 
+                        onClick={() => setSelectedLead(lead)} 
+                        className="font-bold text-[#113254] hover:text-indigo-700 hover:underline text-base text-left block w-full truncate max-w-lg transition-colors"
+                      >
+                        {lead.exporterName || 'Unknown Exporter'}
+                      </button>
+                    ) : (
+                      <div className="font-bold text-slate-800 text-base text-left block w-full truncate max-w-lg">
+                        {lead.exporterName || 'Unknown Exporter'}
+                      </div>
+                    )}
                     <div className="text-xs text-slate-400 mt-1 truncate max-w-lg">
                       {lead.address || 'No address provided'}
                     </div>

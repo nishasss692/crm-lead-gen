@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LeadsTable, { Lead } from './components/LeadsTable';
 import PincodePerformanceTable from './components/PincodePerformanceTable';
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { 
   Building2, 
   Users, 
@@ -15,7 +15,9 @@ import {
   TrendingUp,
   MapPin,
   Mail,
-  AlertCircle
+  AlertCircle,
+  Medal,
+  Briefcase
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -147,8 +149,31 @@ export default function Dashboard() {
     ? leads.filter(lead => lead.division === selectedDivision)
     : leads;
 
-  const priorityFollowUps = filteredLeads
-    .filter(lead => (lead.meetingOutcome || '').toLowerCase() === 'followup' || ((lead.meetingOutcome || '').toLowerCase() === 'positive' && !lead.contractId))
+  const serviceCounts: Record<string, number> = {};
+  filteredLeads.forEach(lead => {
+    const service = lead.serviceUsing ? lead.serviceUsing.trim() : 'Unknown';
+    if (service && service.toLowerCase() !== 'null' && service.toLowerCase() !== 'none') {
+      serviceCounts[service] = (serviceCounts[service] || 0) + 1;
+    }
+  });
+  
+  const serviceData = Object.entries(serviceCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5); // top 5 services
+
+  const agentCounts: Record<string, number> = {};
+  filteredLeads.forEach(lead => {
+    const agent = lead.assignedMeName ? lead.assignedMeName.trim() : 'Unassigned';
+    if (agent) {
+      agentCounts[agent] = (agentCounts[agent] || 0) + 1;
+    }
+  });
+
+  const topAgents = Object.entries(agentCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .filter(a => a.name !== 'Unassigned')
     .slice(0, 5);
 
   const pieData = analytics ? [
@@ -160,19 +185,19 @@ export default function Dashboard() {
   ].filter(item => item.value > 0) : [];
 
   return (
-    <main className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#113254]/20 selection:text-[#113254] pb-20">
+    <main className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-50 via-slate-100 to-[#113254]/5 text-slate-800 font-sans selection:bg-[#113254]/20 selection:text-[#113254] pb-20">
       {/* Decorative Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-slate-200/40 blur-[120px]" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-red-100/30 blur-[100px]" />
+        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-200/30 blur-[120px] mix-blend-multiply" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-rose-200/20 blur-[120px] mix-blend-multiply" />
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-6 pt-8 space-y-8">
+      <div className="max-w-[1400px] mx-auto px-6 pt-10 space-y-10">
         
         {/* Header Section */}
         <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-[#113254] tracking-tight">
+          <div className="space-y-3">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-[#113254] tracking-tight drop-shadow-sm">
               Analytics <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d1242f] to-rose-500">Dashboard</span>
             </h1>
             <p className="text-slate-500 font-medium max-w-xl text-lg">
@@ -225,11 +250,13 @@ export default function Dashboard() {
 
         {/* Pipeline Health (High-level Rates) */}
         {analytics && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-1 md:col-span-1 bg-gradient-to-br from-[#113254] to-[#0a1e33] rounded-3xl p-8 text-white shadow-xl shadow-[#113254]/20 relative overflow-hidden flex flex-col justify-between group">
-              <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-700" />
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-xs font-semibold backdrop-blur-md mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="col-span-1 md:col-span-1 bg-gradient-to-br from-[#113254] via-[#154677] to-[#d1242f] rounded-[2rem] p-8 text-white shadow-2xl shadow-[#113254]/30 relative overflow-hidden flex flex-col justify-between group transform hover:-translate-y-1 hover:shadow-3xl transition-all duration-500">
+              <div className="absolute right-0 top-0 w-72 h-72 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 group-hover:scale-125 group-hover:bg-white/20 transition-all duration-700" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-rose-500/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4" />
+              
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs font-bold backdrop-blur-md mb-8 shadow-sm">
                   <TrendingUp className="w-3.5 h-3.5 text-rose-400" /> Pipeline Health
                 </div>
                 <h2 className="text-5xl font-bold tracking-tight mb-2">
@@ -265,7 +292,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Status Distribution Pie Chart */}
           {analytics && (
-            <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex flex-col">
+            <div className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-7 border border-white shadow-xl shadow-slate-200/50 flex flex-col h-[420px] group hover:bg-white transition-colors duration-500">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-[#d1242f]" />
@@ -273,7 +300,7 @@ export default function Dashboard() {
                 </h3>
               </div>
               
-              <div className="flex-1 min-h-[300px] w-full mt-4 flex items-center justify-center">
+              <div className="flex-1 w-full mt-2 flex items-center justify-center">
                 {pieData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -281,8 +308,8 @@ export default function Dashboard() {
                         data={pieData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={80}
-                        outerRadius={120}
+                        innerRadius={60}
+                        outerRadius={100}
                         paddingAngle={5}
                         dataKey="value"
                       >
@@ -291,10 +318,10 @@ export default function Dashboard() {
                         ))}
                       </Pie>
                       <RechartsTooltip 
-                        formatter={(value: number) => [`${value} Leads`, '']}
+                        formatter={(value: any) => [`${value} Leads`, '']}
                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
                       />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -304,40 +331,71 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Priority Follow-ups */}
-          <div className="lg:col-span-1 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex flex-col">
+          {/* Service Usage Bar Chart */}
+          <div className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-7 border border-white shadow-xl shadow-slate-200/50 flex flex-col h-[420px] group hover:bg-white transition-colors duration-500">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-[#113254]" />
+                Top Services Used
+              </h3>
+            </div>
+            
+            <div className="flex-1 w-full flex items-center justify-center">
+              {serviceData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={serviceData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} width={80} />
+                    <RechartsTooltip 
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                    />
+                    <Bar dataKey="value" fill="#113254" radius={[0, 4, 4, 0]} barSize={24}>
+                      {serviceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === 0 ? '#d1242f' : '#113254'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-slate-400 font-medium flex items-center justify-center w-full h-full">No service data available</div>
+              )}
+            </div>
+          </div>
+
+          {/* Top Agents Leaderboard */}
+          <div className="bg-white/70 backdrop-blur-xl rounded-[2rem] p-7 border border-white shadow-xl shadow-slate-200/50 flex flex-col h-[420px] group hover:bg-white transition-colors duration-500">
             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-6">
-              <AlertCircle className="w-5 h-5 text-rose-500" />
-              Priority Follow-ups
+              <Medal className="w-5 h-5 text-amber-500" />
+              Top Agents Leaderboard
             </h3>
             
-            <div className="flex-1 space-y-4">
-              {priorityFollowUps.length > 0 ? (
-                priorityFollowUps.map(lead => (
-                  <div key={lead.id} className="p-4 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 transition-colors group cursor-pointer">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-slate-800 text-sm group-hover:text-indigo-700 transition-colors line-clamp-1">{lead.exporterName || 'Unknown Company'}</h4>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-700 uppercase tracking-wider whitespace-nowrap ml-2">Action Req</span>
+            <div className="flex-1 space-y-4 overflow-y-auto custom-scrollbar pr-2">
+              {topAgents.length > 0 ? (
+                topAgents.map((agent, index) => (
+                  <div key={agent.name} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm
+                        ${index === 0 ? 'bg-amber-100 text-amber-700 border border-amber-200' : 
+                          index === 1 ? 'bg-slate-200 text-slate-700 border border-slate-300' : 
+                          index === 2 ? 'bg-orange-100 text-orange-700 border border-orange-200' : 
+                          'bg-white text-slate-500 border border-slate-200'}
+                      `}>
+                        {index + 1}
+                      </div>
+                      <h4 className="font-semibold text-slate-700 text-sm">{agent.name}</h4>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
-                      {lead.contactNumber && (
-                        <div className="flex items-center gap-1">
-                          <PhoneCall className="w-3 h-3" /> {lead.contactNumber}
-                        </div>
-                      )}
-                      {lead.assignedMeName && (
-                        <div className="flex items-center gap-1">
-                          <Users className="w-3 h-3" /> {lead.assignedMeName}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-sm">
+                      <Users className="w-3.5 h-3.5 text-indigo-500" />
+                      <span className="font-bold text-slate-700 text-sm">{agent.value}</span>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mb-3" />
-                  <p className="text-sm font-medium text-slate-600">All caught up!</p>
-                  <p className="text-xs text-slate-400 mt-1">No priority follow-ups pending.</p>
+                  <Users className="w-8 h-8 text-slate-300 mb-3" />
+                  <p className="text-sm font-medium text-slate-600">No agent data yet</p>
                 </div>
               )}
             </div>
@@ -372,24 +430,24 @@ export default function Dashboard() {
 
 function MetricCard({ title, value, icon, color }: { title: string, value: number, icon: React.ReactNode, color: string }) {
   const colorMap: Record<string, string> = {
-    amber: 'bg-amber-50 hover:bg-amber-100/50 border-amber-100',
-    sky: 'bg-sky-50 hover:bg-sky-100/50 border-sky-100',
-    emerald: 'bg-emerald-50 hover:bg-emerald-100/50 border-emerald-100',
-    violet: 'bg-violet-50 hover:bg-violet-100/50 border-violet-100',
-    blue: 'bg-blue-50 hover:bg-blue-100/50 border-blue-100',
-    teal: 'bg-teal-50 hover:bg-teal-100/50 border-teal-100',
+    amber: 'bg-gradient-to-br from-white to-amber-50/50 hover:to-amber-50 border-amber-100 hover:border-amber-300 shadow-amber-500/5',
+    sky: 'bg-gradient-to-br from-white to-sky-50/50 hover:to-sky-50 border-sky-100 hover:border-sky-300 shadow-sky-500/5',
+    emerald: 'bg-gradient-to-br from-white to-emerald-50/50 hover:to-emerald-50 border-emerald-100 hover:border-emerald-300 shadow-emerald-500/5',
+    violet: 'bg-gradient-to-br from-white to-violet-50/50 hover:to-violet-50 border-violet-100 hover:border-violet-300 shadow-violet-500/5',
+    blue: 'bg-gradient-to-br from-white to-blue-50/50 hover:to-blue-50 border-blue-100 hover:border-blue-300 shadow-blue-500/5',
+    teal: 'bg-gradient-to-br from-white to-teal-50/50 hover:to-teal-50 border-teal-100 hover:border-teal-300 shadow-teal-500/5',
   };
   const iconBgMap: Record<string, string> = {
-    amber: 'bg-amber-100',
-    sky: 'bg-sky-100',
-    emerald: 'bg-emerald-100',
-    violet: 'bg-violet-100',
-    blue: 'bg-blue-100',
-    teal: 'bg-teal-100',
+    amber: 'bg-amber-100/80 text-amber-600 shadow-inner shadow-white',
+    sky: 'bg-sky-100/80 text-sky-600 shadow-inner shadow-white',
+    emerald: 'bg-emerald-100/80 text-emerald-600 shadow-inner shadow-white',
+    violet: 'bg-violet-100/80 text-violet-600 shadow-inner shadow-white',
+    blue: 'bg-blue-100/80 text-blue-600 shadow-inner shadow-white',
+    teal: 'bg-teal-100/80 text-teal-600 shadow-inner shadow-white',
   };
 
   return (
-    <div className={`p-5 rounded-3xl border transition-all duration-300 cursor-pointer ${colorMap[color]}`}>
+    <div className={`p-6 rounded-[2rem] border transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:shadow-xl ${colorMap[color]}`}>
       <div className="flex justify-between items-start mb-4">
         <div className={`p-2.5 rounded-2xl ${iconBgMap[color]}`}>
           {icon}
