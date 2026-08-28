@@ -14,7 +14,8 @@ import {
   KeyRound, 
   LogOut,
   Mail,
-  Building2
+  Building2,
+  Megaphone
 } from 'lucide-react';
 
 function SidebarContent() {
@@ -22,6 +23,7 @@ function SidebarContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const statusParam = searchParams.get('status');
+  const tabParam = searchParams.get('tab');
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [user, setUser] = useState<{username: string, role: string} | null>(null);
@@ -44,7 +46,9 @@ function SidebarContent() {
   const getLinkClass = (path: string, status?: string) => {
     let isActive = false;
     if (path === '/') {
-      isActive = pathname === '/';
+      isActive = pathname === '/' && !tabParam;
+    } else if (path === '/?tab=campaigns') {
+      isActive = pathname === '/' && tabParam === 'campaigns';
     } else if (path === '/leads') {
       isActive = pathname === '/leads' && (statusParam === status || (!statusParam && !status));
     }
@@ -81,6 +85,15 @@ function SidebarContent() {
               <Link href="/" className={getLinkClass('/')}>
                 <LayoutDashboard className="w-4 h-4 mr-3 shrink-0" />
                 <span className="text-sm">Dashboard</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/?tab=campaigns" className={getLinkClass('/?tab=campaigns')}>
+                <Megaphone className="w-4 h-4 mr-3 shrink-0 text-[#F7941D]" />
+                <span className="text-sm">Campaigns</span>
+                <span className="ml-auto text-[9px] bg-[#F7941D]/20 text-[#FAB52C] border border-[#F7941D]/30 px-1.5 py-0.2 rounded-full font-bold">
+                  Active
+                </span>
               </Link>
             </li>
           </ul>
