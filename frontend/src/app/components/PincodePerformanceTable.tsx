@@ -1,5 +1,7 @@
+'use client';
 import React, { useMemo } from 'react';
 import { Lead } from './LeadsTable';
+import { MapPin, Download, Building } from 'lucide-react';
 
 interface PincodeStats {
   pincode: string;
@@ -49,14 +51,13 @@ export default function PincodePerformanceTable({ leads }: { leads: Lead[] }) {
         }
       } else if (outcome === 'not interested') {
         st.notInterested += 1;
-        st.notWilling += 1; // Assuming not interested means not willing to onboard
+        st.notWilling += 1;
       } else if (outcome === 'followup') {
         st.followUp += 1;
       }
 
       if (hasContract && outcome !== 'positive') {
-         // Fallback if they have a contract but weren't marked positive
-         st.onboarded += 1;
+        st.onboarded += 1;
       }
     });
 
@@ -90,52 +91,80 @@ export default function PincodePerformanceTable({ leads }: { leads: Lead[] }) {
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Geography</h3>
-          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Pincode performance</h2>
+    <div className="glass-card rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover-lift animate-fade-in-up">
+      <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-[#D1242F]">
+            <MapPin className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-800">Pincode & Post Office Performance</h3>
+            <p className="text-xs text-slate-500 font-medium">Regional delivery & lead distribution across postal codes</p>
+          </div>
         </div>
-        <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-[#d1242f] hover:bg-rose-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all active:scale-95">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Export CSV
+        <button 
+          onClick={handleExport} 
+          className="flex items-center gap-2 px-4 py-2 text-white rounded-xl text-xs font-bold shadow-sm hover:opacity-95 transition-all active:scale-95"
+          style={{ background: 'linear-gradient(135deg, #D1242F, #B01E28)' }}
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Export CSV</span>
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-[#155a8f] text-white">
-            <tr>
-              <th scope="col" className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">Pincode / PO</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Total</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Pending</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Contacted</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Interested</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Not Interested</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Follow-up Required</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Willing to Onboard</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Not Willing to Onboard</th>
-              <th scope="col" className="px-4 py-4 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap">Onboarded</th>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr style={{ background: 'linear-gradient(135deg, #1B2A4A, #243B6A)' }} className="text-white text-xs font-bold uppercase tracking-wider">
+              <th scope="col" className="py-3.5 px-6 whitespace-nowrap">Pincode / PO</th>
+              <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">Total</th>
+              <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">Pending</th>
+              <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">Contacted</th>
+              <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">Interested</th>
+              <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">Not Interested</th>
+              <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">Follow-up</th>
+              <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">Willing</th>
+              <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">Onboarded</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-slate-100">
-            {stats.map((row) => (
-              <tr key={row.pincode} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="font-bold text-slate-800">{row.pincode}</div>
-                  <div className="text-[10px] text-slate-400 font-medium">#N/A</div>
+          <tbody className="divide-y divide-slate-100">
+            {stats.map((row, idx) => (
+              <tr key={row.pincode} className="hover:bg-slate-50/80 transition-colors">
+                <td className="py-3.5 px-6 whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center text-[10px] font-bold">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <div className="font-bold text-slate-800 text-sm">{row.pincode}</div>
+                      <div className="text-[11px] text-slate-400 font-medium">Karnataka Circle</div>
+                    </div>
+                  </div>
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-center font-medium text-slate-700">{row.total}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-slate-600">{row.pending}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-slate-600">{row.contacted}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-slate-600">{row.interested}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-slate-600">{row.notInterested}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-slate-600">{row.followUp}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-slate-600">{row.willing}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-slate-600">{row.notWilling}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-center text-slate-600">{row.onboarded}</td>
+                <td className="py-3.5 px-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 bg-slate-100 text-slate-800 rounded-md text-xs font-bold">{row.total}</span>
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 bg-amber-50 text-amber-700 rounded-md text-xs font-semibold">{row.pending}</span>
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 bg-blue-50 text-[#1565C0] rounded-md text-xs font-semibold">{row.contacted}</span>
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 bg-emerald-50 text-[#2E7D32] rounded-md text-xs font-semibold">{row.interested}</span>
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 bg-red-50 text-[#D1242F] rounded-md text-xs font-semibold">{row.notInterested}</span>
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 bg-orange-50 text-[#F7941D] rounded-md text-xs font-semibold">{row.followUp}</span>
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 bg-teal-50 text-[#00897B] rounded-md text-xs font-semibold">{row.willing}</span>
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  <span className="inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md text-xs font-bold">{row.onboarded}</span>
+                </td>
               </tr>
             ))}
           </tbody>

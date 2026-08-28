@@ -227,6 +227,9 @@ def get_analytics(division_name: str = "", db: Session = Depends(get_db), curren
     onboarded = 0
     onboard_pending = 0
     
+    meetings_over_time = {}
+    agents = {}
+    
     for lead in leads:
         outcome = (lead.meeting_outcome or "").strip().lower()
         has_contract = bool((lead.contract_id or "").strip())
@@ -250,8 +253,49 @@ def get_analytics(division_name: str = "", db: Session = Depends(get_db), curren
         else:
             onboard_pending += 1
             
+        agent_name = (lead.assigned_agent or "Unassigned").strip()
+        if not agent_name or agent_name == "nan":
+            agent_name = "Unassigned"
+        if agent_name not in agents:
+            agents[agent_name] = {"leads": 0, "contacted": 0, "converted": 0}
+        agents[agent_name]["leads"] += 1
+        if outcome and outcome not in ["nan", "none"]:
+            agents[agent_name]["contacted"] += 1
+        if has_contract:
+            agents[agent_name]["converted"] += 1
+            
+        date_str = lead.date_of_meeting
+        if date_str:
+            date_clean = str(date_str).strip().split(' ')[0]
+            if date_clean and date_clean not in ['nan', 'None', '', 'NaT']:
+                meetings_over_time[date_clean] = meetings_over_time.get(date_clean, 0) + 1
+            
     contacted_rate = round((contacted / total * 100) if total > 0 else 0, 2)
     onboarding_rate = round((onboarded / total * 100) if total > 0 else 0, 2)
+    
+    agent_performance = []
+    for agent, stats in agents.items():
+        rate = round((stats["converted"] / stats["leads"] * 100) if stats["leads"] > 0 else 0, 2)
+        agent_performance.append({
+            "name": agent,
+            "leads": stats["leads"],
+            "contacted": stats["contacted"],
+            "converted": stats["converted"],
+            "conversion_rate": rate
+        })
+    agent_performance.sort(key=lambda x: x["converted"], reverse=True)
+
+    try:
+        time_series = [{"date": k, "meetings": v} for k, v in sorted(meetings_over_time.items())]
+    except:
+        time_series = [{"date": k, "meetings": v} for k, v in meetings_over_time.items()]
+
+    funnel = [
+        {"stage": "Total Leads", "value": total},
+        {"stage": "Contacted", "value": contacted},
+        {"stage": "Interested", "value": interested},
+        {"stage": "Onboarded", "value": onboarded}
+    ]
     
     return {
         "total_leads": total,
@@ -265,6 +309,9 @@ def get_analytics(division_name: str = "", db: Session = Depends(get_db), curren
         "onboard_pending": onboard_pending,
         "contacted_rate": contacted_rate,
         "onboarding_rate": onboarding_rate,
+        "time_series": time_series,
+        "funnel": funnel,
+        "agent_performance": agent_performance
     }
 
 # Extra: Included for compatibility if frontend uses it

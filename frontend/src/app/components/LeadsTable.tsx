@@ -1,5 +1,7 @@
+'use client';
 import React, { useState, useMemo } from 'react';
 import UpdateLeadModal from './UpdateLeadModal';
+import { Edit, Trash2, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface Lead {
   id: number;
@@ -47,8 +49,6 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
         body: JSON.stringify(updates),
       });
       if (response.ok) {
-        // Ideally we refetch or mutate the local state here.
-        // For simplicity, we just reload the page to get fresh data
         window.location.reload();
       } else {
         console.error('Failed to update lead');
@@ -62,33 +62,33 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
     const out = (outcome || '').trim().toLowerCase();
     const contract = !!(hasContract || '').trim();
     
-    if (contract) return <span className="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-bold">Onboarded</span>;
-    if (out === 'positive') return <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">Interested</span>;
-    if (out === 'not interested') return <span className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-xs font-bold">Not Interested</span>;
-    if (out === 'followup') return <span className="px-3 py-1 bg-violet-100 text-violet-800 rounded-full text-xs font-bold">Follow-up</span>;
-    if (out !== '') return <span className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-xs font-bold">Contacted</span>;
+    if (contract) return <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">Onboarded</span>;
+    if (out === 'positive') return <span className="px-3 py-1 bg-emerald-100 text-[#2E7D32] rounded-full text-xs font-bold">Interested</span>;
+    if (out === 'not interested') return <span className="px-3 py-1 bg-red-100 text-[#D1242F] rounded-full text-xs font-bold">Not Interested</span>;
+    if (out === 'followup') return <span className="px-3 py-1 bg-orange-100 text-[#F7941D] rounded-full text-xs font-bold">Follow-up</span>;
+    if (out !== '') return <span className="px-3 py-1 bg-blue-100 text-[#1565C0] rounded-full text-xs font-bold">Contacted</span>;
     
-    return <span className="px-3 py-1 bg-emerald-100/50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold">Pending</span>;
+    return <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">Pending</span>;
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm" style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}>
         
         <div className="overflow-x-auto custom-scrollbar">
           <table className="min-w-full text-left text-sm">
-            <thead className="bg-[#113254] text-white uppercase tracking-wider text-xs">
+            <thead style={{ background: 'linear-gradient(135deg, #1B2A4A, #243B6A)' }} className="text-white uppercase tracking-wider text-xs">
               <tr>
                 <th className="px-6 py-4 font-bold text-center w-16">Ser</th>
                 <th className="px-6 py-4 font-bold text-center w-32">Action</th>
                 <th className="px-6 py-4 font-bold">Lead / Exporter</th>
-                <th className="px-6 py-4 font-bold w-48 text-center">Location</th>
-                <th className="px-6 py-4 font-bold text-center w-32">Outcome</th>
+                <th className="px-6 py-4 font-bold w-48 text-center">Location & Pincode</th>
+                <th className="px-6 py-4 font-bold text-center w-36">Outcome</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {currentData.map((lead, index) => (
-                <tr key={lead.id} className="hover:bg-slate-50 transition-colors duration-200">
+                <tr key={lead.id} className="hover:bg-slate-50 transition-all duration-200 hover:shadow-[inset_4px_0_0_0_#D1242F]">
                   <td className="px-6 py-4 text-center text-slate-500 font-medium">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
@@ -96,12 +96,17 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
                       {allowEdit && (
-                        <button onClick={() => setSelectedLead(lead)} className="px-3 py-1.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded text-xs font-bold transition-colors">
-                          Edit
+                        <button 
+                          onClick={() => setSelectedLead(lead)} 
+                          className="px-2.5 py-1.5 border border-[#1565C0]/30 text-[#1565C0] hover:bg-blue-50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                        >
+                          <Edit className="w-3 h-3" />
+                          <span>Edit</span>
                         </button>
                       )}
-                      <button className="px-3 py-1.5 border border-rose-200 text-rose-700 hover:bg-rose-50 rounded text-xs font-bold transition-colors">
-                        Delete
+                      <button className="px-2.5 py-1.5 border border-red-200 text-[#D1242F] hover:bg-red-50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
+                        <Trash2 className="w-3 h-3" />
+                        <span>Delete</span>
                       </button>
                     </div>
                   </td>
@@ -110,7 +115,7 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
                     {allowEdit ? (
                       <button 
                         onClick={() => setSelectedLead(lead)} 
-                        className="font-bold text-[#113254] hover:text-indigo-700 hover:underline text-base text-left block w-full truncate max-w-lg transition-colors"
+                        className="font-bold text-[#1B2A4A] hover:text-[#D1242F] hover:underline text-sm sm:text-base text-left block w-full truncate max-w-lg transition-colors"
                       >
                         {lead.exporterName || 'Unknown Exporter'}
                       </button>
@@ -125,8 +130,13 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
                   </td>
                   
                   <td className="px-6 py-4 text-center">
-                    <div className="text-slate-400">—</div>
-                    <div className="text-xs text-slate-500 font-medium mt-1">{lead.pincode || 'N/A'}</div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200/80 rounded-md text-xs font-semibold text-slate-700">
+                      <MapPin className="w-3 h-3 text-[#D1242F]" />
+                      <span>{lead.pincode || 'N/A'}</span>
+                    </div>
+                    {lead.division && (
+                      <div className="text-[11px] text-slate-400 font-medium mt-1">{lead.division}</div>
+                    )}
                   </td>
                   
                   <td className="px-6 py-4 text-center">
@@ -162,16 +172,18 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:hover:bg-white transition-all shadow-sm flex items-center gap-1 font-semibold"
+              className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:hover:bg-white transition-all shadow-sm flex items-center gap-1 text-xs font-bold"
             >
-              Prev
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Prev</span>
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:hover:bg-white transition-all shadow-sm flex items-center gap-1 font-semibold"
+              className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:hover:bg-white transition-all shadow-sm flex items-center gap-1 text-xs font-bold"
             >
-              Next
+              <span>Next</span>
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

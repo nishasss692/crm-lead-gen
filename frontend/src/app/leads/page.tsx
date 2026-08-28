@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import LeadsTable, { Lead } from '../components/LeadsTable';
 
@@ -11,12 +11,16 @@ const DIVISIONS = [
   "Shimoga", "Sirsi", "Tumkur", "Udupi", "Vijayapura", "Yadgir"
 ];
 
-export default function LeadsPage() {
+function LeadsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const statusFilter = searchParams.get('status');
+
   const [selectedDivision, setSelectedDivision] = useState('');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleExportCSV = () => {
     if (leads.length === 0) return;
@@ -85,11 +89,6 @@ export default function LeadsPage() {
     fetchLeads();
   }, [router]);
 
-  const searchParams = useSearchParams();
-  const statusFilter = searchParams.get('status');
-
-  const [searchTerm, setSearchTerm] = useState('');
-
   let filtered = selectedDivision ? leads.filter(d => d.division === selectedDivision) : leads;
 
   if (statusFilter) {
@@ -139,7 +138,7 @@ export default function LeadsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 md:p-8 font-sans">
+    <main className="min-h-screen bg-slate-50 p-6 md:p-8" style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}>
       <div className="max-w-7xl mx-auto space-y-6">
         
         <div className="mb-2">
@@ -201,12 +200,25 @@ export default function LeadsPage() {
              <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading workspace...</p>
           </div>
         ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <div className="animate-fade-in-up">
             <LeadsTable data={filtered} allowEdit={statusFilter !== 'pending'} />
           </div>
         )}
         
       </div>
     </main>
+  );
+}
+
+export default function LeadsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center py-20 min-h-screen">
+        <div className="w-12 h-12 border-4 border-indigo-200 border-t-[#155a8f] rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading workspace...</p>
+      </div>
+    }>
+      <LeadsPageContent />
+    </Suspense>
   );
 }
