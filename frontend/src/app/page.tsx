@@ -185,14 +185,15 @@ export default function Dashboard() {
   ].filter(item => item.value > 0) : [];
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-50 via-slate-100 to-[#113254]/5 text-slate-800 font-sans selection:bg-[#113254]/20 selection:text-[#113254] pb-20">
-      {/* Decorative Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-200/30 blur-[120px] mix-blend-multiply" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-rose-200/20 blur-[120px] mix-blend-multiply" />
+    <main className="min-h-screen bg-[#f8f9fa] text-slate-800 font-sans pb-20 relative overflow-hidden">
+      {/* Decorative Background - Vibrant Mesh */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-white">
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-br from-[#d1242f]/10 to-[#113254]/5 blur-[100px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-gradient-to-tl from-[#113254]/10 via-[#d1242f]/5 to-transparent blur-[120px]" />
+        <div className="absolute top-[30%] left-[20%] w-[40%] h-[40%] rounded-full bg-[#f8b133]/5 blur-[100px]" />
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-6 pt-10 space-y-10">
+      <div className="max-w-[1400px] mx-auto px-6 pt-10 space-y-10 relative z-10">
         
         {/* Header Section */}
         <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">

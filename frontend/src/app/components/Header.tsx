@@ -19,9 +19,9 @@ export default function Header({ toggleSidebar }: { toggleSidebar?: () => void }
         
         <div className="flex items-center space-x-3">
           <img 
-            src="/india-post-logo.svg" 
+            src="/india-post-logo.png" 
             alt="India Post" 
-            className="h-14 w-auto" 
+            className="h-14 w-auto drop-shadow-md" 
           />
         </div>
       </div>
