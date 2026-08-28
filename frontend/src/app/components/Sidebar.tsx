@@ -1,7 +1,8 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import ChangePasswordModal from './ChangePasswordModal';
 
 const Icons = {
   Dashboard: () => (
@@ -41,10 +42,29 @@ const Icons = {
   ),
 };
 
-export default function Sidebar() {
+function SidebarContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const statusParam = searchParams.get('status');
+
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [user, setUser] = useState<{username: string, role: string} | null>(null);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        setUser(JSON.parse(userStr));
+      } catch (e) {}
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    router.push('/login');
+  };
 
   const getLinkClass = (path: string, status?: string) => {
     let isActive = false;
@@ -62,7 +82,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-[#113254] text-slate-300 flex flex-col h-full shrink-0 shadow-xl z-10 relative">
+    <>
       <div className="p-5 border-b border-white/10 flex items-center gap-3">
         <div className="w-10 h-10 bg-[#d1242f] rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md border border-red-500/30">
           L
@@ -123,20 +143,61 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-white/10">
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
           My Account
         </div>
         <div className="flex items-center">
           <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-semibold">
-            JD
+            {user?.username?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="ml-3">
-            <p className="text-sm font-medium text-white">Jane Doe</p>
-            <p className="text-xs text-slate-400">Marketing Executive</p>
+            <p className="text-sm font-medium text-white capitalize">{user?.username || 'User'}</p>
+            <p className="text-xs text-slate-400">{user?.role || 'Role'}</p>
           </div>
         </div>
+        
+        <div className="mt-4 space-y-2">
+          <button 
+            onClick={() => setIsPasswordModalOpen(true)}
+            className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            Change Password
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors flex items-center"
+          >
+            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
+        </div>
       </div>
+      
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
+    </>
+  );
+}
+
+export default function Sidebar() {
+  return (
+    <aside className="w-64 bg-[#113254] text-slate-300 flex flex-col h-full shrink-0 shadow-xl z-10 relative">
+      <Suspense fallback={
+        <div className="p-5 flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#d1242f] rounded-lg"></div>
+          <div className="w-32 h-10 bg-white/10 rounded"></div>
+        </div>
+      }>
+        <SidebarContent />
+      </Suspense>
     </aside>
   );
 }
