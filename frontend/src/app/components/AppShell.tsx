@@ -1,10 +1,16 @@
 'use client';
 import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  if (pathname === '/login') {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden w-full">

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import LeadsTable, { Lead } from '../components/LeadsTable';
 
 const DIVISIONS = [
@@ -12,8 +12,10 @@ const DIVISIONS = [
 ];
 
 export default function LeadsPage() {
+  const router = useRouter();
   const [selectedDivision, setSelectedDivision] = useState('');
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [divisions, setDivisions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const handleExportCSV = () => {
@@ -35,10 +37,32 @@ export default function LeadsPage() {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    const fetchDivisions = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/divisions', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setDivisions(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch divisions", err);
+      }
+    };
+
     const fetchLeads = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:8000/api/leads`);
+        const res = await fetch(`http://localhost:8000/api/leads`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (res.ok) {
            const data = await res.json();
            const formattedData = data.map((item: any) => ({
@@ -57,8 +81,9 @@ export default function LeadsPage() {
         setLoading(false);
       }
     };
+    fetchDivisions();
     fetchLeads();
-  }, []);
+  }, [router]);
 
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
@@ -132,7 +157,7 @@ export default function LeadsPage() {
                   className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-sm cursor-pointer appearance-none"
                 >
                   <option value="">All Divisions</option>
-                  {DIVISIONS.map((div) => (
+                  {divisions.map((div) => (
                     <option key={div} value={div}>{div}</option>
                   ))}
                 </select>

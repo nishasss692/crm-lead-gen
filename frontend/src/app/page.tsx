@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import LeadsTable, { Lead } from './components/LeadsTable';
 import PincodePerformanceTable from './components/PincodePerformanceTable';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -35,6 +36,7 @@ interface AnalyticsData {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [selectedDivision, setSelectedDivision] = useState('');
   const [divisions, setDivisions] = useState<string[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -46,7 +48,10 @@ export default function Dashboard() {
 
   const fetchDivisions = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/divisions');
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8000/api/divisions', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setDivisions(data);
@@ -59,7 +64,10 @@ export default function Dashboard() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const res = await fetch('http://localhost:8000/api/leads');
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8000/api/leads', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         let data: Lead[] = await res.json();
         data = data.map((item: any) => ({
@@ -96,7 +104,10 @@ export default function Dashboard() {
       const url = division 
         ? `http://localhost:8000/api/analytics?division_name=${encodeURIComponent(division)}` 
         : 'http://localhost:8000/api/analytics';
-      const res = await fetch(url);
+      const token = localStorage.getItem('token');
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         setAnalytics(data);
@@ -107,6 +118,11 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
     fetchDivisions();
     fetchLeads();
     fetchAnalytics();
@@ -125,8 +141,10 @@ export default function Dashboard() {
     formData.append('file', file);
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8000/api/upload-excel', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData,
       });
       if (res.ok) {
