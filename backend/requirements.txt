@@ -4,3 +4,4 @@ sqlalchemy==2.0.29
 pandas==2.2.1
 openpyxl==3.1.2
 python-multipart==0.0.9
+PyJWT==2.8.0
