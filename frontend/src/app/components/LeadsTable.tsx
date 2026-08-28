@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import UpdateLeadModal from './UpdateLeadModal';
-import { Edit, Trash2, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, Trash2, MapPin, ChevronLeft, ChevronRight, CheckCircle2, Clock, XCircle, Award, PhoneCall, AlertCircle } from 'lucide-react';
 
 export interface Lead {
   id: number;
@@ -31,7 +31,7 @@ interface LeadsTableProps {
 
 export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
+  const itemsPerPage = 20;
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
@@ -62,84 +62,121 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
     const out = (outcome || '').trim().toLowerCase();
     const contract = !!(hasContract || '').trim();
     
-    if (contract) return <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">Onboarded</span>;
-    if (out === 'positive') return <span className="px-3 py-1 bg-emerald-100 text-[#2E7D32] rounded-full text-xs font-bold">Interested</span>;
-    if (out === 'not interested') return <span className="px-3 py-1 bg-red-100 text-[#D1242F] rounded-full text-xs font-bold">Not Interested</span>;
-    if (out === 'followup') return <span className="px-3 py-1 bg-orange-100 text-[#F7941D] rounded-full text-xs font-bold">Follow-up</span>;
-    if (out !== '') return <span className="px-3 py-1 bg-blue-100 text-[#1565C0] rounded-full text-xs font-bold">Contacted</span>;
+    if (contract) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold shadow-xs">
+          <Award className="w-3 h-3" />
+          <span>Onboarded</span>
+        </span>
+      );
+    }
+    if (out === 'positive') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold shadow-xs">
+          <CheckCircle2 className="w-3 h-3" />
+          <span>Positive</span>
+        </span>
+      );
+    }
+    if (out === 'not interested') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold shadow-xs">
+          <XCircle className="w-3 h-3" />
+          <span>Not Interested</span>
+        </span>
+      );
+    }
+    if (out === 'followup') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold shadow-xs">
+          <Clock className="w-3 h-3" />
+          <span>Follow-up</span>
+        </span>
+      );
+    }
+    if (out !== '') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold shadow-xs">
+          <PhoneCall className="w-3 h-3" />
+          <span>Contacted</span>
+        </span>
+      );
+    }
     
-    return <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">Pending</span>;
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">
+        <AlertCircle className="w-3 h-3 text-slate-400" />
+        <span>Pending</span>
+      </span>
+    );
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm" style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}>
+      <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}>
         
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="min-w-full text-left text-sm">
-            <thead style={{ background: 'linear-gradient(135deg, #1B2A4A, #243B6A)' }} className="text-white uppercase tracking-wider text-xs">
+          <table className="min-w-full text-left text-sm border-collapse">
+            <thead className="bg-slate-50 border-b border-gray-200 text-slate-600 uppercase tracking-wider text-xs font-semibold">
               <tr>
-                <th className="px-6 py-4 font-bold text-center w-16">Ser</th>
-                <th className="px-6 py-4 font-bold text-center w-32">Action</th>
-                <th className="px-6 py-4 font-bold">Lead / Exporter</th>
-                <th className="px-6 py-4 font-bold w-48 text-center">Location & Pincode</th>
-                <th className="px-6 py-4 font-bold text-center w-36">Outcome</th>
+                <th className="px-5 py-3.5 font-semibold text-center w-14">#</th>
+                <th className="px-5 py-3.5 font-semibold text-center w-28">Actions</th>
+                <th className="px-5 py-3.5 font-semibold">Lead / Exporter</th>
+                <th className="px-5 py-3.5 font-semibold w-48 text-center">Location & Pincode</th>
+                <th className="px-5 py-3.5 font-semibold text-center w-36">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-gray-100 text-slate-700">
               {currentData.map((lead, index) => (
-                <tr key={lead.id} className="hover:bg-slate-50 transition-all duration-200 hover:shadow-[inset_4px_0_0_0_#D1242F]">
-                  <td className="px-6 py-4 text-center text-slate-500 font-medium">
+                <tr 
+                  key={lead.id} 
+                  onClick={() => allowEdit && setSelectedLead(lead)}
+                  className="hover:bg-blue-50/50 cursor-pointer transition-colors duration-150 group"
+                >
+                  <td className="px-5 py-3.5 text-center text-slate-400 font-semibold text-xs tabular-nums">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
                   
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
+                  <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1.5">
                       {allowEdit && (
                         <button 
                           onClick={() => setSelectedLead(lead)} 
-                          className="px-2.5 py-1.5 border border-[#1565C0]/30 text-[#1565C0] hover:bg-blue-50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                          className="p-1.5 border border-blue-200 hover:bg-blue-100/60 text-blue-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                          title="Edit Lead"
                         >
-                          <Edit className="w-3 h-3" />
-                          <span>Edit</span>
+                          <Edit className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      <button className="px-2.5 py-1.5 border border-red-200 text-[#D1242F] hover:bg-red-50 rounded-lg text-xs font-bold transition-colors flex items-center gap-1">
-                        <Trash2 className="w-3 h-3" />
-                        <span>Delete</span>
-                      </button>
-                    </div>
-                  </td>
-                  
-                  <td className="px-6 py-4">
-                    {allowEdit ? (
                       <button 
-                        onClick={() => setSelectedLead(lead)} 
-                        className="font-bold text-[#1B2A4A] hover:text-[#D1242F] hover:underline text-sm sm:text-base text-left block w-full truncate max-w-lg transition-colors"
+                        className="p-1.5 border border-rose-200 hover:bg-rose-100/60 text-rose-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                        title="Delete Lead"
                       >
-                        {lead.exporterName || 'Unknown Exporter'}
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                    ) : (
-                      <div className="font-bold text-slate-800 text-base text-left block w-full truncate max-w-lg">
-                        {lead.exporterName || 'Unknown Exporter'}
-                      </div>
-                    )}
-                    <div className="text-xs text-slate-400 mt-1 truncate max-w-lg">
-                      {lead.address || 'No address provided'}
                     </div>
                   </td>
                   
-                  <td className="px-6 py-4 text-center">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200/80 rounded-md text-xs font-semibold text-slate-700">
-                      <MapPin className="w-3 h-3 text-[#D1242F]" />
+                  <td className="px-5 py-3.5">
+                    <div className="font-bold text-slate-900 group-hover:text-blue-600 text-sm tracking-tight transition-colors">
+                      {lead.exporterName || 'Unknown Exporter'}
+                    </div>
+                    <div className="text-xs text-slate-500 font-normal mt-0.5 truncate max-w-md">
+                      {lead.address || 'No address registered'}
+                    </div>
+                  </td>
+                  
+                  <td className="px-5 py-3.5 text-center">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 border border-slate-200/80 rounded-md text-xs font-semibold text-slate-700">
+                      <MapPin className="w-3 h-3 text-slate-400" />
                       <span>{lead.pincode || 'N/A'}</span>
                     </div>
                     {lead.division && (
-                      <div className="text-[11px] text-slate-400 font-medium mt-1">{lead.division}</div>
+                      <div className="text-[11px] text-slate-400 font-medium mt-0.5">{lead.division}</div>
                     )}
                   </td>
                   
-                  <td className="px-6 py-4 text-center">
+                  <td className="px-5 py-3.5 text-center">
                     {getOutcomeBadge(lead.meetingOutcome, lead.contractId)}
                   </td>
                 </tr>
@@ -147,12 +184,13 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
               
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={5} className="px-6 py-14 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                      </svg>
-                      <span>No leads found matching your criteria.</span>
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                        <AlertCircle className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">No leads found</span>
+                      <span className="text-xs text-slate-400">Try adjusting your filters to see more results</span>
                     </div>
                   </td>
                 </tr>
@@ -164,23 +202,26 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
 
       {/* Pagination Controls */}
       {data.length > 0 && (
-        <div className="flex items-center justify-between px-2 text-sm text-slate-600 font-medium mt-2">
+        <div className="flex items-center justify-between px-2 text-xs text-slate-600 font-medium">
           <p>
-            Showing <span className="font-semibold text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-semibold text-slate-900">{Math.min(currentPage * itemsPerPage, data.length)}</span> of <span className="font-semibold text-slate-900">{data.length}</span> entries
+            Showing <span className="font-bold text-slate-900">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(currentPage * itemsPerPage, data.length)}</span> of <span className="font-bold text-slate-900">{data.length}</span> leads
           </p>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:hover:bg-white transition-all shadow-sm flex items-center gap-1 text-xs font-bold"
+              className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:hover:bg-white transition-all shadow-xs flex items-center gap-1 font-semibold cursor-pointer disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-              <span>Prev</span>
+              <span>Previous</span>
             </button>
+            <span className="text-xs font-semibold text-slate-500 px-1">
+              Page {currentPage} of {totalPages}
+            </span>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:hover:bg-white transition-all shadow-sm flex items-center gap-1 text-xs font-bold"
+              className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:hover:bg-white transition-all shadow-xs flex items-center gap-1 font-semibold cursor-pointer disabled:cursor-not-allowed"
             >
               <span>Next</span>
               <ChevronRight className="w-3.5 h-3.5" />
