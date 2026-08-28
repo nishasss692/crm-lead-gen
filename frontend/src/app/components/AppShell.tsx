@@ -20,7 +20,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-        {children}
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   );

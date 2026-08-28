@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const Icons = {
   Dashboard: () => (
@@ -43,9 +43,17 @@ const Icons = {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get('status');
 
-  const getLinkClass = (path: string) => {
-    const isActive = pathname === path;
+  const getLinkClass = (path: string, status?: string) => {
+    let isActive = false;
+    if (path === '/') {
+      isActive = pathname === '/';
+    } else if (path === '/leads') {
+      isActive = pathname === '/leads' && (statusParam === status || (!statusParam && !status));
+    }
+    
     return `flex items-center px-3 py-2 rounded-md group transition-colors ${
       isActive 
         ? 'bg-slate-800 text-white' 
@@ -76,40 +84,40 @@ export default function Sidebar() {
             </Link>
           </li>
           <li>
-            <Link href="/leads" className={getLinkClass('/leads')}>
+            <Link href="/leads?status=pending" className={getLinkClass('/leads', 'pending')}>
               <Icons.Users />
               <span className="ml-3 font-medium">Contact pending</span>
             </Link>
           </li>
           <li>
-            <a href="#" className={getLinkClass('/contacted')}>
+            <Link href="/leads?status=contacted" className={getLinkClass('/leads', 'contacted')}>
               <Icons.Phone />
               <span className="ml-3 font-medium">Contacted</span>
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#" className={getLinkClass('/follow-up')}>
+            <Link href="/leads?status=followup" className={getLinkClass('/leads', 'followup')}>
               <Icons.Clock />
               <span className="ml-3 font-medium">Follow-up Required</span>
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#" className={getLinkClass('/interested')}>
+            <Link href="/leads?status=interested" className={getLinkClass('/leads', 'interested')}>
               <Icons.Heart />
               <span className="ml-3 font-medium">Interested</span>
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#" className={getLinkClass('/willing')}>
+            <Link href="/leads?status=willing" className={getLinkClass('/leads', 'willing')}>
               <Icons.Star />
               <span className="ml-3 font-medium">Willing to onboard</span>
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="#" className={getLinkClass('/onboarded')}>
+            <Link href="/leads?status=onboarded" className={getLinkClass('/leads', 'onboarded')}>
               <Icons.Briefcase />
               <span className="ml-3 font-medium">Onboarded</span>
-            </a>
+            </Link>
           </li>
         </ul>
       </nav>

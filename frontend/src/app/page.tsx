@@ -1,143 +1,398 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import LeadsTable, { Lead } from './components/LeadsTable';
+import PincodePerformanceTable from './components/PincodePerformanceTable';
+import { 
+  Building2, 
+  Users, 
+  PhoneCall, 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  Upload,
+  BarChart3,
+  TrendingUp,
+  MapPin,
+  Mail,
+  AlertCircle
+} from 'lucide-react';
 
-const PipelineHealth = () => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between">
-    <div className="mb-4 md:mb-0">
-      <h2 className="text-2xl font-bold text-slate-800">Lead Management, at a glance.</h2>
-      <p className="text-slate-500 mt-1">Your high-level overview of lead conversion performance.</p>
-    </div>
-    <div className="flex space-x-8">
-      <div>
-        <p className="text-sm font-medium text-slate-500 mb-1">Contacted rate</p>
-        <p className="text-4xl font-bold text-blue-600">68%</p>
-      </div>
-      <div>
-        <p className="text-sm font-medium text-slate-500 mb-1">Onboarding rate</p>
-        <p className="text-4xl font-bold text-teal-600">24%</p>
-      </div>
-    </div>
-  </div>
-);
-
-const KPIGrid = () => {
-  const metrics = [
-    { label: "Total leads", value: "1,248" },
-    { label: "Contact pending", value: "312" },
-    { label: "Contacted", value: "848" },
-    { label: "Interested", value: "412" },
-    { label: "Not interested", value: "436" },
-    { label: "Willing to onboard", value: "156" },
-    { label: "Onboarded", value: "89" },
-    { label: "Onboard pending", value: "67" },
-  ];
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      {metrics.map((metric, idx) => (
-        <div key={idx} className="bg-white border border-gray-200 shadow-sm rounded-lg p-4 hover:shadow-md transition-shadow">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">{metric.label}</h3>
-          <p className="text-2xl font-bold text-slate-800">{metric.value}</p>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const ChartsAndLists = () => {
-  const priorities = [
-    { id: 1, name: "Acme Corp (New York)", leads: 12 },
-    { id: 2, name: "TechNova (San Francisco)", leads: 8 },
-    { id: 3, name: "Global Industries (London)", leads: 6 },
-    { id: 4, name: "Stark Enterprises (Seattle)", leads: 5 },
-    { id: 5, name: "Wayne Tech (Gotham)", leads: 3 },
-  ];
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Column - 2/3 width */}
-      <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold text-slate-800">Status distribution</h3>
-          <select className="bg-slate-50 border border-gray-200 text-slate-700 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none">
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>This Quarter</option>
-          </select>
-        </div>
-        
-        {/* Placeholder for Bar Chart */}
-        <div className="h-64 flex items-end justify-between space-x-2 border-b border-gray-200 pb-2 relative">
-          <div className="absolute inset-0 flex flex-col justify-between text-xs text-slate-400 pointer-events-none">
-            <span>400</span>
-            <span>300</span>
-            <span>200</span>
-            <span>100</span>
-            <span>0</span>
-          </div>
-          <div className="w-full flex justify-around items-end h-full pt-6 z-10 pl-8">
-            <div className="w-1/6 bg-blue-100 hover:bg-blue-200 rounded-t-sm h-full relative group transition-colors">
-               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">Pending: 312</div>
-            </div>
-            <div className="w-1/6 bg-blue-300 hover:bg-blue-400 rounded-t-sm h-3/4 relative group transition-colors">
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">Contacted: 250</div>
-            </div>
-            <div className="w-1/6 bg-blue-500 hover:bg-blue-600 rounded-t-sm h-1/2 relative group transition-colors">
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">Interested: 180</div>
-            </div>
-            <div className="w-1/6 bg-teal-400 hover:bg-teal-500 rounded-t-sm h-1/3 relative group transition-colors">
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">Willing: 110</div>
-            </div>
-            <div className="w-1/6 bg-teal-600 hover:bg-teal-700 rounded-t-sm h-1/4 relative group transition-colors">
-               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap">Onboarded: 89</div>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-around items-center pt-2 pl-8 text-xs font-medium text-slate-500">
-          <span>Pending</span>
-          <span>Contacted</span>
-          <span>Interested</span>
-          <span>Willing</span>
-          <span>Onboarded</span>
-        </div>
-      </div>
-
-      {/* Right Column - 1/3 width */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
-        <h3 className="text-lg font-bold text-slate-800 mb-6">Priority follow-ups</h3>
-        <div className="flex-1">
-          <ul className="space-y-4">
-            {priorities.map((item) => (
-              <li key={item.id} className="flex items-center justify-between group cursor-pointer">
-                <div className="flex items-center">
-                  <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold mr-3 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
-                    {item.id}
-                  </div>
-                  <span className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">{item.name}</span>
-                </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                  {item.leads} leads
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <button className="mt-6 w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-          View all priorities
-        </button>
-      </div>
-    </div>
-  );
-};
+interface AnalyticsData {
+  total_leads: number;
+  contact_pending: number;
+  contacted: number;
+  interested: number;
+  not_interested: number;
+  follow_up: number;
+  willing_to_onboard: number;
+  onboarded: number;
+  onboard_pending: number;
+  contacted_rate: number;
+  onboarding_rate: number;
+}
 
 export default function Dashboard() {
+  const [selectedDivision, setSelectedDivision] = useState('');
+  const [divisions, setDivisions] = useState<string[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  
+  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchDivisions = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/divisions');
+      if (res.ok) {
+        const data = await res.json();
+        setDivisions(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch divisions", err);
+    }
+  };
+
+  const fetchLeads = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('http://localhost:8000/api/leads');
+      if (res.ok) {
+        let data: Lead[] = await res.json();
+        data = data.map((item: any) => ({
+          id: item.id,
+          slNo: item.sl_no,
+          exporterName: item.exporter_name,
+          address: item.address,
+          pincode: item.pincode,
+          divisionId: item.division_id,
+          division: item.division,
+          region: item.region,
+          assignedMeName: item.assigned_agent,
+          dateOfMeeting: item.date_of_meeting,
+          customerMet: item.customer_met,
+          contactNumber: item.contact_number,
+          email: item.email,
+          serviceUsing: item.service_using,
+          monthlyVolume: item.monthly_volume,
+          meetingOutcome: item.meeting_outcome,
+          contractId: item.contract_id,
+          remarks: item.remarks
+        }));
+        setLeads(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch leads", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async (division = '') => {
+    try {
+      const url = division 
+        ? `http://localhost:8000/api/analytics?division_name=${encodeURIComponent(division)}` 
+        : 'http://localhost:8000/api/analytics';
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setAnalytics(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch analytics", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDivisions();
+    fetchLeads();
+    fetchAnalytics();
+  }, []);
+
+  useEffect(() => {
+    fetchAnalytics(selectedDivision);
+  }, [selectedDivision]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('http://localhost:8000/api/upload-excel', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        fetchDivisions();
+        fetchLeads();
+        fetchAnalytics(selectedDivision);
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const filteredLeads = selectedDivision
+    ? leads.filter(lead => lead.division === selectedDivision)
+    : leads;
+
+  const priorityFollowUps = filteredLeads
+    .filter(lead => (lead.meetingOutcome || '').toLowerCase() === 'followup' || ((lead.meetingOutcome || '').toLowerCase() === 'positive' && !lead.contractId))
+    .slice(0, 5);
+
   return (
-    <main className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-7xl mx-auto">
-        <PipelineHealth />
-        <KPIGrid />
-        <ChartsAndLists />
+    <main className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-20">
+      {/* Decorative Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-200/20 blur-[120px]" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-sky-200/20 blur-[100px]" />
+      </div>
+
+      <div className="max-w-[1400px] mx-auto px-6 pt-8 space-y-8">
+        
+        {/* Header Section */}
+        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-xs font-semibold tracking-wide shadow-sm">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/c/c4/India_Post_Logo.svg" alt="India Post" className="h-4" />
+              Karnataka Postal Circle
+            </div>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+              Analytics <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-sky-500">Dashboard</span>
+            </h1>
+            <p className="text-slate-500 font-medium max-w-xl text-lg">
+              Monitor your lead pipeline, track conversion rates, and manage high-priority follow-ups in real-time.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 bg-white/80 p-3 rounded-2xl border border-white backdrop-blur-xl shadow-sm">
+            <div className="relative group">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500 group-focus-within:text-indigo-600 transition-colors" />
+              <select
+                value={selectedDivision}
+                onChange={(e) => setSelectedDivision(e.target.value)}
+                className="pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all appearance-none min-w-[200px] cursor-pointer"
+              >
+                <option value="">All Divisions</option>
+                {divisions.map((div) => (
+                  <option key={div} value={div}>{div}</option>
+                ))}
+              </select>
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L5 5L9 1" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <div className="h-10 w-px bg-slate-200 hidden sm:block"></div>
+
+            <div className="relative">
+              <input type="file" accept=".xls,.xlsx" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+              >
+                {uploading ? (
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <Upload className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+                )}
+                <span>{uploading ? 'Processing...' : 'Upload Excel'}</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Pipeline Health (High-level Rates) */}
+        {analytics && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="col-span-1 md:col-span-1 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-3xl p-8 text-white shadow-xl shadow-indigo-900/20 relative overflow-hidden flex flex-col justify-between group">
+              <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-700" />
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-semibold backdrop-blur-md mb-6">
+                  <TrendingUp className="w-3.5 h-3.5" /> Pipeline Health
+                </div>
+                <h2 className="text-5xl font-bold tracking-tight mb-2">
+                  {analytics.total_leads}
+                </h2>
+                <p className="text-indigo-100 font-medium text-lg">Total Pipeline Leads</p>
+              </div>
+              <div className="mt-8 pt-6 border-t border-white/20 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-indigo-200 text-sm mb-1">Contacted Rate</p>
+                  <p className="text-2xl font-bold">{analytics.contacted_rate}%</p>
+                </div>
+                <div>
+                  <p className="text-indigo-200 text-sm mb-1">Onboarding Rate</p>
+                  <p className="text-2xl font-bold">{analytics.onboarding_rate}%</p>
+                </div>
+              </div>
+            </div>
+
+            {/* KPI Grid */}
+            <div className="col-span-1 md:col-span-2 grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <MetricCard title="Contact Pending" value={analytics.contact_pending} icon={<PhoneCall className="w-5 h-5 text-amber-500" />} color="amber" />
+              <MetricCard title="Contacted" value={analytics.contacted} icon={<Users className="w-5 h-5 text-sky-500" />} color="sky" />
+              <MetricCard title="Interested" value={analytics.interested} icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />} color="emerald" />
+              
+              <MetricCard title="Follow-up Required" value={analytics.follow_up} icon={<Clock className="w-5 h-5 text-violet-500" />} color="violet" />
+              <MetricCard title="Willing to Onboard" value={analytics.willing_to_onboard} icon={<Building2 className="w-5 h-5 text-blue-500" />} color="blue" />
+              <MetricCard title="Onboarded" value={analytics.onboarded} icon={<CheckCircle2 className="w-5 h-5 text-teal-500" />} color="teal" />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Status Distribution */}
+          {analytics && (
+            <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-indigo-500" />
+                  Status Distribution
+                </h3>
+              </div>
+              
+              <div className="space-y-6">
+                <ProgressBar label="Interested" value={analytics.interested} total={analytics.total_leads} color="bg-emerald-500" />
+                <ProgressBar label="Follow-up Needed" value={analytics.follow_up} total={analytics.total_leads} color="bg-violet-500" />
+                <ProgressBar label="Not Interested" value={analytics.not_interested} total={analytics.total_leads} color="bg-rose-500" />
+                <ProgressBar label="Contact Pending" value={analytics.contact_pending} total={analytics.total_leads} color="bg-amber-400" />
+              </div>
+            </div>
+          )}
+
+          {/* Priority Follow-ups */}
+          <div className="lg:col-span-1 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex flex-col">
+            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-6">
+              <AlertCircle className="w-5 h-5 text-rose-500" />
+              Priority Follow-ups
+            </h3>
+            
+            <div className="flex-1 space-y-4">
+              {priorityFollowUps.length > 0 ? (
+                priorityFollowUps.map(lead => (
+                  <div key={lead.id} className="p-4 rounded-2xl bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 transition-colors group cursor-pointer">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-slate-800 text-sm group-hover:text-indigo-700 transition-colors line-clamp-1">{lead.exporterName || 'Unknown Company'}</h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-700 uppercase tracking-wider whitespace-nowrap ml-2">Action Req</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
+                      {lead.contactNumber && (
+                        <div className="flex items-center gap-1">
+                          <PhoneCall className="w-3 h-3" /> {lead.contactNumber}
+                        </div>
+                      )}
+                      {lead.assignedMeName && (
+                        <div className="flex items-center gap-1">
+                          <Users className="w-3 h-3" /> {lead.assignedMeName}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mb-3" />
+                  <p className="text-sm font-medium text-slate-600">All caught up!</p>
+                  <p className="text-xs text-slate-400 mt-1">No priority follow-ups pending.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Pincode Performance Section */}
+        {!loading && filteredLeads.length > 0 && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <PincodePerformanceTable leads={filteredLeads} />
+          </div>
+        )}
+
+        {/* Data Grid Section */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm mt-8">
+           {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+               <div className="w-10 h-10 border-3 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+               <p className="mt-4 text-slate-500 text-sm font-medium animate-pulse">Loading leads directory...</p>
+            </div>
+          ) : (
+            <div className="animate-in fade-in duration-700">
+              <LeadsTable data={filteredLeads} />
+            </div>
+          )}
+        </div>
+        
       </div>
     </main>
+  );
+}
+
+function MetricCard({ title, value, icon, color }: { title: string, value: number, icon: React.ReactNode, color: string }) {
+  const colorMap: Record<string, string> = {
+    amber: 'bg-amber-50 hover:bg-amber-100/50 border-amber-100',
+    sky: 'bg-sky-50 hover:bg-sky-100/50 border-sky-100',
+    emerald: 'bg-emerald-50 hover:bg-emerald-100/50 border-emerald-100',
+    violet: 'bg-violet-50 hover:bg-violet-100/50 border-violet-100',
+    blue: 'bg-blue-50 hover:bg-blue-100/50 border-blue-100',
+    teal: 'bg-teal-50 hover:bg-teal-100/50 border-teal-100',
+  };
+  const iconBgMap: Record<string, string> = {
+    amber: 'bg-amber-100',
+    sky: 'bg-sky-100',
+    emerald: 'bg-emerald-100',
+    violet: 'bg-violet-100',
+    blue: 'bg-blue-100',
+    teal: 'bg-teal-100',
+  };
+
+  return (
+    <div className={`p-5 rounded-3xl border transition-all duration-300 cursor-pointer ${colorMap[color]}`}>
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-2.5 rounded-2xl ${iconBgMap[color]}`}>
+          {icon}
+        </div>
+      </div>
+      <div>
+        <h4 className="text-3xl font-extrabold text-slate-800">{value}</h4>
+        <p className="text-sm font-medium text-slate-500 mt-1">{title}</p>
+      </div>
+    </div>
+  );
+}
+
+function ProgressBar({ label, value, total, color }: { label: string, value: number, total: number, color: string }) {
+  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-2">
+        <span className="text-sm font-semibold text-slate-700">{label}</span>
+        <div className="text-right">
+          <span className="text-sm font-bold text-slate-900">{value}</span>
+          <span className="text-xs font-medium text-slate-400 ml-1">({percentage}%)</span>
+        </div>
+      </div>
+      <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+        <div 
+          className={`h-full ${color} rounded-full transition-all duration-1000 ease-out`} 
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
   );
 }
