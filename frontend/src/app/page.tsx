@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import LeadsTable, { Lead } from './components/LeadsTable';
 import PincodePerformanceTable from './components/PincodePerformanceTable';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 import { 
   Building2, 
   Users, 
@@ -150,12 +151,20 @@ export default function Dashboard() {
     .filter(lead => (lead.meetingOutcome || '').toLowerCase() === 'followup' || ((lead.meetingOutcome || '').toLowerCase() === 'positive' && !lead.contractId))
     .slice(0, 5);
 
+  const pieData = analytics ? [
+    { name: 'Interested', value: analytics.interested, color: '#10b981' }, // emerald
+    { name: 'Follow-up', value: analytics.follow_up, color: '#8b5cf6' }, // violet
+    { name: 'Not Interested', value: analytics.not_interested, color: '#f43f5e' }, // rose
+    { name: 'Contact Pending', value: analytics.contact_pending, color: '#fbbf24' }, // amber
+    { name: 'Onboarded', value: analytics.onboarded, color: '#14b8a6' }, // teal
+  ].filter(item => item.value > 0) : [];
+
   return (
-    <main className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-900 pb-20">
+    <main className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-[#113254]/20 selection:text-[#113254] pb-20">
       {/* Decorative Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-200/20 blur-[120px]" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-sky-200/20 blur-[100px]" />
+        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-slate-200/40 blur-[120px]" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-red-100/30 blur-[100px]" />
       </div>
 
       <div className="max-w-[1400px] mx-auto px-6 pt-8 space-y-8">
@@ -163,12 +172,8 @@ export default function Dashboard() {
         {/* Header Section */}
         <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 text-xs font-semibold tracking-wide shadow-sm">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/c/c4/India_Post_Logo.svg" alt="India Post" className="h-4" />
-              Karnataka Postal Circle
-            </div>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
-              Analytics <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-sky-500">Dashboard</span>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-[#113254] tracking-tight">
+              Analytics <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d1242f] to-rose-500">Dashboard</span>
             </h1>
             <p className="text-slate-500 font-medium max-w-xl text-lg">
               Monitor your lead pipeline, track conversion rates, and manage high-priority follow-ups in real-time.
@@ -177,11 +182,11 @@ export default function Dashboard() {
 
           <div className="flex flex-wrap items-center gap-4 bg-white/80 p-3 rounded-2xl border border-white backdrop-blur-xl shadow-sm">
             <div className="relative group">
-              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500 group-focus-within:text-indigo-600 transition-colors" />
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#113254] group-focus-within:text-[#d1242f] transition-colors" />
               <select
                 value={selectedDivision}
                 onChange={(e) => setSelectedDivision(e.target.value)}
-                className="pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all appearance-none min-w-[200px] cursor-pointer"
+                className="pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#113254]/30 transition-all appearance-none min-w-[200px] cursor-pointer"
               >
                 <option value="">All Divisions</option>
                 {divisions.map((div) => (
@@ -202,7 +207,7 @@ export default function Dashboard() {
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#d1242f] hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-sm font-semibold shadow-lg shadow-rose-600/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed group"
               >
                 {uploading ? (
                   <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -221,25 +226,25 @@ export default function Dashboard() {
         {/* Pipeline Health (High-level Rates) */}
         {analytics && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="col-span-1 md:col-span-1 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-3xl p-8 text-white shadow-xl shadow-indigo-900/20 relative overflow-hidden flex flex-col justify-between group">
-              <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-700" />
+            <div className="col-span-1 md:col-span-1 bg-gradient-to-br from-[#113254] to-[#0a1e33] rounded-3xl p-8 text-white shadow-xl shadow-[#113254]/20 relative overflow-hidden flex flex-col justify-between group">
+              <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:scale-110 transition-transform duration-700" />
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-semibold backdrop-blur-md mb-6">
-                  <TrendingUp className="w-3.5 h-3.5" /> Pipeline Health
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-xs font-semibold backdrop-blur-md mb-6">
+                  <TrendingUp className="w-3.5 h-3.5 text-rose-400" /> Pipeline Health
                 </div>
                 <h2 className="text-5xl font-bold tracking-tight mb-2">
                   {analytics.total_leads}
                 </h2>
-                <p className="text-indigo-100 font-medium text-lg">Total Pipeline Leads</p>
+                <p className="text-slate-300 font-medium text-lg">Total Pipeline Leads</p>
               </div>
-              <div className="mt-8 pt-6 border-t border-white/20 grid grid-cols-2 gap-4">
+              <div className="mt-8 pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-indigo-200 text-sm mb-1">Contacted Rate</p>
-                  <p className="text-2xl font-bold">{analytics.contacted_rate}%</p>
+                  <p className="text-slate-400 text-sm mb-1">Contacted Rate</p>
+                  <p className="text-2xl font-bold text-white">{analytics.contacted_rate}%</p>
                 </div>
                 <div>
-                  <p className="text-indigo-200 text-sm mb-1">Onboarding Rate</p>
-                  <p className="text-2xl font-bold">{analytics.onboarding_rate}%</p>
+                  <p className="text-slate-400 text-sm mb-1">Onboarding Rate</p>
+                  <p className="text-2xl font-bold text-white">{analytics.onboarding_rate}%</p>
                 </div>
               </div>
             </div>
@@ -258,21 +263,43 @@ export default function Dashboard() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Status Distribution */}
+          {/* Status Distribution Pie Chart */}
           {analytics && (
-            <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-              <div className="flex items-center justify-between mb-8">
+            <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex flex-col">
+              <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-indigo-500" />
+                  <BarChart3 className="w-5 h-5 text-[#d1242f]" />
                   Status Distribution
                 </h3>
               </div>
               
-              <div className="space-y-6">
-                <ProgressBar label="Interested" value={analytics.interested} total={analytics.total_leads} color="bg-emerald-500" />
-                <ProgressBar label="Follow-up Needed" value={analytics.follow_up} total={analytics.total_leads} color="bg-violet-500" />
-                <ProgressBar label="Not Interested" value={analytics.not_interested} total={analytics.total_leads} color="bg-rose-500" />
-                <ProgressBar label="Contact Pending" value={analytics.contact_pending} total={analytics.total_leads} color="bg-amber-400" />
+              <div className="flex-1 min-h-[300px] w-full mt-4 flex items-center justify-center">
+                {pieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={120}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip 
+                        formatter={(value: number) => [`${value} Leads`, '']}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-slate-400 font-medium flex items-center justify-center w-full h-full">No data available</div>
+                )}
               </div>
             </div>
           )}

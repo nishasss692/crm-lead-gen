@@ -54,22 +54,23 @@ export default function Sidebar() {
       isActive = pathname === '/leads' && (statusParam === status || (!statusParam && !status));
     }
     
-    return `flex items-center px-3 py-2 rounded-md group transition-colors ${
+    return `flex items-center px-3 py-2.5 rounded-lg group transition-all duration-200 ${
       isActive 
-        ? 'bg-slate-800 text-white' 
-        : 'text-slate-300 hover:bg-slate-800'
+        ? 'bg-white/10 text-white shadow-[inset_4px_0_0_0_#d1242f] font-bold' 
+        : 'text-[#90b4d4] hover:bg-white/5 hover:text-white'
     }`;
   };
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-full shrink-0">
-      <div className="p-4 border-b border-slate-800 flex justify-between items-center">
-        <span className="text-sm font-semibold tracking-wider text-slate-500">NAVIGATION</span>
-        <button className="text-slate-500 hover:text-slate-300">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-          </svg>
-        </button>
+    <aside className="w-64 bg-[#113254] text-slate-300 flex flex-col h-full shrink-0 shadow-xl z-10 relative">
+      <div className="p-5 border-b border-white/10 flex items-center gap-3">
+        <div className="w-10 h-10 bg-[#d1242f] rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md border border-red-500/30">
+          L
+        </div>
+        <div className="flex flex-col">
+          <span className="text-white font-bold text-sm leading-tight tracking-wide">Leads</span>
+          <span className="text-white font-bold text-sm leading-tight tracking-wide">Management</span>
+        </div>
       </div>
       
       <nav className="flex-1 overflow-y-auto py-4">
