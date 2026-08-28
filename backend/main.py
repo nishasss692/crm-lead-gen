@@ -60,7 +60,95 @@ class User(Base):
     region = Column(String, nullable=True)
     division = Column(String, nullable=True)
 
+class Campaign(Base):
+    __tablename__ = "campaigns"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    type = Column(String, nullable=False)
+    badge = Column(String, default="Hot")
+    reach = Column(String, default="10,000")
+    leads_target = Column(Integer, default=500)
+    budget = Column(String, default="₹ 25,000")
+    leads_gen = Column(Integer, default=0)
+    status = Column(String, default="Active")
+    metric1_label = Column(String, default="Sent")
+    metric1_val = Column(String, default="45,200")
+    metric2_label = Column(String, default="Open Rate")
+    metric2_val = Column(String, default="24.8%")
+    metric3_label = Column(String, default="Click Rate")
+    metric3_val = Column(String, default="3.2%")
+    created_at = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+
 Base.metadata.create_all(bind=engine)
+
+# Seed default campaigns if empty
+def seed_default_campaigns():
+    db = SessionLocal()
+    try:
+        if db.query(Campaign).count() == 0:
+            defaults = [
+                Campaign(
+                    title="Q3 Speed Post Corporate Outreach",
+                    type="Email & Letter Sequence",
+                    badge="Hot",
+                    reach="45,200",
+                    leads_target=1500,
+                    budget="₹ 35,000",
+                    leads_gen=1450,
+                    status="Active",
+                    metric1_label="Sent", metric1_val="45,200",
+                    metric2_label="Open Rate", metric2_val="24.8%",
+                    metric3_label="Click Rate", metric3_val="3.2%"
+                ),
+                Campaign(
+                    title="E-Commerce Logistics Decision Makers",
+                    type="Digital & LinkedIn Targeting",
+                    badge="Warm",
+                    reach="128.5K",
+                    leads_target=1000,
+                    budget="₹ 12,400",
+                    leads_gen=890,
+                    status="Active",
+                    metric1_label="Impressions", metric1_val="128.5K",
+                    metric2_label="CTR", metric2_val="1.8%",
+                    metric3_label="Spend", metric3_val="₹ 12,400"
+                ),
+                Campaign(
+                    title="Enterprise Outbound Parcel Drive",
+                    type="Field Marketing & Calling",
+                    badge="Cold",
+                    reach="4,200",
+                    leads_target=300,
+                    budget="₹ 18,000",
+                    leads_gen=210,
+                    status="Active",
+                    metric1_label="Calls Made", metric1_val="4,200",
+                    metric2_label="Connect Rate", metric2_val="12.5%",
+                    metric3_label="Meetings", metric3_val="84"
+                ),
+                Campaign(
+                    title="Postal Life Insurance MSME Drive",
+                    type="Circle Branch Marketing",
+                    badge="Hot",
+                    reach="18,500",
+                    leads_target=800,
+                    budget="₹ 22,000",
+                    leads_gen=640,
+                    status="Active",
+                    metric1_label="Brochures", metric1_val="18,500",
+                    metric2_label="Inquiries", metric2_val="1,240",
+                    metric3_label="Conversion", metric3_val="28.4%"
+                )
+            ]
+            db.add_all(defaults)
+            db.commit()
+    except Exception as e:
+        print("Campaign seed error:", e)
+    finally:
+        db.close()
+
+seed_default_campaigns()
 
 # 2.5 Auth Setup
 SECRET_KEY = "super-secret-key-for-dev"
@@ -139,21 +227,25 @@ def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db
     db.commit()
     return {"success": True, "message": "Password updated successfully"}
 
-# 3. The Upload Endpoint
+# 3. The Upload Endpoint (Supports Excel & CSV)
 @app.post("/api/upload-excel")
 async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    if not file.filename.endswith(('.xls', '.xlsx')):
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an Excel file.")
+    filename = file.filename.lower()
+    if not (filename.endswith('.xls') or filename.endswith('.xlsx') or filename.endswith('.csv')):
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file.")
     
     try:
         contents = await file.read()
-        df = pd.read_excel(io.BytesIO(contents))
+        if filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
         
-        # CRITICAL FIX: Remove NaN values and float errors before inserting
+        # Remove NaN values and format as string
         df = df.fillna("")
         df = df.astype(str)
         
-        # Sanitize column names to map Excel headers to database columns
+        # Sanitize column names
         def sanitize_column_name(col):
             return str(col).strip().lower().replace(" ", "_").replace("-", "_")
             
@@ -173,11 +265,80 @@ async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_d
         db.bulk_save_objects(leads_to_insert)
         db.commit()
         
-        return {"success": True, "count": len(leads_to_insert), "message": "Excel data processed successfully."}
+        return {"success": True, "count": len(leads_to_insert), "message": f"Successfully processed {len(leads_to_insert)} lead records from {file.filename}."}
         
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error parsing file: {str(e)}")
+
+# Campaign Models & Endpoints
+class CampaignCreate(BaseModel):
+    title: str
+    type: str
+    badge: str = "Hot"
+    reach: str = "10,000"
+    leads_target: int = 500
+    budget: str = "₹ 25,000"
+
+@app.get("/api/campaigns")
+def get_campaigns(db: Session = Depends(get_db)):
+    campaigns = db.query(Campaign).order_by(Campaign.id.desc()).all()
+    return [
+        {
+            "id": c.id,
+            "title": c.title,
+            "type": c.type,
+            "icon": "mail" if "Email" in c.type or "Letter" in c.type else "call" if "Call" in c.type else "campaign",
+            "badge": c.badge,
+            "metric1": {"label": c.metric1_label, "value": c.metric1_val},
+            "metric2": {"label": c.metric2_label, "value": c.metric2_val},
+            "metric3": {"label": c.metric3_label, "value": c.metric3_val},
+            "leadsGen": c.leads_gen,
+            "status": c.status,
+            "created_at": c.created_at
+        }
+        for c in campaigns
+    ]
+
+@app.post("/api/campaigns")
+def create_campaign(campaign: CampaignCreate, db: Session = Depends(get_db)):
+    new_camp = Campaign(
+        title=campaign.title,
+        type=campaign.type,
+        badge=campaign.badge,
+        reach=campaign.reach,
+        leads_target=campaign.leads_target,
+        budget=campaign.budget,
+        leads_gen=0,
+        status="Active",
+        metric1_label="Reach", metric1_val=campaign.reach,
+        metric2_label="Target Leads", metric2_val=str(campaign.leads_target),
+        metric3_label="Budget", metric3_val=campaign.budget
+    )
+    db.add(new_camp)
+    db.commit()
+    db.refresh(new_camp)
+    return {
+        "id": new_camp.id,
+        "title": new_camp.title,
+        "type": new_camp.type,
+        "icon": "mail" if "Email" in new_camp.type or "Letter" in new_camp.type else "call" if "Call" in new_camp.type else "campaign",
+        "badge": new_camp.badge,
+        "metric1": {"label": new_camp.metric1_label, "value": new_camp.metric1_val},
+        "metric2": {"label": new_camp.metric2_label, "value": new_camp.metric2_val},
+        "metric3": {"label": new_camp.metric3_label, "value": new_camp.metric3_val},
+        "leadsGen": new_camp.leads_gen,
+        "status": new_camp.status
+    }
+
+@app.delete("/api/campaigns/{campaign_id}")
+def delete_campaign(campaign_id: int, db: Session = Depends(get_db)):
+    camp = db.query(Campaign).filter(Campaign.id == campaign_id).first()
+    if not camp:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    db.delete(camp)
+    db.commit()
+    return {"success": True}
 
 # 4. Data Endpoints
 def apply_rbac_filter(query, user: User):
