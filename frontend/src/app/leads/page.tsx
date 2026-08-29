@@ -2,14 +2,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import LeadsTable, { Lead } from '../components/LeadsTable';
-
-const DIVISIONS = [
-  "Bagalkot", "Ballari", "Belagavi", "BG East", "BG GPO", "BG South", "BG West", 
-  "Bidar", "Channapatna", "Chikkamagaluru", "Chikodi", "Chitradurga", "Davanagere", 
-  "Dharwad", "Gadag", "Gokak", "Hassan", "Haveri", "Kalaburagi", "Karwar", "Kodagu", 
-  "Kolar", "Mandya", "Mangaluru", "Mysuru", "Nanjangud", "Puttur", "Raichur", 
-  "Shimoga", "Sirsi", "Tumkur", "Udupi", "Vijayapura", "Yadgir"
-];
+import { CopyX, Trash2, Check, RefreshCw, X, Download, Filter, Search } from 'lucide-react';
 
 function LeadsPageContent() {
   const router = useRouter();
@@ -22,6 +15,115 @@ function LeadsPageContent() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Deduplication Modal State
+  const [isDedupModalOpen, setIsDedupModalOpen] = useState(false);
+  const [dedupCriteria, setDedupCriteria] = useState('name_and_contact');
+  const [dedupSummary, setDedupSummary] = useState<{ total_leads: number; duplicate_count: number; unique_leads_estimate: number } | null>(null);
+  const [isDedupLoading, setIsDedupLoading] = useState(false);
+  const [dedupSuccessResult, setDedupSuccessResult] = useState<string | null>(null);
+
+  const fetchDivisions = async (token: string) => {
+    try {
+      const res = await fetch('http://localhost:8000/api/divisions', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDivisions(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch divisions", err);
+    }
+  };
+
+  const fetchLeads = async (token: string, division = selectedDivision) => {
+    setLoading(true);
+    try {
+      const divQuery = division && division !== 'All Divisions' ? `?division_name=${encodeURIComponent(division)}` : '';
+      const res = await fetch(`http://localhost:8000/api/leads${divQuery}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const formattedData = data.map((item: any) => ({
+          id: item.id, slNo: item.sl_no, exporterName: item.exporter_name, address: item.address,
+          pincode: item.pincode, divisionId: item.division_id, division: item.division,
+          region: item.region, assignedMeName: item.assigned_agent, dateOfMeeting: item.date_of_meeting,
+          customerMet: item.customer_met, contactNumber: item.contact_number, email: item.email,
+          serviceUsing: item.service_using, monthlyVolume: item.monthly_volume, meetingOutcome: item.meeting_outcome,
+          contractId: item.contract_id, remarks: item.remarks
+        }));
+        setLeads(formattedData);
+      }
+    } catch (error) {
+      console.error("Failed to fetch leads", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    fetchDivisions(token);
+    fetchLeads(token, selectedDivision);
+  }, [router, selectedDivision]);
+
+  // Fetch Duplicate Summary
+  const fetchDuplicateSummary = async (criteria = dedupCriteria) => {
+    const token = localStorage.getItem('token');
+    setIsDedupLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/leads/duplicates-summary?criteria=${encodeURIComponent(criteria)}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDedupSummary(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch duplicate summary", err);
+    } finally {
+      setIsDedupLoading(false);
+    }
+  };
+
+  const handleOpenDedupModal = () => {
+    setDedupSuccessResult(null);
+    setIsDedupModalOpen(true);
+    fetchDuplicateSummary(dedupCriteria);
+  };
+
+  const handleExecuteDeduplication = async () => {
+    const token = localStorage.getItem('token');
+    setIsDedupLoading(true);
+    try {
+      const res = await fetch('http://localhost:8000/api/leads/deduplicate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ criteria: dedupCriteria })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDedupSuccessResult(data.message);
+        if (token) fetchLeads(token, selectedDivision);
+        fetchDuplicateSummary(dedupCriteria);
+      } else {
+        alert(data.detail || "Failed to remove duplicates");
+      }
+    } catch (err: any) {
+      alert("Error running deduplication: " + err.message);
+    } finally {
+      setIsDedupLoading(false);
+    }
+  };
+
   const handleExportCSV = () => {
     if (leads.length === 0) return;
     const headers = Object.keys(leads[0]).join(',');
@@ -33,61 +135,12 @@ function LeadsPageContent() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'leads_export.csv';
+    a.download = `indiapost_leads_${selectedDivision || 'all'}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    const fetchDivisions = async () => {
-      try {
-        const res = await fetch('http://localhost:8000/api/divisions', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setDivisions(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch divisions", err);
-      }
-    };
-
-    const fetchLeads = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`http://localhost:8000/api/leads`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-           const data = await res.json();
-           const formattedData = data.map((item: any) => ({
-             id: item.id, slNo: item.sl_no, exporterName: item.exporter_name, address: item.address,
-             pincode: item.pincode, divisionId: item.division_id, division: item.division,
-             region: item.region, assignedMeName: item.assigned_agent, dateOfMeeting: item.date_of_meeting,
-             customerMet: item.customer_met, contactNumber: item.contact_number, email: item.email,
-             serviceUsing: item.service_using, monthlyVolume: item.monthly_volume, meetingOutcome: item.meeting_outcome,
-             contractId: item.contract_id, remarks: item.remarks
-           }));
-           setLeads(formattedData);
-        }
-      } catch (error) {
-        console.error("Failed to fetch leads", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDivisions();
-    fetchLeads();
-  }, [router]);
 
   let filtered = selectedDivision ? leads.filter(d => d.division === selectedDivision) : leads;
 
@@ -98,17 +151,17 @@ function LeadsPageContent() {
       
       switch (statusFilter) {
         case 'pending':
-          return outcome === '';
+          return outcome === '' || outcome === 'pending' || outcome === 'nan';
         case 'contacted':
-          return outcome !== '';
+          return outcome !== '' && outcome !== 'pending' && outcome !== 'nan';
         case 'followup':
-          return outcome === 'followup';
+          return outcome.includes('follow') || outcome.includes('warm');
         case 'interested':
-          return outcome === 'positive';
+          return outcome.includes('positive') || outcome.includes('interested');
         case 'willing':
-          return outcome === 'positive' && !hasContract;
+          return (outcome.includes('positive') || outcome.includes('interested')) && !hasContract;
         case 'onboarded':
-          return hasContract;
+          return hasContract || outcome.includes('onboard');
         default:
           return true;
       }
@@ -121,91 +174,206 @@ function LeadsPageContent() {
       (lead.exporterName || '').toLowerCase().includes(term) ||
       (lead.address || '').toLowerCase().includes(term) ||
       (lead.pincode || '').toLowerCase().includes(term) ||
+      (lead.contactNumber || '').toLowerCase().includes(term) ||
+      (lead.email || '').toLowerCase().includes(term) ||
       (lead.id || '').toString().includes(term)
     );
   }
 
   const getTitle = () => {
     switch (statusFilter) {
-      case 'pending': return 'Contact pending';
-      case 'contacted': return 'Contacted';
+      case 'pending': return 'Contact Pending Leads';
+      case 'contacted': return 'Contacted Leads';
       case 'followup': return 'Follow-up Required';
-      case 'interested': return 'Interested';
-      case 'willing': return 'Willing to onboard';
-      case 'onboarded': return 'Onboarded';
-      default: return 'All Leads';
+      case 'interested': return 'Interested Commercial Leads';
+      case 'willing': return 'Willing to Onboard';
+      case 'onboarded': return 'Onboarded Contracts';
+      default: return 'All Circle Leads Directory';
     }
   };
 
   return (
     <main className="min-h-screen bg-slate-50 p-6 md:p-8" style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-[1650px] mx-auto space-y-6">
         
-        <div className="mb-2">
-          <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Lead Workspace</h3>
-          <h1 className="text-3xl font-extrabold text-[#113254] tracking-tight">{getTitle()}</h1>
-          <p className="text-sm font-medium text-slate-500 mt-2">{filtered.length.toLocaleString()} records matching the selected filters</p>
-        </div>
-
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto flex-1">
-             <div className="relative w-full sm:max-w-[200px]">
-                <select
-                  value={selectedDivision}
-                  onChange={(e) => setSelectedDivision(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-sm cursor-pointer appearance-none"
-                >
-                  <option value="">All Divisions</option>
-                  {divisions.map((div) => (
-                    <option key={div} value={div}>{div}</option>
-                  ))}
-                </select>
-                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 1L5 5L9 1" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-             </div>
-             
-             <div className="relative w-full sm:flex-1 max-w-lg">
-                <input
-                  type="text"
-                  placeholder="Search exporter, address, lead ID, pincode..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-slate-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
-                />
-                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-             </div>
+        {/* Header Title Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-[11px] font-black text-[#D1242F] uppercase tracking-wider mb-1">
+              Karnataka Postal Circle • Lead Workspace
+            </h3>
+            <h1 className="text-3xl font-black text-[#1B2A4A] tracking-tight">{getTitle()}</h1>
+            <p className="text-sm font-medium text-slate-500 mt-1">
+              {filtered.length.toLocaleString()} records matching active circle filters
+            </p>
           </div>
 
-          <div className="flex gap-3">
-            <button className="flex items-center px-8 py-2.5 bg-[#d1242f] text-white rounded-xl text-sm font-bold shadow-md hover:bg-rose-700 transition-colors active:scale-95">
-              Load
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={handleOpenDedupModal}
+              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+            >
+              <CopyX className="w-4 h-4 text-amber-700" />
+              <span>Clean Duplicates</span>
             </button>
-            <button onClick={handleExportCSV} className="flex items-center px-4 py-2.5 bg-[#1e4b85] text-white rounded-xl text-sm font-bold shadow-md hover:bg-[#113254] transition-colors gap-2 active:scale-95">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Export CSV
+
+            <button 
+              onClick={handleExportCSV} 
+              className="flex items-center px-4 py-2.5 bg-[#1B2A4A] hover:bg-[#283044] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all gap-1.5"
+            >
+              <Download className="w-4 h-4 text-[#FAB52C]" />
+              <span>Export CSV</span>
             </button>
           </div>
         </div>
 
+        {/* Toolbar & Filters */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto flex-1">
+            <div className="relative w-full sm:max-w-[220px]">
+              <select
+                value={selectedDivision}
+                onChange={(e) => setSelectedDivision(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#D1242F] focus:ring-2 focus:ring-[#D1242F]/20 shadow-xs cursor-pointer appearance-none"
+              >
+                <option value="">🏢 All Circle Divisions</option>
+                {divisions.map((div) => (
+                  <option key={div} value={div}>{div} Division</option>
+                ))}
+              </select>
+              <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+            
+            <div className="relative w-full sm:flex-1 max-w-xl">
+              <input
+                type="text"
+                placeholder="Search exporter name, address, lead ID, phone, email, pincode..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-[#D1242F] focus:ring-2 focus:ring-[#D1242F]/20 shadow-xs"
+              >
+              </input>
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Table Content */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
-             <div className="w-12 h-12 border-4 border-indigo-200 border-t-[#155a8f] rounded-full animate-spin"></div>
-             <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading workspace...</p>
+             <div className="w-12 h-12 border-4 border-red-200 border-t-[#D1242F] rounded-full animate-spin"></div>
+             <p className="mt-4 text-slate-500 font-bold animate-pulse">Loading leads directory...</p>
           </div>
         ) : (
           <div className="animate-fade-in-up">
-            <LeadsTable data={filtered} allowEdit={statusFilter !== 'pending'} />
+            <LeadsTable data={filtered} allowEdit={true} />
           </div>
         )}
         
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          DEDUPLICATE LEADS MODAL
+         ═══════════════════════════════════════════════════════════ */}
+      {isDedupModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+                  <CopyX className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Lead Deduplication Engine</h3>
+                  <p className="text-xs text-slate-500">Scan & remove duplicate records across database</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsDedupModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Deduplication Criteria</label>
+                <select
+                  value={dedupCriteria}
+                  onChange={(e) => {
+                    setDedupCriteria(e.target.value);
+                    fetchDuplicateSummary(e.target.value);
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#D1242F]/20"
+                >
+                  <option value="name_and_contact">Composite (Exporter Name + Phone Number + Email)</option>
+                  <option value="name">Exporter Name only</option>
+                  <option value="contact">Contact Phone Number only</option>
+                  <option value="email">Email Address only</option>
+                  <option value="sl_no">Sl No / Lead ID only</option>
+                </select>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-600">Total Leads in Database:</span>
+                  <span className="font-black text-slate-900 text-sm">
+                    {dedupSummary?.total_leads ? dedupSummary.total_leads.toLocaleString() : '...'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-amber-700">Duplicate Records Found:</span>
+                  <span className="font-black text-amber-600 text-sm">
+                    {dedupSummary?.duplicate_count !== undefined ? dedupSummary.duplicate_count.toLocaleString() : '...'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-200 pt-2">
+                  <span className="font-bold text-emerald-700">Unique Records Preserved:</span>
+                  <span className="font-black text-emerald-700 text-sm">
+                    {dedupSummary?.unique_leads_estimate !== undefined ? dedupSummary.unique_leads_estimate.toLocaleString() : '...'}
+                  </span>
+                </div>
+              </div>
+
+              {dedupSuccessResult && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-800 font-bold">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{dedupSuccessResult}</span>
+                </div>
+              )}
+
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                * Note: The primary lead record with the earliest entry is preserved, while all duplicate secondary entries are safely removed.
+              </p>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsDedupModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleExecuteDeduplication}
+                  disabled={isDedupLoading || !dedupSummary || dedupSummary.duplicate_count === 0}
+                  className="px-4 py-2 bg-[#D1242F] hover:bg-[#B01E28] disabled:opacity-50 text-white rounded-xl font-bold shadow-xs hover:shadow flex items-center gap-1.5 transition-all"
+                >
+                  {isDedupLoading ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {isDedupLoading ? 'Cleaning Records...' : `Clean ${dedupSummary?.duplicate_count || 0} Duplicates`}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -214,8 +382,8 @@ export default function LeadsPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col items-center justify-center py-20 min-h-screen">
-        <div className="w-12 h-12 border-4 border-indigo-200 border-t-[#155a8f] rounded-full animate-spin"></div>
-        <p className="mt-4 text-slate-500 font-medium animate-pulse">Loading workspace...</p>
+        <div className="w-12 h-12 border-4 border-red-200 border-t-[#D1242F] rounded-full animate-spin"></div>
+        <p className="mt-4 text-slate-500 font-bold animate-pulse">Loading leads directory...</p>
       </div>
     }>
       <LeadsPageContent />

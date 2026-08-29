@@ -1,12 +1,10 @@
 'use client';
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { 
   Users, 
   UserPlus, 
   TrendingUp, 
-  TrendingDown, 
   IndianRupee, 
   Calendar, 
   Download, 
@@ -22,21 +20,16 @@ import {
   PhoneCall,
   CheckCircle2,
   Filter,
-  Eye,
   Briefcase,
-  Megaphone,
-  Plus,
-  Mail,
-  Share2,
-  Lightbulb,
   AlertTriangle,
   X,
-  Target,
-  Send,
   FileSpreadsheet,
   Check,
   RefreshCw,
-  BarChart3
+  BarChart3,
+  Layers,
+  CopyX,
+  Trash2
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -50,166 +43,21 @@ import {
   Pie,
   Cell,
   BarChart,
-  Bar
+  Bar,
+  Legend
 } from 'recharts';
 
-// Trend Chart Fallback
-const DEFAULT_TRENDS = [
-  { name: 'Mon', current: 420, previous: 310 },
-  { name: 'Tue', current: 580, previous: 440 },
-  { name: 'Wed', current: 710, previous: 520 },
-  { name: 'Thu', current: 890, previous: 630 },
-  { name: 'Fri', current: 1040, previous: 810 },
-  { name: 'Sat', current: 760, previous: 680 },
-  { name: 'Sun', current: 950, previous: 720 },
-];
-
-const DEFAULT_SOURCES = [
-  { name: 'Speed Post B2B', value: 45, color: '#D1242F' },
-  { name: 'Business Parcel', value: 30, color: '#F7941D' },
-  { name: 'Direct Portal', value: 15, color: '#1B2A4A' },
-  { name: 'Circle Referrals', value: 10, color: '#2E7D32' },
-];
-
-const DEFAULT_ACTIVITIES = [
-  {
-    id: 1,
-    name: 'Sarah Jenkins',
-    initials: 'SJ',
-    company: 'Acme Export Corp',
-    division: 'Bengaluru GPO',
-    status: 'Hot',
-    statusType: 'hot',
-    score: 94,
-    source: 'Speed Post B2B',
-    lastContact: '2 hours ago',
-    email: 'sarah.j@acmexp.com'
-  },
-  {
-    id: 2,
-    name: 'Michael Ross',
-    initials: 'MR',
-    company: 'TechFlow Logistics',
-    division: 'Mysuru Central',
-    status: 'Warm',
-    statusType: 'warm',
-    score: 78,
-    source: 'Business Parcel',
-    lastContact: '5 hours ago',
-    email: 'm.ross@techflow.in'
-  },
-  {
-    id: 3,
-    name: 'Elena Carter',
-    initials: 'EC',
-    company: 'Nexus Retail Hub',
-    division: 'Belagavi Division',
-    status: 'Hot',
-    statusType: 'hot',
-    score: 91,
-    source: 'Direct Portal',
-    lastContact: 'Just now',
-    email: 'elena@nexusretail.com'
-  },
-  {
-    id: 4,
-    name: 'Emily Parker',
-    initials: 'EP',
-    company: 'Global Dynamics Ltd',
-    division: 'Hubballi-Dharwad',
-    status: 'Cold',
-    statusType: 'cold',
-    score: 35,
-    source: 'Circle Referrals',
-    lastContact: '1 day ago',
-    email: 'eparker@globaldyn.org'
-  },
-  {
-    id: 5,
-    name: 'Rajesh Sharma',
-    initials: 'RS',
-    company: 'Karnataka Agro Mills',
-    division: 'Mangaluru Circle',
-    status: 'Warm',
-    statusType: 'warm',
-    score: 82,
-    source: 'Speed Post B2B',
-    lastContact: 'Yesterday',
-    email: 'rajesh@agromills.in'
-  }
-];
-
-const DEFAULT_CAMPAIGNS = [
-  {
-    id: 1,
-    title: 'Q3 Speed Post Corporate Outreach',
-    type: 'Email & Letter Sequence',
-    icon: 'mail',
-    badge: 'Hot',
-    metric1: { label: 'Sent', value: '45,200' },
-    metric2: { label: 'Open Rate', value: '24.8%' },
-    metric3: { label: 'Click Rate', value: '3.2%' },
-    leadsGen: 1450,
-    status: 'Active'
-  },
-  {
-    id: 2,
-    title: 'E-Commerce Logistics Decision Makers',
-    type: 'Digital & LinkedIn Targeting',
-    icon: 'campaign',
-    badge: 'Warm',
-    metric1: { label: 'Impressions', value: '128.5K' },
-    metric2: { label: 'CTR', value: '1.8%' },
-    metric3: { label: 'Spend', value: '₹ 12,400' },
-    leadsGen: 890,
-    status: 'Active'
-  },
-  {
-    id: 3,
-    title: 'Enterprise Outbound Parcel Drive',
-    type: 'Field Marketing & Calling',
-    icon: 'call',
-    badge: 'Cold',
-    metric1: { label: 'Calls Made', value: '4,200' },
-    metric2: { label: 'Connect Rate', value: '12.5%' },
-    metric3: { label: 'Meetings', value: '84' },
-    leadsGen: 210,
-    status: 'Active'
-  },
-  {
-    id: 4,
-    title: 'Postal Life Insurance MSME Drive',
-    type: 'Circle Branch Marketing',
-    icon: 'parcel',
-    badge: 'Hot',
-    metric1: { label: 'Brochures', value: '18,500' },
-    metric2: { label: 'Inquiries', value: '1,240' },
-    metric3: { label: 'Conversion', value: '28.4%' },
-    leadsGen: 640,
-    status: 'Active'
-  }
-];
-
-const CHANNEL_DATA = [
-  { month: 'Month 1', SpeedPost: 800, BusinessParcel: 550, Calls: 200 },
-  { month: 'Month 2', SpeedPost: 950, BusinessParcel: 680, Calls: 280 },
-  { month: 'Month 3', SpeedPost: 1200, BusinessParcel: 820, Calls: 350 },
-  { month: 'Month 4', SpeedPost: 1450, BusinessParcel: 890, Calls: 410 },
-];
-
 function DashboardMainContent() {
-  const searchParams = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'campaigns' ? 'campaigns' : 'overview';
-
-  const [activeTab, setActiveTab] = useState<'overview' | 'campaigns'>(initialTab);
   const [timeframe, setTimeframe] = useState('Last 30 Days');
+  const [selectedDivision, setSelectedDivision] = useState('All Divisions');
+  const [divisionsList, setDivisionsList] = useState<string[]>([]);
+  const [barChartMode, setBarChartMode] = useState<'division' | 'status'>('division');
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
   // Backend Data State
   const [analytics, setAnalytics] = useState<any>(null);
-  const [recentActivities, setRecentActivities] = useState(DEFAULT_ACTIVITIES);
-  const [campaigns, setCampaigns] = useState<any[]>(DEFAULT_CAMPAIGNS);
-  const [isLoading, setIsLoading] = useState(false);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Upload Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -218,90 +66,143 @@ function DashboardMainContent() {
   const [uploadMessage, setUploadMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // New Campaign Modal State
-  const [isNewCampaignModalOpen, setIsNewCampaignModalOpen] = useState(false);
-  const [newCampaign, setNewCampaign] = useState({
-    title: '',
-    type: 'Email & Letter Sequence',
-    badge: 'Hot' as 'Hot' | 'Warm' | 'Cold',
-    reach: '10,000',
-    leadsTarget: 500,
-    budget: '₹ 25,000'
-  });
+  // Deduplication Modal State
+  const [isDedupModalOpen, setIsDedupModalOpen] = useState(false);
+  const [dedupCriteria, setDedupCriteria] = useState('name_and_contact');
+  const [dedupSummary, setDedupSummary] = useState<{ total_leads: number; duplicate_count: number; unique_leads_estimate: number } | null>(null);
+  const [isDedupLoading, setIsDedupLoading] = useState(false);
+  const [dedupSuccessResult, setDedupSuccessResult] = useState<string | null>(null);
 
-  // Sync tab with URL
-  useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam === 'campaigns') {
-      setActiveTab('campaigns');
+  // Load Divisions
+  const loadDivisions = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('http://localhost:8000/api/divisions', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDivisionsList(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch divisions", err);
     }
-  }, [searchParams]);
+  };
 
-  // Load Data from Backend
-  const loadDashboardData = async () => {
+  // Load Dashboard Data from Backend
+  const loadDashboardData = async (division = selectedDivision) => {
     const token = localStorage.getItem('token');
     setIsLoading(true);
 
     try {
-      // 1. Fetch Analytics
-      const analyticsRes = await fetch('http://localhost:8000/api/analytics', {
+      const divQuery = division && division !== 'All Divisions' ? `?division_name=${encodeURIComponent(division)}` : '';
+      
+      // 1. Fetch Dynamic Analytics
+      const analyticsRes = await fetch(`http://localhost:8000/api/analytics${divQuery}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (analyticsRes.ok) {
         const data = await analyticsRes.json();
         setAnalytics(data);
       }
-    } catch (err) {
-      console.log("Analytics fetch failed, using state", err);
-    }
 
-    try {
-      // 2. Fetch Campaigns
-      const campRes = await fetch('http://localhost:8000/api/campaigns');
-      if (campRes.ok) {
-        const campData = await campRes.json();
-        if (Array.isArray(campData) && campData.length > 0) {
-          setCampaigns(campData);
-        }
-      }
-    } catch (err) {
-      console.log("Campaigns fetch failed, using fallback", err);
-    }
-
-    try {
-      // 3. Fetch Leads for Recent Activity
-      const leadsRes = await fetch('http://localhost:8000/api/leads', {
+      // 2. Fetch Live Leads for Recent Engagements
+      const leadsRes = await fetch(`http://localhost:8000/api/leads${divQuery}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (leadsRes.ok) {
         const leadsData = await leadsRes.json();
-        if (Array.isArray(leadsData) && leadsData.length > 0) {
-          const formatted = leadsData.slice(0, 8).map((item: any, idx: number) => ({
-            id: item.id || idx,
-            name: item.exporter_name || item.customer_met || 'Commercial Client',
-            initials: (item.exporter_name || 'IP').slice(0, 2).toUpperCase(),
-            company: item.exporter_name || 'Enterprises',
-            division: item.division || 'Karnataka Circle',
-            status: item.meeting_outcome === 'Positive' ? 'Hot' : item.meeting_outcome === 'Followup' ? 'Warm' : 'Cold',
-            statusType: item.meeting_outcome === 'Positive' ? 'hot' : item.meeting_outcome === 'Followup' ? 'warm' : 'cold',
-            score: item.meeting_outcome === 'Positive' ? 92 : 65,
-            source: item.service_using || 'Speed Post B2B',
-            lastContact: item.date_of_meeting || 'Recent',
-            email: item.email || `${(item.exporter_name || 'client').toLowerCase().replace(/\s+/g, '')}@gmail.com`
-          }));
+        if (Array.isArray(leadsData)) {
+          const formatted = leadsData.slice(0, 8).map((item: any) => {
+            const outcome = (item.meeting_outcome || '').trim().toLowerCase();
+            const isHot = outcome.includes('positive') || outcome.includes('interested');
+            const isWarm = outcome.includes('follow') || outcome.includes('contacted') || outcome !== '';
+            
+            return {
+              id: item.id,
+              name: item.exporter_name || item.customer_met || 'Commercial Client',
+              initials: (item.exporter_name || 'IP').slice(0, 2).toUpperCase(),
+              company: item.exporter_name || 'Commercial Entity',
+              division: item.division || 'Karnataka Circle',
+              status: isHot ? 'Hot' : isWarm ? 'Warm' : 'Cold',
+              statusType: isHot ? 'hot' : isWarm ? 'warm' : 'cold',
+              score: isHot ? 92 : isWarm ? 74 : 45,
+              source: item.service_using || 'Speed Post B2B',
+              lastContact: item.date_of_meeting || 'Pending Meeting',
+              email: item.email || `${(item.exporter_name || 'client').toLowerCase().replace(/[^a-z0-9]/g, '')}@indiapost.gov.in`
+            };
+          });
           setRecentActivities(formatted);
         }
       }
     } catch (err) {
-      console.log("Leads fetch failed, using state", err);
+      console.error("Dashboard fetch error:", err);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    setIsLoading(false);
+  // Fetch Duplicate Summary when Modal opens or criteria changes
+  const fetchDuplicateSummary = async (criteria = dedupCriteria) => {
+    const token = localStorage.getItem('token');
+    setIsDedupLoading(true);
+    try {
+      const res = await fetch(`http://localhost:8000/api/leads/duplicates-summary?criteria=${encodeURIComponent(criteria)}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDedupSummary(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch duplicate summary", err);
+    } finally {
+      setIsDedupLoading(false);
+    }
+  };
+
+  const handleOpenDedupModal = () => {
+    setDedupSuccessResult(null);
+    setIsDedupModalOpen(true);
+    fetchDuplicateSummary(dedupCriteria);
+  };
+
+  const handleExecuteDeduplication = async () => {
+    const token = localStorage.getItem('token');
+    setIsDedupLoading(true);
+    try {
+      const res = await fetch('http://localhost:8000/api/leads/deduplicate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ criteria: dedupCriteria })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDedupSuccessResult(data.message);
+        loadDashboardData(selectedDivision);
+        fetchDuplicateSummary(dedupCriteria);
+      } else {
+        alert(data.detail || "Failed to remove duplicates");
+      }
+    } catch (err: any) {
+      alert("Error running deduplication: " + err.message);
+    } finally {
+      setIsDedupLoading(false);
+    }
   };
 
   useEffect(() => {
+    loadDivisions();
     loadDashboardData();
   }, []);
+
+  const handleDivisionChange = (div: string) => {
+    setSelectedDivision(div);
+    loadDashboardData(div);
+  };
 
   // Handle File Upload (Excel or CSV)
   const handleFileUpload = async (e: React.FormEvent) => {
@@ -309,14 +210,16 @@ function DashboardMainContent() {
     if (!uploadFile) return;
 
     setUploadProgress('uploading');
-    setUploadMessage('Processing file records and updating CRM database...');
+    setUploadMessage('Processing records into database...');
 
+    const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('file', uploadFile);
 
     try {
       const res = await fetch('http://localhost:8000/api/upload-excel', {
         method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
       });
 
@@ -328,7 +231,8 @@ function DashboardMainContent() {
           setIsUploadModalOpen(false);
           setUploadProgress('idle');
           setUploadFile(null);
-          loadDashboardData();
+          loadDivisions();
+          loadDashboardData(selectedDivision);
         }, 1500);
       } else {
         setUploadProgress('error');
@@ -340,711 +244,513 @@ function DashboardMainContent() {
     }
   };
 
-  // Handle Create Campaign
-  const handleCreateCampaign = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCampaign.title) return;
-
-    try {
-      const res = await fetch('http://localhost:8000/api/campaigns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newCampaign.title,
-          type: newCampaign.type,
-          badge: newCampaign.badge,
-          reach: newCampaign.reach,
-          leads_target: Number(newCampaign.leadsTarget) || 500,
-          budget: newCampaign.budget
-        })
-      });
-
-      if (res.ok) {
-        const created = await res.json();
-        setCampaigns([created, ...campaigns]);
-      } else {
-        // Fallback local update
-        const fallbackCreated = {
-          id: Date.now(),
-          title: newCampaign.title,
-          type: newCampaign.type,
-          icon: newCampaign.type.includes('Email') ? 'mail' : newCampaign.type.includes('Call') ? 'call' : 'campaign',
-          badge: newCampaign.badge,
-          metric1: { label: 'Reach', value: newCampaign.reach },
-          metric2: { label: 'Target Leads', value: `${newCampaign.leadsTarget}` },
-          metric3: { label: 'Budget', value: newCampaign.budget },
-          leadsGen: 0,
-          status: 'Active'
-        };
-        setCampaigns([fallbackCreated, ...campaigns]);
-      }
-    } catch (err) {
-      const fallbackCreated = {
-        id: Date.now(),
-        title: newCampaign.title,
-        type: newCampaign.type,
-        icon: newCampaign.type.includes('Email') ? 'mail' : newCampaign.type.includes('Call') ? 'call' : 'campaign',
-        badge: newCampaign.badge,
-        metric1: { label: 'Reach', value: newCampaign.reach },
-        metric2: { label: 'Target Leads', value: `${newCampaign.leadsTarget}` },
-        metric3: { label: 'Budget', value: newCampaign.budget },
-        leadsGen: 0,
-        status: 'Active'
-      };
-      setCampaigns([fallbackCreated, ...campaigns]);
-    }
-
-    setIsNewCampaignModalOpen(false);
-    setNewCampaign({
-      title: '',
-      type: 'Email & Letter Sequence',
-      badge: 'Hot',
-      reach: '10,000',
-      leadsTarget: 500,
-      budget: '₹ 25,000'
-    });
-  };
-
   const handleExport = () => {
+    if (recentActivities.length === 0) return;
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Company,Division,Status,Lead Score,Source,Last Contact\n"
+      + "Name,Company,Division,Status,Lead Score,Service,Last Contact\n"
       + recentActivities.map(e => `"${e.name}","${e.company}","${e.division}","${e.status}",${e.score},"${e.source}","${e.lastContact}"`).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "leadpulse_overview_export.csv");
+    link.setAttribute("download", `indiapost_crm_leads_${selectedDivision.replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Metrics from Backend or defaults
-  const totalLeadsCount = analytics?.total_leads ? analytics.total_leads.toLocaleString() : '12,450';
-  const newLeadsTodayCount = analytics?.contact_pending ? analytics.contact_pending.toLocaleString() : '342';
-  const conversionRateVal = analytics?.onboarding_rate ? `${analytics.onboarding_rate}%` : '8.4%';
+  // KPI calculations
+  const totalLeads = analytics?.total_leads ? analytics.total_leads.toLocaleString() : '0';
+  const pendingLeads = analytics?.contact_pending ? analytics.contact_pending.toLocaleString() : '0';
+  const contactedLeads = analytics?.contacted ? analytics.contacted.toLocaleString() : '0';
+  const onboardedLeads = analytics?.onboarded ? analytics.onboarded.toLocaleString() : '0';
+  const conversionRate = analytics?.onboarding_rate !== undefined ? `${analytics.onboarding_rate}%` : '0.0%';
+  const pipelineValue = analytics?.pipeline_value || '₹ 0';
+
+  // Dynamic Chart Datasets
+  const timeSeriesData = analytics?.time_series || [];
+  const divisionPerformanceData = analytics?.division_performance || [];
+  const serviceDistributionData = analytics?.service_distribution || [];
+  const outcomeBreakdownData = analytics?.outcome_breakdown || [];
 
   return (
-    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 animate-fade-in-up">
-      {/* Top Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div className="p-4 md:p-8 max-w-[1650px] mx-auto space-y-6 animate-fade-in-up">
+      
+      {/* Top Page Header & Controls */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="h-2.5 w-2.5 rounded-full bg-[#D1242F]"></span>
-            <span className="text-xs font-bold text-[#D1242F] uppercase tracking-wider">India Post CRM Executive View</span>
+            <span className="text-xs font-black text-[#D1242F] uppercase tracking-wider">Karnataka Circle Executive Dashboard</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-            {activeTab === 'overview' ? 'Overview Dashboard' : 'Active Campaigns & Outreach'}
+          <h1 className="text-2xl md:text-3xl font-black text-[#1B2A4A] tracking-tight">
+            Commercial Pipeline & Analytics
           </h1>
           <p className="text-xs md:text-sm text-slate-500 mt-0.5">
-            {activeTab === 'overview' 
-              ? 'Real-time performance metrics, logistics pipeline, and lead acquisition activity.'
-              : 'Monitor commercial parcel, logistics outreach, and marketing campaigns across circles.'}
+            Real-time postal performance metrics, division breakdowns, service distribution, and lead acquisition trends.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* View Switcher Tabs */}
-          <div className="flex items-center bg-slate-200/70 p-1 rounded-xl">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'overview'
-                  ? 'bg-white text-[#D1242F] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
+          {/* Division Filter Dropdown */}
+          <div className="relative min-w-[170px]">
+            <select
+              value={selectedDivision}
+              onChange={(e) => handleDivisionChange(e.target.value)}
+              className="w-full appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer transition-colors"
             >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>Overview</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('campaigns')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'campaigns'
-                  ? 'bg-white text-[#D1242F] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Megaphone className="w-3.5 h-3.5" />
-              <span>Campaigns</span>
-              <span className="bg-[#D1242F] text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold">
-                {campaigns.length}
-              </span>
-            </button>
+              <option value="All Divisions">🏢 All Circle Divisions</option>
+              {divisionsList.map((div) => (
+                <option key={div} value={div}>{div} Division</option>
+              ))}
+            </select>
+            <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+
+          {/* Timeframe Select */}
+          <div className="relative">
+            <select
+              value={timeframe}
+              onChange={(e) => setTimeframe(e.target.value)}
+              className="appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer"
+            >
+              <option>Last 30 Days</option>
+              <option>This Quarter</option>
+              <option>Year to Date</option>
+            </select>
+            <Calendar className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Deduplicate Leads Button */}
+          <button
+            onClick={handleOpenDedupModal}
+            className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+            title="Scan and eliminate duplicate leads"
+          >
+            <CopyX className="w-3.5 h-3.5 text-amber-700" />
+            <span>Clean Duplicates</span>
+          </button>
 
           {/* Upload Data File Button */}
           <button
             onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all"
+            className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
             title="Upload Excel or CSV data file"
           >
             <Upload className="w-3.5 h-3.5 text-[#FAB52C]" />
             <span>Upload File</span>
           </button>
 
-          {activeTab === 'overview' ? (
-            <>
-              <div className="relative">
-                <select
-                  value={timeframe}
-                  onChange={(e) => setTimeframe(e.target.value)}
-                  className="appearance-none bg-white border border-slate-200 rounded-lg pl-3 pr-8 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer"
-                >
-                  <option>Last 30 Days</option>
-                  <option>This Quarter</option>
-                  <option>Year to Date</option>
-                </select>
-                <Calendar className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+          {/* Export CSV Button */}
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 bg-[#D1242F] hover:bg-[#B01E28] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
 
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-1.5 bg-[#D1242F] hover:bg-[#B01E28] text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export</span>
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setIsNewCampaignModalOpen(true)}
-              className="flex items-center gap-1.5 bg-[#D1242F] hover:bg-[#B01E28] text-white px-4 py-2 rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Campaign</span>
-            </button>
-          )}
+      {/* KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Total Leads */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-bl-full pointer-events-none"></div>
+          <div className="flex justify-between items-start">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Circle Leads</span>
+            <div className="w-9 h-9 rounded-xl bg-red-50 text-[#D1242F] flex items-center justify-center group-hover:bg-[#D1242F] group-hover:text-white transition-colors shadow-xs">
+              <Users className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{totalLeads}</div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs">
+              <span className="flex items-center font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> +100% Real DB
+              </span>
+              <span className="text-slate-400 text-[11px]">{selectedDivision}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 2: Pending Outreach */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none"></div>
+          <div className="flex justify-between items-start">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Meeting</span>
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#F7941D] flex items-center justify-center group-hover:bg-[#F7941D] group-hover:text-white transition-colors shadow-xs">
+              <UserPlus className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{pendingLeads}</div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs">
+              <span className="flex items-center font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                {contactedLeads} Contacted
+              </span>
+              <span className="text-slate-400 text-[11px]">in queue</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3: Onboarding Rate */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
+          <div className="flex justify-between items-start">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Onboarding Rate</span>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1565C0] flex items-center justify-center group-hover:bg-[#1565C0] group-hover:text-white transition-colors shadow-xs">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{conversionRate}</div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs">
+              <span className="flex items-center font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-1.5 py-0.5 rounded">
+                {onboardedLeads} Onboarded
+              </span>
+              <span className="text-slate-400 text-[11px]">contract signed</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: Postal Pipeline Value */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
+          <div className="flex justify-between items-start">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Postal Pipeline Value</span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#2E7D32] flex items-center justify-center group-hover:bg-[#2E7D32] group-hover:text-white transition-colors shadow-xs">
+              <IndianRupee className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{pipelineValue}</div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs">
+              <span className="flex items-center font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> High Potential
+              </span>
+              <span className="text-slate-400 text-[11px]">monthly volume</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          TAB 1: OVERVIEW ANALYTICS
+          SECTION 1: INTERACTIVE MULTI-DIMENSIONAL BAR GRAPH
          ═══════════════════════════════════════════════════════════ */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6 animate-fade-in-up">
-          {/* KPI Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* KPI 1: Total Leads */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-4 md:p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-bl-full pointer-events-none"></div>
-              <div className="flex justify-between items-start">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Leads</span>
-                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#D1242F] flex items-center justify-center group-hover:bg-[#D1242F] group-hover:text-white transition-colors">
-                  <Users className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">{totalLeadsCount}</div>
-                <div className="flex items-center gap-1.5 mt-1.5 text-xs">
-                  <span className="flex items-center font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                    <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> +14.5%
-                  </span>
-                  <span className="text-slate-400 text-[11px]">vs last month</span>
-                </div>
-              </div>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-[#D1242F]" />
+              <h2 className="text-lg font-black text-slate-900">
+                {barChartMode === 'division' ? 'Division Lead Performance Breakdown' : 'Lead Outcome Status Distribution'}
+              </h2>
             </div>
-
-            {/* KPI 2: New Leads Today */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-4 md:p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none"></div>
-              <div className="flex justify-between items-start">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Outreach</span>
-                <div className="w-8 h-8 rounded-lg bg-amber-50 text-[#F7941D] flex items-center justify-center group-hover:bg-[#F7941D] group-hover:text-white transition-colors">
-                  <UserPlus className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">{newLeadsTodayCount}</div>
-                <div className="flex items-center gap-1.5 mt-1.5 text-xs">
-                  <span className="flex items-center font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                    <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> +5.2%
-                  </span>
-                  <span className="text-slate-400 text-[11px]">vs yesterday</span>
-                </div>
-              </div>
-            </div>
-
-            {/* KPI 3: Conversion Rate */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-4 md:p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
-              <div className="flex justify-between items-start">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Onboarding Rate</span>
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#1565C0] flex items-center justify-center group-hover:bg-[#1565C0] group-hover:text-white transition-colors">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">{conversionRateVal}</div>
-                <div className="flex items-center gap-1.5 mt-1.5 text-xs">
-                  <span className="flex items-center font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                    <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> +2.4%
-                  </span>
-                  <span className="text-slate-400 text-[11px]">target met</span>
-                </div>
-              </div>
-            </div>
-
-            {/* KPI 4: Pipeline Value */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-4 md:p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
-              <div className="flex justify-between items-start">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Postal Pipeline Value</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#2E7D32] flex items-center justify-center group-hover:bg-[#2E7D32] group-hover:text-white transition-colors">
-                  <IndianRupee className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">₹ 2.4 Cr</div>
-                <div className="flex items-center gap-1.5 mt-1.5 text-xs">
-                  <span className="flex items-center font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                    <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> +22.8%
-                  </span>
-                  <span className="text-slate-400 text-[11px]">vs last quarter</span>
-                </div>
-              </div>
-            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {barChartMode === 'division'
+                ? 'Multi-dimensional comparison of Total Leads, Contacted Inquiries, and Onboarded Contracts by Division'
+                : 'Exact volume distribution of lead stages across Karnataka Circle database'}
+            </p>
           </div>
 
-          {/* Charts Row: Line/Area Trends + Lead Source Donut */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left 2 Cols: Lead Acquisition Trends Area Chart */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs lg:col-span-2 flex flex-col justify-between">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                <div>
-                  <h2 className="text-base font-extrabold text-slate-900">Lead Acquisition Trends</h2>
-                  <p className="text-xs text-slate-500">Comparing current week acquisition volume with previous cycle</p>
-                </div>
-                <div className="flex items-center gap-4 text-xs font-semibold">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-[#D1242F]"></span>
-                    <span className="text-slate-700">Current Week</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-1.5 border-b-2 border-dashed border-slate-400"></span>
-                    <span className="text-slate-500">Previous</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="h-[280px] w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analytics?.time_series && analytics.time_series.length > 3 ? analytics.time_series.slice(-7).map((t: any) => ({ name: t.date.slice(5), current: t.meetings * 20, previous: t.meetings * 15 })) : DEFAULT_TRENDS} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="ipRedGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#D1242F" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#D1242F" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                      itemStyle={{ color: '#FAB52C' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="current" 
-                      stroke="#D1242F" 
-                      strokeWidth={2.5} 
-                      fillOpacity={1} 
-                      fill="url(#ipRedGradient)" 
-                      name="Current Volume"
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="previous" 
-                      stroke="#94A3B8" 
-                      strokeWidth={1.5} 
-                      strokeDasharray="4 4"
-                      fill="transparent" 
-                      name="Previous Cycle"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Right 1 Col: Lead Source Donut Chart */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-base font-extrabold text-slate-900">Lead Sources</h2>
-                <span className="text-xs bg-amber-50 text-[#F7941D] font-bold px-2 py-0.5 rounded-full border border-amber-200">
-                  Active Channel Mix
-                </span>
-              </div>
-
-              <div className="relative h-[200px] w-full flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={DEFAULT_SOURCES}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={80}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {DEFAULT_SOURCES.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-xl font-extrabold text-slate-900 leading-tight">100%</span>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Total Mix</span>
-                </div>
-              </div>
-
-              {/* Donut Legend */}
-              <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
-                {DEFAULT_SOURCES.map((src) => (
-                  <div key={src.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: src.color }}></span>
-                      <span className="text-slate-600 font-medium">{src.name}</span>
-                    </div>
-                    <span className="font-mono font-bold text-slate-800">{src.value}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity Table */}
-          <div className="bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden">
-            <div className="p-4 md:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div>
-                <h2 className="text-base font-extrabold text-slate-900">Recent Lead Engagements</h2>
-                <p className="text-xs text-slate-500">Latest business inquiries requiring follow-up from postal agents</p>
-              </div>
-              <Link
-                href="/leads"
-                className="text-xs font-bold text-[#D1242F] hover:text-[#B01E28] flex items-center gap-1 hover:underline"
-              >
-                <span>View All Leads</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3 px-5">Lead Name</th>
-                    <th className="py-3 px-4">Company & Division</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Lead Score</th>
-                    <th className="py-3 px-4">Service</th>
-                    <th className="py-3 px-4">Last Contact</th>
-                    <th className="py-3 px-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                  {recentActivities.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#1B2A4A] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-                            {lead.initials}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{lead.name}</p>
-                            <p className="text-[11px] text-slate-400">{lead.email}</p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-800">{lead.company}</div>
-                        <div className="text-[11px] text-slate-500">
-                          {lead.division}
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-4">
-                        {lead.statusType === 'hot' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-[#D1242F] border border-red-200">
-                            <Flame className="w-3 h-3 text-[#D1242F]" /> Qualified (Hot)
-                          </span>
-                        )}
-                        {lead.statusType === 'warm' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                            <Zap className="w-3 h-3 text-amber-600" /> Contacted
-                          </span>
-                        )}
-                        {lead.statusType === 'cold' && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                            <Snowflake className="w-3 h-3 text-slate-400" /> Cold Lead
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded font-mono font-bold text-xs ${
-                          lead.score >= 85 ? 'bg-red-50 text-[#D1242F]' : lead.score >= 60 ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          {lead.score} / 100
-                        </span>
-                      </td>
-
-                      <td className="py-3 px-4 font-medium text-slate-600">
-                        {lead.source}
-                      </td>
-
-                      <td className="py-3 px-4 text-slate-500">
-                        {lead.lastContact}
-                      </td>
-
-                      <td className="py-3 px-4 text-right relative">
-                        <button
-                          onClick={() => setActiveMenuId(activeMenuId === lead.id ? null : lead.id)}
-                          className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors"
-                        >
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-
-                        {activeMenuId === lead.id && (
-                          <div className="absolute right-4 mt-1 w-36 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-30 text-left text-xs animate-fade-in-scale">
-                            <Link href="/leads" className="block px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-medium">
-                              View Details
-                            </Link>
-                            <Link href="/leads" className="block px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-medium">
-                              Schedule Call
-                            </Link>
-                            <button 
-                              onClick={() => setActiveMenuId(null)}
-                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-[#D1242F] font-semibold border-t border-slate-100"
-                            >
-                              Mark Converted
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {/* Toggle View Mode */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={() => setBarChartMode('division')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                barChartMode === 'division'
+                  ? 'bg-white text-[#D1242F] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              By Division
+            </button>
+            <button
+              onClick={() => setBarChartMode('status')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                barChartMode === 'status'
+                  ? 'bg-white text-[#D1242F] shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              By Outcome Status
+            </button>
           </div>
         </div>
-      )}
+
+        {/* Bar Chart Container */}
+        <div className="h-[340px] w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            {barChartMode === 'division' ? (
+              <BarChart data={divisionPerformanceData} margin={{ top: 10, right: 10, left: -15, bottom: 25 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis 
+                  dataKey="division" 
+                  stroke="#64748B" 
+                  fontSize={11} 
+                  fontWeight={600}
+                  tickLine={false} 
+                  angle={-20} 
+                  textAnchor="end"
+                  interval={0}
+                />
+                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '10px', color: '#fff', fontSize: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '15px' }}
+                  iconType="circle"
+                />
+                <Bar dataKey="total" name="Total Leads" fill="#1B2A4A" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="contacted" name="Contacted" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="interested" name="Interested" fill="#10B981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="onboarded" name="Onboarded" fill="#D1242F" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            ) : (
+              <BarChart data={outcomeBreakdownData} margin={{ top: 10, right: 10, left: -15, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="label" stroke="#64748B" fontSize={11} fontWeight={600} tickLine={false} />
+                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
+                />
+                <Bar dataKey="count" name="Lead Count" radius={[6, 6, 0, 0]}>
+                  {outcomeBreakdownData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color || '#D1242F'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          TAB 2: ACTIVE CAMPAIGNS & OUTREACH
+          SECTION 2: ACQUISITION TRENDS & SERVICE DONUT CHARTS
          ═══════════════════════════════════════════════════════════ */}
-      {activeTab === 'campaigns' && (
-        <div className="space-y-6 animate-fade-in-up">
-          {/* Top Bento KPI Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* KPI 1 */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-4 md:p-5 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
-                Total Leads Generated
-              </span>
-              <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">12,450</div>
-              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 font-bold">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>+14.2% from last month</span>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Lead Acquisition Trends Area Chart */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs lg:col-span-2 flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h2 className="text-base font-black text-slate-900">Lead Acquisition & Activity Timeline</h2>
+              <p className="text-xs text-slate-500">Temporal meeting activity distribution from live database records</p>
             </div>
-
-            {/* KPI 2 */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-4 md:p-5 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
-                Avg Conversion Rate
-              </span>
-              <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">4.8%</div>
-              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 font-bold">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>+0.5% from last month</span>
+            <div className="flex items-center gap-4 text-xs font-bold">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#D1242F]"></span>
+                <span className="text-slate-700">Lead Volume</span>
               </div>
-            </div>
-
-            {/* KPI 3 */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-4 md:p-5 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
-                Total Campaign Spend
-              </span>
-              <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">₹ 45.2K</div>
-              <div className="mt-2 flex items-center gap-1 text-xs text-[#D1242F] font-bold">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>+8.1% from last month</span>
-              </div>
-            </div>
-
-            {/* KPI 4 */}
-            <div className="bg-white border border-slate-200/80 rounded-xl p-4 md:p-5 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
-                Cost Per Lead (CPL)
-              </span>
-              <div className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">₹ 3.63</div>
-              <div className="mt-2 flex items-center gap-1 text-xs text-emerald-600 font-bold">
-                <TrendingDown className="w-3.5 h-3.5" />
-                <span>-1.2% from last month</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-1.5 border-b-2 border-dashed border-slate-400"></span>
+                <span className="text-slate-500">Benchmark</span>
               </div>
             </div>
           </div>
 
-          {/* Main Grid: Left 8 Cols (Campaign Cards), Right 4 Cols (Leads by Channel + AI Insights) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Column: Active Campaign Cards */}
-            <div className="col-span-1 lg:col-span-8 flex flex-col gap-4">
-              {campaigns.map((camp) => (
-                <div
-                  key={camp.id}
-                  className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs hover:shadow-md transition-all relative overflow-hidden group"
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#D1242F]/5 rounded-bl-full pointer-events-none"></div>
-
-                  {/* Campaign Header */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
-                        {camp.icon === 'mail' ? (
-                          <Mail className="w-5 h-5" />
-                        ) : camp.icon === 'call' ? (
-                          <PhoneCall className="w-5 h-5" />
-                        ) : (
-                          <Megaphone className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-extrabold text-slate-900 leading-tight">
-                          {camp.title}
-                        </h3>
-                        <p className="text-[11px] text-slate-500">{camp.type}</p>
-                      </div>
-                    </div>
-
-                    {/* Hot / Warm / Cold Badge */}
-                    {camp.badge === 'Hot' && (
-                      <span className="px-2.5 py-1 rounded-full bg-red-50 text-[#D1242F] border border-red-200 text-[10px] font-bold uppercase flex items-center gap-1">
-                        <Flame className="w-3 h-3 text-[#D1242F]" /> Hot Campaign
-                      </span>
-                    )}
-                    {camp.badge === 'Warm' && (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold uppercase flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-amber-600" /> Warm
-                      </span>
-                    )}
-                    {camp.badge === 'Cold' && (
-                      <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold uppercase flex items-center gap-1">
-                        <Snowflake className="w-3 h-3 text-slate-400" /> Cold
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Metrics Grid */}
-                  <div className="grid grid-cols-3 gap-3 py-3 border-y border-slate-100 mb-3 text-xs">
-                    <div>
-                      <p className="text-[11px] text-slate-400 font-medium mb-0.5">{camp.metric1.label}</p>
-                      <p className="font-mono font-bold text-slate-900 text-sm">{camp.metric1.value}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 font-medium mb-0.5">{camp.metric2.label}</p>
-                      <p className="font-mono font-bold text-slate-900 text-sm">{camp.metric2.value}</p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 font-medium mb-0.5">{camp.metric3.label}</p>
-                      <p className="font-mono font-bold text-slate-900 text-sm">{camp.metric3.value}</p>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                      <span className="font-bold text-slate-700">{camp.status}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[11px] text-slate-400 mr-2">Leads Generated</span>
-                      <span className="font-extrabold text-[#D1242F] text-base">{camp.leadsGen ? camp.leadsGen.toLocaleString() : '0'}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Right Column: Chart + AI Insights */}
-            <div className="col-span-1 lg:col-span-4 flex flex-col gap-6">
-              {/* Leads by Channel Bar Chart */}
-              <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs flex flex-col">
-                <h3 className="text-sm font-extrabold text-slate-900">Leads by Channel</h3>
-                <p className="text-xs text-slate-500 mb-4">Comparing top postal marketing channels over 4 months</p>
-
-                <div className="h-[220px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={CHANNEL_DATA} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                      <XAxis dataKey="month" stroke="#94A3B8" fontSize={10} tickLine={false} />
-                      <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
-                      />
-                      <Bar dataKey="SpeedPost" fill="#D1242F" name="Speed Post" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="BusinessParcel" fill="#F7941D" name="Business Parcel" radius={[3, 3, 0, 0]} />
-                      <Bar dataKey="Calls" fill="#1B2A4A" name="Direct Calls" radius={[3, 3, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Legend */}
-                <div className="flex justify-center gap-4 mt-3 pt-3 border-t border-slate-100 text-[11px] font-semibold">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-[#D1242F]"></span>
-                    <span className="text-slate-700">Speed Post</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-[#F7941D]"></span>
-                    <span className="text-slate-700">Parcel</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-sm bg-[#1B2A4A]"></span>
-                    <span className="text-slate-700">Calls</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Postal AI Insights */}
-              <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1 rounded-md bg-amber-50 text-[#F7941D]">
-                    <Lightbulb className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-extrabold text-slate-900">Postal AI Insights</h3>
-                </div>
-
-                <ul className="space-y-3 text-xs">
-                  <li className="flex gap-2.5 items-start p-3 bg-slate-50 border border-slate-200/60 rounded-lg">
-                    <Sparkles className="w-4 h-4 text-[#D1242F] shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-slate-900">Increase E-Commerce Outreach</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        CPL is 15% lower than circle average for Bengaluru and Mysuru MSME sellers.
-                      </p>
-                    </div>
-                  </li>
-
-                  <li className="flex gap-2.5 items-start p-3 bg-amber-50/50 border border-amber-200/60 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-slate-900">Email Fatigue Detected</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Open rates on sequence 3 dropped by 4% this week. Consider switching to postal desk dispatch.
-                      </p>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
+          <div className="h-[280px] w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={timeSeriesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="ipRedGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#D1242F" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#D1242F" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} />
+                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
+                  itemStyle={{ color: '#FAB52C' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="current" 
+                  stroke="#D1242F" 
+                  strokeWidth={2.5} 
+                  fillOpacity={1} 
+                  fill="url(#ipRedGradient)" 
+                  name="Volume"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="previous" 
+                  stroke="#94A3B8" 
+                  strokeWidth={1.5} 
+                  strokeDasharray="4 4"
+                  fill="transparent" 
+                  name="Baseline"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      )}
+
+        {/* Right 1 Col: Lead Source Donut Chart */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-base font-black text-slate-900">Service Breakdown</h2>
+            <span className="text-xs bg-red-50 text-[#D1242F] font-bold px-2.5 py-0.5 rounded-full border border-red-200">
+              Live Mix
+            </span>
+          </div>
+
+          <div className="relative h-[200px] w-full flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={serviceDistributionData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={80}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {serviceDistributionData.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-xl font-black text-slate-900 leading-tight">100%</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Service Mix</span>
+            </div>
+          </div>
+
+          {/* Donut Legend */}
+          <div className="space-y-1.5 pt-3 border-t border-slate-100 text-xs">
+            {serviceDistributionData.map((src: any) => (
+              <div key={src.name} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: src.color }}></span>
+                  <span className="text-slate-700 font-semibold">{src.name}</span>
+                </div>
+                <span className="font-mono font-bold text-slate-900">{src.value}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION 3: RECENT LEADS ENGAGEMENTS TABLE
+         ═══════════════════════════════════════════════════════════ */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h2 className="text-base font-black text-slate-900">Recent Lead Engagements</h2>
+            <p className="text-xs text-slate-500">Latest active leads from database matching selected division</p>
+          </div>
+          <Link
+            href="/leads"
+            className="text-xs font-bold text-[#D1242F] hover:text-[#B01E28] flex items-center gap-1 hover:underline"
+          >
+            <span>View All Leads</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="py-3.5 px-5">Lead / Exporter Name</th>
+                <th className="py-3.5 px-4">Company & Division</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4">Service</th>
+                <th className="py-3.5 px-4">Date of Meeting</th>
+                <th className="py-3.5 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+              {recentActivities.length > 0 ? (
+                recentActivities.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#1B2A4A] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                          {lead.initials}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">{lead.name}</p>
+                          <p className="text-[11px] text-slate-400">{lead.email}</p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-slate-800">{lead.company}</div>
+                      <div className="text-[11px] text-slate-500">
+                        {lead.division}
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      {lead.statusType === 'hot' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-[#D1242F] border border-red-200">
+                          <Flame className="w-3 h-3 text-[#D1242F]" /> Qualified (Hot)
+                        </span>
+                      )}
+                      {lead.statusType === 'warm' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          <Zap className="w-3 h-3 text-amber-600" /> Contacted
+                        </span>
+                      )}
+                      {lead.statusType === 'cold' && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                          <Snowflake className="w-3 h-3 text-slate-400" /> Cold Lead
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="py-3.5 px-4 font-semibold text-slate-700">
+                      {lead.source}
+                    </td>
+
+                    <td className="py-3.5 px-4 text-slate-500 font-medium">
+                      {lead.lastContact}
+                    </td>
+
+                    <td className="py-3.5 px-4 text-right relative">
+                      <button
+                        onClick={() => setActiveMenuId(activeMenuId === lead.id ? null : lead.id)}
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {activeMenuId === lead.id && (
+                        <div className="absolute right-4 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-30 text-left text-xs animate-fade-in-scale">
+                          <Link href="/leads" className="block px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-semibold">
+                            View Details
+                          </Link>
+                          <Link href="/leads" className="block px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-semibold">
+                            Schedule Call
+                          </Link>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
+                    No lead engagements found for {selectedDivision}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════
           MODAL 1: UPLOAD DATA FILE (.xlsx, .xls, .csv)
@@ -1058,7 +764,7 @@ function DashboardMainContent() {
                   <FileSpreadsheet className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Upload Leads Data</h3>
+                  <h3 className="text-base font-black text-slate-900">Upload Leads Data</h3>
                   <p className="text-xs text-slate-500">Import Excel (.xlsx, .xls) or CSV files</p>
                 </div>
               </div>
@@ -1075,7 +781,6 @@ function DashboardMainContent() {
             </div>
 
             <form onSubmit={handleFileUpload} className="mt-4 space-y-4 text-xs">
-              {/* Drag & Drop Zone */}
               <div 
                 onClick={() => fileInputRef.current?.click()}
                 className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
@@ -1114,9 +819,8 @@ function DashboardMainContent() {
                 )}
               </div>
 
-              {/* Status Message */}
               {uploadProgress !== 'idle' && (
-                <div className={`p-3 rounded-lg flex items-center gap-2 ${
+                <div className={`p-3 rounded-xl flex items-center gap-2 ${
                   uploadProgress === 'uploading' ? 'bg-blue-50 text-blue-800 border border-blue-200' :
                   uploadProgress === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
                   'bg-rose-50 text-rose-800 border border-rose-200'
@@ -1124,7 +828,7 @@ function DashboardMainContent() {
                   {uploadProgress === 'uploading' && <RefreshCw className="w-4 h-4 animate-spin text-blue-600 shrink-0" />}
                   {uploadProgress === 'success' && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
                   {uploadProgress === 'error' && <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />}
-                  <span className="font-medium text-[11px]">{uploadMessage}</span>
+                  <span className="font-semibold text-[11px]">{uploadMessage}</span>
                 </div>
               )}
 
@@ -1136,14 +840,14 @@ function DashboardMainContent() {
                     setUploadProgress('idle');
                     setUploadFile(null);
                   }}
-                  className="px-4 py-2 border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-50"
+                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!uploadFile || uploadProgress === 'uploading'}
-                  className="px-4 py-2 bg-[#D1242F] hover:bg-[#B01E28] disabled:opacity-50 text-white rounded-lg font-bold shadow-xs hover:shadow flex items-center gap-1.5"
+                  className="px-4 py-2 bg-[#D1242F] hover:bg-[#B01E28] disabled:opacity-50 text-white rounded-xl font-bold shadow-xs hover:shadow flex items-center gap-1.5"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>{uploadProgress === 'uploading' ? 'Processing...' : 'Upload & Process'}</span>
@@ -1155,119 +859,118 @@ function DashboardMainContent() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════
-          MODAL 2: CREATE NEW CAMPAIGN
+          MODAL 2: DEDUPLICATE LEADS CLEANUP
          ═══════════════════════════════════════════════════════════ */}
-      {isNewCampaignModalOpen && (
+      {isDedupModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
-                  <Megaphone className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+                  <CopyX className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900">Create New Postal Campaign</h3>
-                  <p className="text-xs text-slate-500">Launch marketing drive across Karnataka Circle</p>
+                  <h3 className="text-base font-black text-slate-900">Lead Deduplication Engine</h3>
+                  <p className="text-xs text-slate-500">Identify and clean duplicate records from database</p>
                 </div>
               </div>
               <button
-                onClick={() => setIsNewCampaignModalOpen(false)}
+                onClick={() => setIsDedupModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateCampaign} className="mt-4 space-y-3.5 text-xs">
+            <div className="mt-4 space-y-4 text-xs">
+              {/* Criteria Selector */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Campaign Title *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Q4 Festive MSME Shipping Drive"
-                  value={newCampaign.title}
-                  onChange={(e) => setNewCampaign({ ...newCampaign, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D1242F]/20 focus:border-[#D1242F]"
-                />
+                <label className="font-bold text-slate-700 block mb-1">Deduplication Criteria</label>
+                <select
+                  value={dedupCriteria}
+                  onChange={(e) => {
+                    setDedupCriteria(e.target.value);
+                    fetchDuplicateSummary(e.target.value);
+                  }}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#D1242F]/20"
+                >
+                  <option value="name_and_contact">Composite (Exporter Name + Phone Number + Email)</option>
+                  <option value="name">Exporter Name only</option>
+                  <option value="contact">Contact Phone Number only</option>
+                  <option value="email">Email Address only</option>
+                  <option value="sl_no">Sl No / Lead ID only</option>
+                </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Channel Type</label>
-                  <select
-                    value={newCampaign.type}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, type: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D1242F]/20 bg-white"
-                  >
-                    <option>Email & Letter Sequence</option>
-                    <option>Digital & LinkedIn Ads</option>
-                    <option>Field Marketing & Calling</option>
-                    <option>Circle Branch Direct Drive</option>
-                  </select>
+              {/* Scan Results Card */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-600">Total Records in CRM:</span>
+                  <span className="font-black text-slate-900 text-sm">
+                    {dedupSummary?.total_leads ? dedupSummary.total_leads.toLocaleString() : '...'}
+                  </span>
                 </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Priority Badge</label>
-                  <select
-                    value={newCampaign.badge}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, badge: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D1242F]/20 bg-white"
-                  >
-                    <option value="Hot">Hot</option>
-                    <option value="Warm">Warm</option>
-                    <option value="Cold">Cold</option>
-                  </select>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-amber-700">Detected Duplicate Records:</span>
+                  <span className="font-black text-amber-600 text-sm">
+                    {dedupSummary?.duplicate_count !== undefined ? dedupSummary.duplicate_count.toLocaleString() : '...'}
+                  </span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Target Leads</label>
-                  <input
-                    type="number"
-                    value={newCampaign.leadsTarget}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, leadsTarget: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D1242F]/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Budget Allocation</label>
-                  <input
-                    type="text"
-                    value={newCampaign.budget}
-                    onChange={(e) => setNewCampaign({ ...newCampaign, budget: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D1242F]/20"
-                  />
+                <div className="flex items-center justify-between border-t border-slate-200 pt-2">
+                  <span className="font-bold text-emerald-700">Estimated Unique Leads:</span>
+                  <span className="font-black text-emerald-700 text-sm">
+                    {dedupSummary?.unique_leads_estimate !== undefined ? dedupSummary.unique_leads_estimate.toLocaleString() : '...'}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+              {/* Success Result Banner */}
+              {dedupSuccessResult && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-emerald-800 font-bold">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{dedupSuccessResult}</span>
+                </div>
+              )}
+
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                * Note: The primary (original) lead record with the earliest entry is preserved, while all duplicate secondary entries are safely deleted.
+              </p>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsNewCampaignModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-50"
+                  onClick={() => setIsDedupModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-[#D1242F] hover:bg-[#B01E28] text-white rounded-lg font-bold shadow-xs hover:shadow"
+                  onClick={handleExecuteDeduplication}
+                  disabled={isDedupLoading || !dedupSummary || dedupSummary.duplicate_count === 0}
+                  className="px-4 py-2 bg-[#D1242F] hover:bg-[#B01E28] disabled:opacity-50 text-white rounded-xl font-bold shadow-xs hover:shadow flex items-center gap-1.5 transition-all"
                 >
-                  Launch Campaign
+                  {isDedupLoading ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {isDedupLoading ? 'Cleaning Records...' : `Clean ${dedupSummary?.duplicate_count || 0} Duplicates`}
+                  </span>
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-slate-500 font-bold">Loading Dashboard...</div>}>
+    <Suspense fallback={<div className="p-8 text-slate-500 font-bold">Loading India Post CRM Dashboard...</div>}>
       <DashboardMainContent />
     </Suspense>
   );

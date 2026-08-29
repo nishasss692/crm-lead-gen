@@ -3,6 +3,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import ChangePasswordModal from './ChangePasswordModal';
+import IndiaPostLogo from './IndiaPostLogo';
 import { 
   LayoutDashboard, 
   Users, 
@@ -13,9 +14,7 @@ import {
   Briefcase, 
   KeyRound, 
   LogOut,
-  Mail,
-  Building2,
-  Megaphone
+  Sparkles
 } from 'lucide-react';
 
 function SidebarContent() {
@@ -23,7 +22,6 @@ function SidebarContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const statusParam = searchParams.get('status');
-  const tabParam = searchParams.get('tab');
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [user, setUser] = useState<{username: string, role: string} | null>(null);
@@ -46,9 +44,7 @@ function SidebarContent() {
   const getLinkClass = (path: string, status?: string) => {
     let isActive = false;
     if (path === '/') {
-      isActive = pathname === '/' && !tabParam;
-    } else if (path === '/?tab=campaigns') {
-      isActive = pathname === '/' && tabParam === 'campaigns';
+      isActive = pathname === '/';
     } else if (path === '/leads') {
       isActive = pathname === '/leads' && (statusParam === status || (!statusParam && !status));
     }
@@ -63,37 +59,21 @@ function SidebarContent() {
   return (
     <>
       {/* Brand Header */}
-      <div className="p-5 border-b border-white/10 flex items-center gap-3.5">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #D1242F, #B01E28)' }}>
-          <span>IP</span>
-          <div className="absolute -bottom-1.5 -right-1.5 w-5 h-5 bg-[#F7941D] rounded-full opacity-70"></div>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-white font-extrabold text-sm leading-tight tracking-wide">India Post CRM</span>
-          <span className="text-[#FAB52C] font-semibold text-xs leading-tight tracking-wider uppercase mt-0.5">Karnataka Circle</span>
-        </div>
+      <div className="p-4 border-b border-white/10">
+        <IndiaPostLogo size="sm" variant="compact" textColor="light" />
       </div>
       
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-6 custom-scrollbar">
         <div>
           <div className="px-3 mb-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
-            Pipeline Analytics
+            Executive Analytics
           </div>
           <ul className="space-y-1">
             <li>
               <Link href="/" className={getLinkClass('/')}>
-                <LayoutDashboard className="w-4 h-4 mr-3 shrink-0" />
-                <span className="text-sm">Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/?tab=campaigns" className={getLinkClass('/?tab=campaigns')}>
-                <Megaphone className="w-4 h-4 mr-3 shrink-0 text-[#F7941D]" />
-                <span className="text-sm">Campaigns</span>
-                <span className="ml-auto text-[9px] bg-[#F7941D]/20 text-[#FAB52C] border border-[#F7941D]/30 px-1.5 py-0.2 rounded-full font-bold">
-                  Active
-                </span>
+                <LayoutDashboard className="w-4 h-4 mr-3 shrink-0 text-[#FAB52C]" />
+                <span className="text-sm">Overview Dashboard</span>
               </Link>
             </li>
           </ul>
@@ -104,6 +84,12 @@ function SidebarContent() {
             Lead Management
           </div>
           <ul className="space-y-1">
+            <li>
+              <Link href="/leads" className={getLinkClass('/leads')}>
+                <Users className="w-4 h-4 mr-3 shrink-0 text-slate-300" />
+                <span className="text-sm">All Leads Directory</span>
+              </Link>
+            </li>
             <li>
               <Link href="/leads?status=pending" className={getLinkClass('/leads', 'pending')}>
                 <Users className="w-4 h-4 mr-3 shrink-0 text-amber-400" />
@@ -151,8 +137,8 @@ function SidebarContent() {
             {user?.username?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-white capitalize truncate">{user?.username || 'User'}</p>
-            <p className="text-xs text-slate-400 font-medium truncate">{user?.role ? `${user.role} Officer` : 'Officer'}</p>
+            <p className="text-sm font-bold text-white capitalize truncate">{user?.username || 'Officer'}</p>
+            <p className="text-xs text-slate-400 font-medium truncate">{user?.role ? `${user.role} Officer` : 'Authorized Officer'}</p>
           </div>
         </div>
         

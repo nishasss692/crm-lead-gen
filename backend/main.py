@@ -2,17 +2,18 @@ from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status, B
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, func
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 import pandas as pd
 import io
+import re
 import jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-
+from typing import Optional, List
 
 # 1. Setup
-app = FastAPI()
+app = FastAPI(title="India Post Lead Management API", version="2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,17 +34,17 @@ class Lead(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     sl_no = Column(String, nullable=True)
-    exporter_name = Column(String, nullable=True)
+    exporter_name = Column(String, nullable=True, index=True)
     address = Column(String, nullable=True)
     pincode = Column(String, nullable=True)
     division_id = Column(String, nullable=True)
-    division = Column(String, nullable=True)
-    region = Column(String, nullable=True)
+    division = Column(String, nullable=True, index=True)
+    region = Column(String, nullable=True, index=True)
     assigned_agent = Column(String, nullable=True)
     date_of_meeting = Column(String, nullable=True)
     customer_met = Column(String, nullable=True)
-    contact_number = Column(String, nullable=True)
-    email = Column(String, nullable=True)
+    contact_number = Column(String, nullable=True, index=True)
+    email = Column(String, nullable=True, index=True)
     service_using = Column(String, nullable=True)
     monthly_volume = Column(String, nullable=True)
     meeting_outcome = Column(String, nullable=True)
@@ -60,95 +61,7 @@ class User(Base):
     region = Column(String, nullable=True)
     division = Column(String, nullable=True)
 
-class Campaign(Base):
-    __tablename__ = "campaigns"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    type = Column(String, nullable=False)
-    badge = Column(String, default="Hot")
-    reach = Column(String, default="10,000")
-    leads_target = Column(Integer, default=500)
-    budget = Column(String, default="₹ 25,000")
-    leads_gen = Column(Integer, default=0)
-    status = Column(String, default="Active")
-    metric1_label = Column(String, default="Sent")
-    metric1_val = Column(String, default="45,200")
-    metric2_label = Column(String, default="Open Rate")
-    metric2_val = Column(String, default="24.8%")
-    metric3_label = Column(String, default="Click Rate")
-    metric3_val = Column(String, default="3.2%")
-    created_at = Column(String, default=lambda: datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
-
 Base.metadata.create_all(bind=engine)
-
-# Seed default campaigns if empty
-def seed_default_campaigns():
-    db = SessionLocal()
-    try:
-        if db.query(Campaign).count() == 0:
-            defaults = [
-                Campaign(
-                    title="Q3 Speed Post Corporate Outreach",
-                    type="Email & Letter Sequence",
-                    badge="Hot",
-                    reach="45,200",
-                    leads_target=1500,
-                    budget="₹ 35,000",
-                    leads_gen=1450,
-                    status="Active",
-                    metric1_label="Sent", metric1_val="45,200",
-                    metric2_label="Open Rate", metric2_val="24.8%",
-                    metric3_label="Click Rate", metric3_val="3.2%"
-                ),
-                Campaign(
-                    title="E-Commerce Logistics Decision Makers",
-                    type="Digital & LinkedIn Targeting",
-                    badge="Warm",
-                    reach="128.5K",
-                    leads_target=1000,
-                    budget="₹ 12,400",
-                    leads_gen=890,
-                    status="Active",
-                    metric1_label="Impressions", metric1_val="128.5K",
-                    metric2_label="CTR", metric2_val="1.8%",
-                    metric3_label="Spend", metric3_val="₹ 12,400"
-                ),
-                Campaign(
-                    title="Enterprise Outbound Parcel Drive",
-                    type="Field Marketing & Calling",
-                    badge="Cold",
-                    reach="4,200",
-                    leads_target=300,
-                    budget="₹ 18,000",
-                    leads_gen=210,
-                    status="Active",
-                    metric1_label="Calls Made", metric1_val="4,200",
-                    metric2_label="Connect Rate", metric2_val="12.5%",
-                    metric3_label="Meetings", metric3_val="84"
-                ),
-                Campaign(
-                    title="Postal Life Insurance MSME Drive",
-                    type="Circle Branch Marketing",
-                    badge="Hot",
-                    reach="18,500",
-                    leads_target=800,
-                    budget="₹ 22,000",
-                    leads_gen=640,
-                    status="Active",
-                    metric1_label="Brochures", metric1_val="18,500",
-                    metric2_label="Inquiries", metric2_val="1,240",
-                    metric3_label="Conversion", metric3_val="28.4%"
-                )
-            ]
-            db.add_all(defaults)
-            db.commit()
-    except Exception as e:
-        print("Campaign seed error:", e)
-    finally:
-        db.close()
-
-seed_default_campaigns()
 
 # 2.5 Auth Setup
 SECRET_KEY = "super-secret-key-for-dev"
@@ -227,7 +140,7 @@ def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db
     db.commit()
     return {"success": True, "message": "Password updated successfully"}
 
-# 3. The Upload Endpoint (Supports Excel & CSV)
+# 3. File Upload Endpoint (Excel & CSV)
 @app.post("/api/upload-excel")
 async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_db)):
     filename = file.filename.lower()
@@ -259,7 +172,7 @@ async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_d
         
         leads_to_insert = []
         for _, row in df.iterrows():
-            lead_data = {col: row[col] for col in db_cols}
+            lead_data = {col: str(row[col]).strip() for col in db_cols}
             leads_to_insert.append(Lead(**lead_data))
             
         db.bulk_save_objects(leads_to_insert)
@@ -271,76 +184,7 @@ async def upload_excel(file: UploadFile = File(...), db: Session = Depends(get_d
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error parsing file: {str(e)}")
 
-# Campaign Models & Endpoints
-class CampaignCreate(BaseModel):
-    title: str
-    type: str
-    badge: str = "Hot"
-    reach: str = "10,000"
-    leads_target: int = 500
-    budget: str = "₹ 25,000"
-
-@app.get("/api/campaigns")
-def get_campaigns(db: Session = Depends(get_db)):
-    campaigns = db.query(Campaign).order_by(Campaign.id.desc()).all()
-    return [
-        {
-            "id": c.id,
-            "title": c.title,
-            "type": c.type,
-            "icon": "mail" if "Email" in c.type or "Letter" in c.type else "call" if "Call" in c.type else "campaign",
-            "badge": c.badge,
-            "metric1": {"label": c.metric1_label, "value": c.metric1_val},
-            "metric2": {"label": c.metric2_label, "value": c.metric2_val},
-            "metric3": {"label": c.metric3_label, "value": c.metric3_val},
-            "leadsGen": c.leads_gen,
-            "status": c.status,
-            "created_at": c.created_at
-        }
-        for c in campaigns
-    ]
-
-@app.post("/api/campaigns")
-def create_campaign(campaign: CampaignCreate, db: Session = Depends(get_db)):
-    new_camp = Campaign(
-        title=campaign.title,
-        type=campaign.type,
-        badge=campaign.badge,
-        reach=campaign.reach,
-        leads_target=campaign.leads_target,
-        budget=campaign.budget,
-        leads_gen=0,
-        status="Active",
-        metric1_label="Reach", metric1_val=campaign.reach,
-        metric2_label="Target Leads", metric2_val=str(campaign.leads_target),
-        metric3_label="Budget", metric3_val=campaign.budget
-    )
-    db.add(new_camp)
-    db.commit()
-    db.refresh(new_camp)
-    return {
-        "id": new_camp.id,
-        "title": new_camp.title,
-        "type": new_camp.type,
-        "icon": "mail" if "Email" in new_camp.type or "Letter" in new_camp.type else "call" if "Call" in new_camp.type else "campaign",
-        "badge": new_camp.badge,
-        "metric1": {"label": new_camp.metric1_label, "value": new_camp.metric1_val},
-        "metric2": {"label": new_camp.metric2_label, "value": new_camp.metric2_val},
-        "metric3": {"label": new_camp.metric3_label, "value": new_camp.metric3_val},
-        "leadsGen": new_camp.leads_gen,
-        "status": new_camp.status
-    }
-
-@app.delete("/api/campaigns/{campaign_id}")
-def delete_campaign(campaign_id: int, db: Session = Depends(get_db)):
-    camp = db.query(Campaign).filter(Campaign.id == campaign_id).first()
-    if not camp:
-        raise HTTPException(status_code=404, detail="Campaign not found")
-    db.delete(camp)
-    db.commit()
-    return {"success": True}
-
-# 4. Data Endpoints
+# 4. RBAC Filter
 def apply_rbac_filter(query, user: User):
     if user.role == "CO":
         pass # sees everything
@@ -352,33 +196,36 @@ def apply_rbac_filter(query, user: User):
         query = query.filter(Lead.region == user.region, Lead.division == user.division)
     return query
 
+# 5. Lead Data Endpoints
 @app.get("/api/leads")
-def get_leads(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_leads(division_name: str = "", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     query = db.query(Lead)
     query = apply_rbac_filter(query, current_user)
-    return query.all()
+    if division_name and division_name != "All Divisions":
+        query = query.filter(Lead.division == division_name)
+    return query.order_by(Lead.id.desc()).all()
 
 @app.get("/api/divisions")
 def get_divisions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     query = db.query(Lead.division)
-    # Even if they ask for divisions, they should only see ones they have access to
     query = apply_rbac_filter(query, current_user)
     divisions = query.distinct().all()
-    return [div[0] for div in divisions if div[0] and div[0] != ""]
+    div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none']]
+    return sorted(list(set(div_list)))
 
+# 6. Comprehensive Analytics Endpoint for Dashboard
 @app.get("/api/analytics")
-def get_analytics(division_name: str = "", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_analytics(division_name: str = "", timeframe: str = "Last 30 Days", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     query = db.query(Lead)
     query = apply_rbac_filter(query, current_user)
     
-    if division_name:
+    if division_name and division_name != "All Divisions":
         query = query.filter(Lead.division == division_name)
     
     leads = query.all()
-    
     total = len(leads)
     
-    # Calculate metrics based on meeting_outcome and contract_id
+    # Status metrics
     contact_pending = 0
     contacted = 0
     interested = 0
@@ -388,76 +235,162 @@ def get_analytics(division_name: str = "", db: Session = Depends(get_db), curren
     onboarded = 0
     onboard_pending = 0
     
+    # Aggregation containers
     meetings_over_time = {}
+    division_map = {}
+    service_map = {}
     agents = {}
+    monthly_pipeline_est = 0
     
+    SERVICE_COLORS = {
+        "speed post b2b": "#D1242F",
+        "speed post": "#D1242F",
+        "business parcel": "#F7941D",
+        "parcel": "#F7941D",
+        "direct portal": "#1B2A4A",
+        "portal": "#1B2A4A",
+        "circle referrals": "#2E7D32",
+        "referral": "#2E7D32",
+        "postal life insurance": "#0284C7",
+        "pli": "#0284C7",
+        "logistics post": "#9333EA",
+        "express parcel": "#E11D48",
+        "retail post": "#D97706",
+        "other": "#64748B"
+    }
+
     for lead in leads:
         outcome = (lead.meeting_outcome or "").strip().lower()
-        has_contract = bool((lead.contract_id or "").strip())
+        has_contract = bool((lead.contract_id or "").strip() and (lead.contract_id or "").strip().lower() not in ['nan', 'none'])
+        div_name = (lead.division or "Unassigned").strip()
+        if not div_name or div_name.lower() in ['nan', 'none']:
+            div_name = "Other Circle"
+            
+        service_name = (lead.service_using or "Speed Post B2B").strip()
+        if not service_name or service_name.lower() in ['nan', 'none']:
+            service_name = "Speed Post B2B"
         
-        if not outcome:
+        # Parse volume for pipeline valuation
+        vol_str = (lead.monthly_volume or "").strip()
+        try:
+            # Extract digits
+            nums = re.findall(r'\d+', vol_str.replace(',', ''))
+            if nums:
+                monthly_pipeline_est += int(nums[0]) * 120 # rough valuation factor per piece/volume
+            else:
+                monthly_pipeline_est += 2500
+        except Exception:
+            monthly_pipeline_est += 2500
+            
+        # Meeting Outcome categorization
+        if not outcome or outcome in ['nan', 'none', 'pending']:
             contact_pending += 1
         else:
             contacted += 1
             
-        if outcome == "positive":
+        if "positive" in outcome or "interested" in outcome:
             interested += 1
             if not has_contract:
                 willing += 1
-        elif outcome == "not interested":
+        elif "not interested" in outcome or "rejected" in outcome:
             not_interested += 1
-        elif outcome == "followup":
+        elif "follow" in outcome or "warm" in outcome:
             follow_up += 1
             
-        if has_contract:
+        if has_contract or "onboard" in outcome:
             onboarded += 1
         else:
             onboard_pending += 1
             
+        # Division Aggregation for Bar Chart
+        if div_name not in division_map:
+            division_map[div_name] = {"division": div_name, "total": 0, "contacted": 0, "interested": 0, "onboarded": 0, "pending": 0}
+        division_map[div_name]["total"] += 1
+        if outcome and outcome not in ['nan', 'none', 'pending']:
+            division_map[div_name]["contacted"] += 1
+        if "positive" in outcome or "interested" in outcome:
+            division_map[div_name]["interested"] += 1
+        if has_contract or "onboard" in outcome:
+            division_map[div_name]["onboarded"] += 1
+        else:
+            division_map[div_name]["pending"] += 1
+            
+        # Service Distribution for Donut Chart
+        service_clean = service_name.title()
+        service_map[service_clean] = service_map.get(service_clean, 0) + 1
+
+        # Agent performance
         agent_name = (lead.assigned_agent or "Unassigned").strip()
-        if not agent_name or agent_name == "nan":
+        if not agent_name or agent_name.lower() in ["nan", "none"]:
             agent_name = "Unassigned"
         if agent_name not in agents:
             agents[agent_name] = {"leads": 0, "contacted": 0, "converted": 0}
         agents[agent_name]["leads"] += 1
-        if outcome and outcome not in ["nan", "none"]:
+        if outcome and outcome not in ["nan", "none", "pending"]:
             agents[agent_name]["contacted"] += 1
-        if has_contract:
+        if has_contract or "onboard" in outcome:
             agents[agent_name]["converted"] += 1
             
+        # Temporal series
         date_str = lead.date_of_meeting
         if date_str:
             date_clean = str(date_str).strip().split(' ')[0]
             if date_clean and date_clean not in ['nan', 'None', '', 'NaT']:
                 meetings_over_time[date_clean] = meetings_over_time.get(date_clean, 0) + 1
-            
-    contacted_rate = round((contacted / total * 100) if total > 0 else 0, 2)
-    onboarding_rate = round((onboarded / total * 100) if total > 0 else 0, 2)
-    
-    agent_performance = []
-    for agent, stats in agents.items():
-        rate = round((stats["converted"] / stats["leads"] * 100) if stats["leads"] > 0 else 0, 2)
-        agent_performance.append({
-            "name": agent,
-            "leads": stats["leads"],
-            "contacted": stats["contacted"],
-            "converted": stats["converted"],
-            "conversion_rate": rate
-        })
-    agent_performance.sort(key=lambda x: x["converted"], reverse=True)
 
+    contacted_rate = round((contacted / total * 100) if total > 0 else 0, 1)
+    onboarding_rate = round((onboarded / total * 100) if total > 0 else 0, 1)
+    
+    # Division Performance List (sorted by total descending)
+    division_performance = list(division_map.values())
+    division_performance.sort(key=lambda x: x["total"], reverse=True)
+    # Take top 8 divisions for optimal chart readability
+    top_division_performance = division_performance[:10]
+
+    # Service Distribution formatting
+    service_distribution = []
+    for s_name, count in sorted(service_map.items(), key=lambda x: x[1], reverse=True):
+        pct = round((count / total * 100) if total > 0 else 0, 1)
+        color = SERVICE_COLORS.get(s_name.lower(), "#F7941D")
+        service_distribution.append({
+            "name": s_name,
+            "count": count,
+            "value": pct,
+            "color": color
+        })
+        
+    if not service_distribution:
+        service_distribution = [
+            {"name": "Speed Post B2B", "count": 45, "value": 45, "color": "#D1242F"},
+            {"name": "Business Parcel", "count": 30, "value": 30, "color": "#F7941D"},
+            {"name": "Direct Portal", "count": 15, "value": 15, "color": "#1B2A4A"},
+            {"name": "Circle Referrals", "count": 10, "value": 10, "color": "#2E7D32"}
+        ]
+
+    # Time series formatting
     try:
         time_series = [{"date": k, "meetings": v} for k, v in sorted(meetings_over_time.items())]
-    except:
+    except Exception:
         time_series = [{"date": k, "meetings": v} for k, v in meetings_over_time.items()]
+        
+    # Format pipeline value in INR Crores / Lakhs
+    if monthly_pipeline_est >= 10000000:
+        pipeline_formatted = f"₹ {(monthly_pipeline_est / 10000000):.2f} Cr"
+    elif monthly_pipeline_est >= 100000:
+        pipeline_formatted = f"₹ {(monthly_pipeline_est / 100000):.2f} L"
+    else:
+        pipeline_formatted = f"₹ {monthly_pipeline_est:,}"
 
-    funnel = [
-        {"stage": "Total Leads", "value": total},
-        {"stage": "Contacted", "value": contacted},
-        {"stage": "Interested", "value": interested},
-        {"stage": "Onboarded", "value": onboarded}
+    # Outcome breakdown for Bar/Summary charts
+    outcome_breakdown = [
+        {"status": "Contact Pending", "count": contact_pending, "color": "#F59E0B"},
+        {"status": "Contacted", "count": contacted, "color": "#3B82F6"},
+        {"status": "Interested", "count": interested, "color": "#10B981"},
+        {"status": "Follow-up", "count": follow_up, "color": "#F97316"},
+        {"status": "Onboarded", "count": onboarded, "color": "#06B6D4"},
+        {"status": "Not Interested", "count": not_interested, "color": "#94A3B8"}
     ]
-    
+
     return {
         "total_leads": total,
         "contact_pending": contact_pending,
@@ -470,12 +403,153 @@ def get_analytics(division_name: str = "", db: Session = Depends(get_db), curren
         "onboard_pending": onboard_pending,
         "contacted_rate": contacted_rate,
         "onboarding_rate": onboarding_rate,
+        "pipeline_value": pipeline_formatted,
+        "pipeline_raw": monthly_pipeline_est,
         "time_series": time_series,
-        "funnel": funnel,
-        "agent_performance": agent_performance
+        "division_performance": top_division_performance,
+        "service_distribution": service_distribution,
+        "outcome_breakdown": outcome_breakdown,
+        "agent_performance": [
+            {
+                "name": agent,
+                "leads": stats["leads"],
+                "contacted": stats["contacted"],
+                "converted": stats["converted"],
+                "conversion_rate": round((stats["converted"] / stats["leads"] * 100) if stats["leads"] > 0 else 0, 1)
+            }
+            for agent, stats in sorted(agents.items(), key=lambda x: x[1]["converted"], reverse=True)
+        ]
     }
 
-# Extra: Included for compatibility if frontend uses it
+# 7. Deduplication Endpoints
+def normalize_string(text: Optional[str]) -> str:
+    if not text:
+        return ""
+    cleaned = str(text).strip().lower()
+    if cleaned in ['nan', 'none', 'null', 'n/a', '']:
+        return ""
+    return re.sub(r'[^a-z0-9]', '', cleaned)
+
+def normalize_phone(phone: Optional[str]) -> str:
+    if not phone:
+        return ""
+    digits = re.sub(r'\D', '', str(phone))
+    if len(digits) == 12 and digits.startswith('91'):
+        digits = digits[2:]
+    return digits if len(digits) >= 8 else ""
+
+@app.get("/api/leads/duplicates-summary")
+def get_duplicates_summary(criteria: str = "name_and_contact", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    query = db.query(Lead)
+    query = apply_rbac_filter(query, current_user)
+    leads = query.order_by(Lead.id.asc()).all()
+    
+    seen_keys = set()
+    duplicate_lead_ids = set()
+    
+    for lead in leads:
+        norm_name = normalize_string(lead.exporter_name)
+        norm_phone = normalize_phone(lead.contact_number)
+        norm_email = normalize_string(lead.email)
+        norm_sl = normalize_string(lead.sl_no)
+        
+        key = None
+        if criteria == "name":
+            if norm_name:
+                key = f"name:{norm_name}"
+        elif criteria == "contact":
+            if norm_phone:
+                key = f"phone:{norm_phone}"
+        elif criteria == "email":
+            if norm_email and len(norm_email) > 4:
+                key = f"email:{norm_email}"
+        elif criteria == "sl_no":
+            if norm_sl:
+                key = f"sl:{norm_sl}"
+        else: # default: name_and_contact composite
+            if norm_name:
+                key = f"name:{norm_name}"
+            elif norm_phone:
+                key = f"phone:{norm_phone}"
+            elif norm_email and len(norm_email) > 4:
+                key = f"email:{norm_email}"
+                
+        if key:
+            if key in seen_keys:
+                duplicate_lead_ids.add(lead.id)
+            else:
+                seen_keys.add(key)
+
+    return {
+        "total_leads": len(leads),
+        "duplicate_count": len(duplicate_lead_ids),
+        "unique_leads_estimate": len(leads) - len(duplicate_lead_ids),
+        "criteria": criteria
+    }
+
+class DeduplicateRequest(BaseModel):
+    criteria: Optional[str] = "name_and_contact" # "name_and_contact", "name", "contact", "email", "sl_no"
+
+@app.post("/api/leads/deduplicate")
+def deduplicate_leads(req: DeduplicateRequest = Body(default=DeduplicateRequest()), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    query = db.query(Lead)
+    query = apply_rbac_filter(query, current_user)
+    leads = query.order_by(Lead.id.asc()).all()
+    
+    seen_keys = set()
+    to_delete_ids = []
+    
+    criteria = req.criteria or "name_and_contact"
+    
+    for lead in leads:
+        norm_name = normalize_string(lead.exporter_name)
+        norm_phone = normalize_phone(lead.contact_number)
+        norm_email = normalize_string(lead.email)
+        norm_sl = normalize_string(lead.sl_no)
+        
+        key = None
+        if criteria == "name":
+            if norm_name:
+                key = f"name:{norm_name}"
+        elif criteria == "contact":
+            if norm_phone:
+                key = f"phone:{norm_phone}"
+        elif criteria == "email":
+            if norm_email and len(norm_email) > 4:
+                key = f"email:{norm_email}"
+        elif criteria == "sl_no":
+            if norm_sl:
+                key = f"sl:{norm_sl}"
+        else: # default: name_and_contact composite
+            if norm_name:
+                key = f"name:{norm_name}"
+            elif norm_phone:
+                key = f"phone:{norm_phone}"
+            elif norm_email and len(norm_email) > 4:
+                key = f"email:{norm_email}"
+        
+        if key:
+            if key in seen_keys:
+                to_delete_ids.append(lead.id)
+            else:
+                seen_keys.add(key)
+                
+    if to_delete_ids:
+        # Delete duplicate leads in batch
+        db.query(Lead).filter(Lead.id.in_(to_delete_ids)).delete(synchronize_session=False)
+        db.commit()
+        
+    remaining_count = db.query(Lead).count()
+    
+    return {
+        "success": True,
+        "removed_count": len(to_delete_ids),
+        "remaining_count": remaining_count,
+        "criteria_used": criteria,
+        "message": f"Successfully removed {len(to_delete_ids)} duplicate records. {remaining_count} unique leads remaining."
+    }
+
+# 8. Single Lead Update Endpoint
 @app.patch("/api/leads/{lead_id}")
 async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
@@ -487,7 +561,10 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
         "contactNumber": "contact_number",
         "serviceUsing": "service_using",
         "monthlyVolume": "monthly_volume",
-        "meetingOutcome": "meeting_outcome"
+        "meetingOutcome": "meeting_outcome",
+        "contractId": "contract_id",
+        "assignedAgent": "assigned_agent",
+        "remarks": "remarks"
     }
     
     for key, value in data.items():
@@ -496,4 +573,4 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
             setattr(lead, db_key, str(value) if value is not None else "")
             
     db.commit()
-    return {"success": True}
+    return {"success": True, "message": "Lead updated successfully"}
