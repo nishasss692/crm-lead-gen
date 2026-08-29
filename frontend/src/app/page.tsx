@@ -315,16 +315,11 @@ function DashboardMainContent() {
   };
 
   // KPI calculations
-  const totalLeads = analytics?.total_leads ? analytics.total_leads.toLocaleString() : '1,108';
-  const pendingLeads = analytics?.contact_pending ? analytics.contact_pending.toLocaleString() : '1,103';
-  const contactedLeads = analytics?.contacted ? analytics.contacted.toLocaleString() : '5';
-  const interestedLeads = analytics?.interested ? analytics.interested.toLocaleString() : '5';
-  const notInterestedLeads = analytics?.not_interested !== undefined ? analytics.not_interested.toLocaleString() : '0';
-  const willingLeads = analytics?.willing_to_onboard ? analytics.willing_to_onboard.toLocaleString() : '5';
-  const onboardedLeads = analytics?.onboarded ? analytics.onboarded.toLocaleString() : '1';
-  const onboardPendingLeads = analytics?.onboard_pending ? analytics.onboard_pending.toLocaleString() : '4';
-  const contactedRate = analytics?.contacted_rate !== undefined ? `${analytics.contacted_rate}%` : '0.45%';
-  const onboardingRate = analytics?.onboarding_rate !== undefined ? `${analytics.onboarding_rate}%` : '0.09%';
+  const totalLeads = analytics?.total_leads ? analytics.total_leads.toLocaleString() : '0';
+  const pendingLeads = analytics?.contact_pending ? analytics.contact_pending.toLocaleString() : '0';
+  const contactedLeads = analytics?.contacted ? analytics.contacted.toLocaleString() : '0';
+  const onboardedLeads = analytics?.onboarded ? analytics.onboarded.toLocaleString() : '0';
+  const conversionRate = analytics?.onboarding_rate !== undefined ? `${analytics.onboarding_rate}%` : '0.0%';
   const pipelineValue = analytics?.pipeline_value || '₹ 0';
   const healthScore = analytics?.data_health?.score || 94.2;
 
@@ -336,73 +331,110 @@ function DashboardMainContent() {
   const funnelStages = analytics?.funnel_stages || [];
   const dataQualityItems = analytics?.data_health?.quality_items || [];
 
-  // Distribution chart data
-  const statusChartData = [
-    { name: 'Contacted', count: analytics?.contacted || 5, fill: '#6ba4e8' },
-    { name: 'Interested', count: analytics?.interested || 5, fill: '#5bb286' },
-    { name: 'Not Willing', count: analytics?.not_interested || 0, fill: '#cbd5e1' },
-    { name: 'Willing to Onboard', count: analytics?.willing_to_onboard || 5, fill: '#a78bfa' },
-    { name: 'Onboarded', count: analytics?.onboarded || 1, fill: '#1e5631' },
-    { name: 'Onboard Pending', count: analytics?.onboard_pending || 4, fill: '#e29b47' },
-  ];
-
   return (
-    <div className="p-4 md:p-6 max-w-[1650px] mx-auto space-y-5 animate-fade-in-up">
+    <div className="p-4 md:p-8 max-w-[1650px] mx-auto space-y-6 animate-fade-in-up">
       
       {/* ═══════════════════════════════════════════════════════════
-          QUICK ACTIONS & CIRCLE FILTER TOOLBAR
+          TOP HEADER & VERIFIED CREDENTIALS CONTROL BAR
          ═══════════════════════════════════════════════════════════ */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 px-4 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-700">Filter Division:</span>
-          <div className="relative min-w-[180px]">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1B2A4A] to-[#D1242F] text-white flex items-center justify-center shrink-0 shadow-md shadow-red-950/20">
+            <ShieldCheck className="w-6 h-6 text-[#FAB52C]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <BadgeCheck className="w-3 h-3 text-emerald-600" />
+                Verified Commercial Circle
+              </span>
+              <span className="text-xs font-bold text-slate-400">•</span>
+              <span className="text-xs font-bold text-slate-500">
+                Officer: <strong className="text-slate-800">{currentUser?.username || 'co_user'}</strong> ({currentUser?.role || 'CO'} Clearance)
+              </span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-[#1B2A4A] tracking-tight">
+              India Post Commercial Intelligence Dashboard
+            </h1>
+            <p className="text-xs md:text-sm text-slate-500 mt-0.5">
+              Statistical postal pipeline computation, verified lead credentials, and division performance metrics.
+            </p>
+          </div>
+        </div>
+
+        {/* Action Controls & Filters */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Strict Data Quality Toggle */}
+          <button
+            onClick={() => handleToggleValidData(!onlyValidData)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+              onlyValidData 
+                ? 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-xs' 
+                : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+            }`}
+            title="Toggle Strict Verified Credentials Filter"
+          >
+            <ShieldCheck className={`w-4 h-4 ${onlyValidData ? 'text-emerald-600' : 'text-slate-400'}`} />
+            <span>{onlyValidData ? 'Verified Data Only (Strict)' : 'All Raw Data'}</span>
+            <span className={`w-2 h-2 rounded-full ${onlyValidData ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+          </button>
+
+          {/* Division Filter Dropdown */}
+          <div className="relative min-w-[165px]">
             <select
               value={selectedDivision}
               onChange={(e) => handleDivisionChange(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-200 hover:border-[#D1242F] rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer transition-colors"
+              className="w-full appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer transition-colors"
             >
               <option value="All Divisions">🏢 All Circle Divisions</option>
               {divisionsList.map((div) => (
                 <option key={div} value={div}>{div} Division</option>
               ))}
             </select>
-            <Filter className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          <button
-            onClick={() => handleToggleValidData(!onlyValidData)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-              onlyValidData 
-                ? 'bg-emerald-50 text-emerald-900 border-emerald-300' 
-                : 'bg-slate-100 text-slate-600 border-slate-200'
-            }`}
-          >
-            <ShieldCheck className={`w-3.5 h-3.5 ${onlyValidData ? 'text-emerald-600' : 'text-slate-400'}`} />
-            <span>{onlyValidData ? 'Verified Only' : 'All Data'}</span>
-          </button>
-        </div>
+          {/* Timeframe Select */}
+          <div className="relative">
+            <select
+              value={timeframe}
+              onChange={(e) => {
+                setTimeframe(e.target.value);
+                loadDashboardData(selectedDivision, onlyValidData);
+              }}
+              className="appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer"
+            >
+              <option>Last 30 Days</option>
+              <option>This Quarter</option>
+              <option>Year to Date</option>
+            </select>
+            <Calendar className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
 
-        <div className="flex items-center gap-2">
+          {/* Deduplicate Clean Button */}
           <button
             onClick={handleOpenDedupModal}
-            className="flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+            className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
             title="Scan and eliminate duplicate leads"
           >
             <CopyX className="w-3.5 h-3.5 text-amber-700" />
-            <span>Deduplicate</span>
+            <span>Clean Duplicates</span>
           </button>
 
+          {/* Upload Data File Button */}
           <button
             onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-1 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all group"
+            className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all group"
+            title="Upload Excel or CSV data file"
           >
-            <Upload className="w-3.5 h-3.5 text-[#FAB52C]" />
-            <span>Upload CSV</span>
+            <Upload className="w-3.5 h-3.5 text-[#FAB52C] group-hover:scale-110 transition-transform" />
+            <span>Upload File</span>
           </button>
 
+          {/* Export CSV Button */}
           <button
             onClick={handleExport}
-            className="flex items-center gap-1 bg-[#D1242F] hover:bg-[#B01E28] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+            className="flex items-center gap-1.5 bg-[#D1242F] hover:bg-[#B01E28] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export</span>
@@ -411,270 +443,101 @@ function DashboardMainContent() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          SECTION 1: PIPELINE HEALTH HERO BANNER (Matches Screenshot)
+          SECTION: CALCULATED KPI HERO METRICS
          ═══════════════════════════════════════════════════════════ */}
-      <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-6 shadow-xs relative">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          {/* Left Title & Description */}
-          <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
-              PIPELINE HEALTH
-            </span>
-            <h2 
-              className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mt-1"
-              style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-            >
-              Lead Management, at a glance.
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Prioritize follow-ups, understand conversion, and keep onboarding moving.
-            </p>
-          </div>
-
-          {/* Right Rates: Contacted rate & Onboarding rate */}
-          <div className="flex items-center gap-8 shrink-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Total Verified Leads */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-bl-full pointer-events-none"></div>
+          <div className="flex justify-between items-start">
             <div>
-              <span className="text-xs font-medium text-slate-600 block">Contacted rate</span>
-              <div 
-                className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight"
-                style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-              >
-                {contactedRate}
-              </div>
-              <span className="text-[10px] text-slate-400 font-medium">Contacted ÷ total leads</span>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Verified Leads</span>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Authenticated corporate entities</p>
             </div>
-
-            <div>
-              <span className="text-xs font-medium text-slate-600 block">Onboarding rate</span>
-              <div 
-                className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight"
-                style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-              >
-                {onboardingRate}
-              </div>
-              <span className="text-[10px] text-slate-400 font-medium">Onboarded ÷ total leads</span>
+            <div className="w-9 h-9 rounded-xl bg-red-50 text-[#D1242F] flex items-center justify-center group-hover:bg-[#D1242F] group-hover:text-white transition-colors shadow-xs">
+              <Users className="w-4 h-4" />
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 2: 8 METRICS CARDS ROW (Matches Screenshot)
-         ═══════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        {/* 1. Total leads */}
-        <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-4 text-center relative shadow-xs hover:shadow-md transition-all">
-          <span className="w-2 h-2 rounded-full bg-slate-700 absolute top-2.5 right-2.5"></span>
-          <span className="text-xs font-bold text-slate-800 block">Total leads</span>
-          <div 
-            className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5"
-            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-          >
-            {totalLeads}
-          </div>
-        </div>
-
-        {/* 2. Contact pending */}
-        <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-4 text-center relative shadow-xs hover:shadow-md transition-all">
-          <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2.5 right-2.5"></span>
-          <span className="text-xs font-bold text-slate-800 block">Contact pending</span>
-          <div 
-            className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5"
-            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-          >
-            {pendingLeads}
-          </div>
-        </div>
-
-        {/* 3. Contacted */}
-        <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-4 text-center relative shadow-xs hover:shadow-md transition-all">
-          <span className="w-2 h-2 rounded-full bg-sky-500 absolute top-2.5 right-2.5"></span>
-          <span className="text-xs font-bold text-slate-800 block">Contacted</span>
-          <div 
-            className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5"
-            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-          >
-            {contactedLeads}
-          </div>
-        </div>
-
-        {/* 4. Interested */}
-        <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-4 text-center relative shadow-xs hover:shadow-md transition-all">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 absolute top-2.5 right-2.5"></span>
-          <span className="text-xs font-bold text-slate-800 block">Interested</span>
-          <div 
-            className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5"
-            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-          >
-            {interestedLeads}
-          </div>
-        </div>
-
-        {/* 5. Not interested */}
-        <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-4 text-center relative shadow-xs hover:shadow-md transition-all">
-          <span className="w-2 h-2 rounded-full bg-slate-400 absolute top-2.5 right-2.5"></span>
-          <span className="text-xs font-bold text-slate-800 block">Not interested</span>
-          <div 
-            className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5"
-            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-          >
-            {notInterestedLeads}
-          </div>
-        </div>
-
-        {/* 6. Willing to onboard */}
-        <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-4 text-center relative shadow-xs hover:shadow-md transition-all">
-          <span className="w-2 h-2 rounded-full bg-purple-500 absolute top-2.5 right-2.5"></span>
-          <span className="text-xs font-bold text-slate-800 block">Willing to onboard</span>
-          <div 
-            className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5"
-            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-          >
-            {willingLeads}
-          </div>
-        </div>
-
-        {/* 7. Onboarded */}
-        <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-4 text-center relative shadow-xs hover:shadow-md transition-all">
-          <span className="w-2 h-2 rounded-full bg-emerald-600 absolute top-2.5 right-2.5"></span>
-          <span className="text-xs font-bold text-slate-800 block">Onboarded</span>
-          <div 
-            className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5"
-            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-          >
-            {onboardedLeads}
-          </div>
-        </div>
-
-        {/* 8. Onboard pending */}
-        <div className="bg-white rounded-2xl border border-slate-200 border-t-4 border-[#C41220] p-4 text-center relative shadow-xs hover:shadow-md transition-all">
-          <span className="w-2 h-2 rounded-full bg-amber-500 absolute top-2.5 right-2.5"></span>
-          <span className="text-xs font-bold text-slate-800 block">Onboard pending</span>
-          <div 
-            className="text-xl sm:text-2xl font-black text-slate-900 mt-1.5"
-            style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-          >
-            {onboardPendingLeads}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 3: STATUS DISTRIBUTION & PRIORITY FOLLOW-UPS
-         ═══════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left 2 Cols: Status distribution Bar Chart */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs lg:col-span-2 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
-                PIPELINE
+          <div className="mt-3">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{totalLeads}</div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs">
+              <span className="flex items-center font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                <BadgeCheck className="w-3.5 h-3.5 mr-0.5 text-emerald-600" /> 100% Valid Data
               </span>
-              <h3 
-                className="text-xl font-bold text-slate-900 mt-0.5"
-                style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-              >
-                Status distribution
-              </h3>
+              <span className="text-slate-400 text-[11px] truncate">{selectedDivision}</span>
             </div>
-
-            <div className="relative">
-              <select
-                value={timeframe}
-                onChange={(e) => {
-                  setTimeframe(e.target.value);
-                  loadDashboardData(selectedDivision, onlyValidData);
-                }}
-                className="appearance-none bg-white border border-slate-300 hover:border-slate-400 rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold text-slate-800 shadow-2xs outline-none cursor-pointer"
-              >
-                <option>Last 7 days</option>
-                <option>Last 30 Days</option>
-                <option>This Quarter</option>
-              </select>
-              <svg className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-
-          <div className="h-[260px] w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart 
-                data={statusChartData} 
-                margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="#64748B" 
-                  fontSize={11} 
-                  fontWeight={500} 
-                  tickLine={false} 
-                />
-                <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
-                />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                  {statusChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Right 1 Col: Priority follow-ups */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
+        {/* KPI 2: Outreach Velocity */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none"></div>
+          <div className="flex justify-between items-start">
             <div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
-                FOCUS
-              </span>
-              <h3 
-                className="text-xl font-bold text-slate-900 mt-0.5"
-                style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
-              >
-                Priority follow-ups
-              </h3>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Outreach</span>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Awaiting ME interaction</p>
             </div>
-            <Link 
-              href="/leads?status=pending"
-              className="text-xs font-bold text-[#1B2A4A] hover:underline flex items-center gap-1"
-            >
-              <span>View all</span>
-              <span>→</span>
-            </Link>
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#F7941D] flex items-center justify-center group-hover:bg-[#F7941D] group-hover:text-white transition-colors shadow-xs">
+              <UserPlus className="w-4 h-4" />
+            </div>
           </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{pendingLeads}</div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs">
+              <span className="flex items-center font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+                {contactedLeads} Contacted
+              </span>
+              <span className="text-slate-400 text-[11px]">in active pipeline</span>
+            </div>
+          </div>
+        </div>
 
-          <div className="space-y-3.5">
-            {[
-              { id: 1, name: 'CMP Centre And School S.O', sub: '560025 • 89 pending', count: '89 leads' },
-              { id: 2, name: 'Hoodi B.O', sub: '560048 • 86 pending', count: '86 leads' },
-              { id: 3, name: 'Indiranagar S.O Bengaluru', sub: '560038 • 75 pending', count: '75 leads' },
-              { id: 4, name: 'E P I P S.O', sub: '560066 • 68 pending', count: '68 leads' },
-              { id: 5, name: 'Attur B.O', sub: '560061 • 53 pending', count: '53 leads' },
-            ].map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 py-1">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">
-                    {item.id}
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-bold text-slate-900 truncate">{item.name}</h4>
-                    <p className="text-[11px] text-slate-400 font-medium truncate">{item.sub}</p>
-                  </div>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FEF3C7] text-[#92400E] shrink-0 border border-amber-200">
-                  {item.count}
-                </span>
-              </div>
-            ))}
+        {/* KPI 3: Onboarding Rate */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Conversion Rate</span>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Corporate client conversion</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1565C0] flex items-center justify-center group-hover:bg-[#1565C0] group-hover:text-white transition-colors shadow-xs">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{conversionRate}</div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs">
+              <span className="flex items-center font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-1.5 py-0.5 rounded">
+                {onboardedLeads} Contracts Won
+              </span>
+              <span className="text-slate-400 text-[11px]">signed agreements</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: Calculated Postal Pipeline Valuation */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
+          <div className="flex justify-between items-start">
+            <div>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Calculated Pipeline Value</span>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Volume * Tariff Model</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#2E7D32] flex items-center justify-center group-hover:bg-[#2E7D32] group-hover:text-white transition-colors shadow-xs">
+              <IndianRupee className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{pipelineValue}</div>
+            <div className="flex items-center gap-1.5 mt-2 text-xs">
+              <span className="flex items-center font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> High Monthly Yield
+              </span>
+              <span className="text-slate-400 text-[11px]">recurring revenue</span>
+            </div>
           </div>
         </div>
       </div>
-
 
       {/* ═══════════════════════════════════════════════════════════
           SECTION: PICTORIAL DATA HEALTH & VERIFIED CREDENTIALS SCORECARD

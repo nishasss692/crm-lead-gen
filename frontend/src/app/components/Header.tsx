@@ -12,8 +12,19 @@ export default function Header({
   return (
     <header className="bg-white border-b-[3px] border-[#D1242F] h-18 md:h-20 flex items-center px-4 md:px-8 justify-between shrink-0 shadow-xs relative z-30">
       
-      {/* Left side: India Post Logo with Sanskrit & Department of Posts */}
+      {/* Left side: Hamburger Toggle & India Post Logo with Sanskrit & Department of Posts */}
       <div className="flex items-center space-x-3 shrink-0">
+        {toggleSidebar && (
+          <button 
+            onClick={toggleSidebar} 
+            className="p-2 -ml-2 text-slate-600 hover:text-[#D1242F] hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-200 transition-colors"
+            title="Toggle Navigation Menu"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
         <IndiaPostLogo size="md" variant="official" />
       </div>
       
@@ -30,11 +41,11 @@ export default function Header({
         </h2>
       </div>
       
-      {/* Right side spacer to keep center aligned */}
-      <div className="shrink-0 w-16 md:w-32 flex justify-end items-center">
-        {/* Subtle circle status or space reservation */}
+      {/* Right side spacer to keep center balanced */}
+      <div className="shrink-0 w-12 md:w-28 flex justify-end items-center">
       </div>
     </header>
   );
 }
+
 
