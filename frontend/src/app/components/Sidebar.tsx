@@ -57,15 +57,9 @@ function SidebarContent() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1B2A4A] text-slate-300 select-none">
-      {/* Brand Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <IndiaPostLogo size="sm" variant="symbol-only" textColor="light" />
-        <span className="text-xs font-bold text-slate-300">Karnataka Circle</span>
-      </div>
-      
+    <div className="flex flex-col h-full bg-[#1B2A4A] text-slate-300 select-none pt-2">
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-6 custom-scrollbar">
+      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-6 custom-scrollbar">
         <div>
           <div className="px-3 mb-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
             Executive Analytics

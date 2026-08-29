@@ -18,10 +18,10 @@ export default function IndiaPostLogo({
 
   // Dimension scaling for the emblem
   const emblemSizes = {
-    sm: { width: 36, height: 28 },
-    md: { width: 48, height: 38 },
-    lg: { width: 60, height: 48 },
-    xl: { width: 72, height: 56 },
+    sm: { width: 38, height: 30 },
+    md: { width: 50, height: 40 },
+    lg: { width: 62, height: 50 },
+    xl: { width: 75, height: 60 },
   };
 
   const currentSize = emblemSizes[size] || emblemSizes.md;
@@ -41,39 +41,34 @@ export default function IndiaPostLogo({
           style={{
             width: `${currentSize.width}px`,
             height: `${currentSize.height}px`,
-            background: '#D1242F',
+            background: '#C41220',
           }}
         >
           {/* Authentic India Post Wing Silhouette */}
           <svg
-            viewBox="0 0 120 90"
+            viewBox="0 0 100 80"
             className="w-full h-full p-1"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            {/* Top Golden Flying Wing */}
+            {/* Top Wing Stroke (Angular Forward Flight) */}
             <path
-              d="M12 68 L60 14 L108 68 L60 46 Z"
+              d="M12 56 L48 12 L88 12 L38 56 Z"
               fill="#FAB52C"
             />
-            {/* Dark Red Geometric Inner Fold */}
+            {/* Middle Wing Stroke (Speed Acceleration) */}
             <path
-              d="M18 70 L60 24 L102 70 L60 52 Z"
-              fill="#A31D1D"
-            />
-            {/* Dynamic Gold Forward Slant */}
-            <path
-              d="M32 72 L80 18 L90 24 L42 78 Z"
+              d="M18 64 L54 22 L76 22 L32 64 Z"
               fill="#FAB52C"
             />
-            {/* Central White Aero-Fold */}
+            {/* Bottom Wing / Envelope Base */}
             <path
-              d="M50 48 L60 36 L70 48 L60 44 Z"
-              fill="#FFFFFF"
+              d="M24 72 L60 32 L68 32 L28 72 Z"
+              fill="#FAB52C"
             />
-            {/* Bottom Postal Speed Stripes */}
-            <line x1="20" y1="74" x2="100" y2="74" stroke="#FAB52C" strokeWidth="4" strokeLinecap="round" />
-            <line x1="28" y1="82" x2="92" y2="82" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
+            {/* Aerodynamic Speed Lines */}
+            <rect x="36" y="68" width="52" height="3.5" rx="1.75" fill="#FAB52C" />
+            <rect x="52" y="74" width="36" height="2" rx="1" fill="#FFFFFF" opacity="0.9" />
           </svg>
         </div>
       </div>
@@ -92,5 +87,6 @@ export default function IndiaPostLogo({
     </div>
   );
 }
+
 
 

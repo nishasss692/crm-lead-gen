@@ -330,39 +330,13 @@ function DashboardMainContent() {
   const outcomeBreakdownData = analytics?.outcome_breakdown || [];
   const funnelStages = analytics?.funnel_stages || [];
   const dataQualityItems = analytics?.data_health?.quality_items || [];
-
   return (
     <div className="p-4 md:p-8 max-w-[1650px] mx-auto space-y-6 animate-fade-in-up">
       
       {/* ═══════════════════════════════════════════════════════════
-          TOP HEADER & VERIFIED CREDENTIALS CONTROL BAR
+          TOP ACTION CONTROLS & DIVISION FILTER TOOLBAR
          ═══════════════════════════════════════════════════════════ */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1B2A4A] to-[#D1242F] text-white flex items-center justify-center shrink-0 shadow-md shadow-red-950/20">
-            <ShieldCheck className="w-6 h-6 text-[#FAB52C]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <BadgeCheck className="w-3 h-3 text-emerald-600" />
-                Verified Commercial Circle
-              </span>
-              <span className="text-xs font-bold text-slate-400">•</span>
-              <span className="text-xs font-bold text-slate-500">
-                Officer: <strong className="text-slate-800">{currentUser?.username || 'co_user'}</strong> ({currentUser?.role || 'CO'} Clearance)
-              </span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-black text-[#1B2A4A] tracking-tight">
-              India Post Commercial Intelligence Dashboard
-            </h1>
-            <p className="text-xs md:text-sm text-slate-500 mt-0.5">
-              Statistical postal pipeline computation, verified lead credentials, and division performance metrics.
-            </p>
-          </div>
-        </div>
-
-        {/* Action Controls & Filters */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Strict Data Quality Toggle */}
           <button
@@ -380,11 +354,11 @@ function DashboardMainContent() {
           </button>
 
           {/* Division Filter Dropdown */}
-          <div className="relative min-w-[165px]">
+          <div className="relative min-w-[170px]">
             <select
               value={selectedDivision}
               onChange={(e) => handleDivisionChange(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer transition-colors"
+              className="w-full appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer transition-colors"
             >
               <option value="All Divisions">🏢 All Circle Divisions</option>
               {divisionsList.map((div) => (
@@ -402,7 +376,7 @@ function DashboardMainContent() {
                 setTimeframe(e.target.value);
                 loadDashboardData(selectedDivision, onlyValidData);
               }}
-              className="appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer"
+              className="appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer"
             >
               <option>Last 30 Days</option>
               <option>This Quarter</option>
@@ -410,11 +384,14 @@ function DashboardMainContent() {
             </select>
             <Calendar className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
+        </div>
 
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
           {/* Deduplicate Clean Button */}
           <button
             onClick={handleOpenDedupModal}
-            className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+            className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
             title="Scan and eliminate duplicate leads"
           >
             <CopyX className="w-3.5 h-3.5 text-amber-700" />
@@ -424,7 +401,7 @@ function DashboardMainContent() {
           {/* Upload Data File Button */}
           <button
             onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all group"
+            className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all group"
             title="Upload Excel or CSV data file"
           >
             <Upload className="w-3.5 h-3.5 text-[#FAB52C] group-hover:scale-110 transition-transform" />
@@ -434,7 +411,7 @@ function DashboardMainContent() {
           {/* Export CSV Button */}
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 bg-[#D1242F] hover:bg-[#B01E28] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+            className="flex items-center gap-1.5 bg-[#D1242F] hover:bg-[#B01E28] text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export</span>
@@ -536,92 +513,6 @@ function DashboardMainContent() {
               <span className="text-slate-400 text-[11px]">recurring revenue</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION: PICTORIAL DATA HEALTH & VERIFIED CREDENTIALS SCORECARD
-         ═══════════════════════════════════════════════════════════ */}
-      <div className="bg-gradient-to-br from-slate-900 via-[#1B2A4A] to-[#0E1726] rounded-2xl p-6 text-white shadow-lg border border-slate-800">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-inner">
-              <Award className="w-7 h-7 text-[#FAB52C]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-[#FAB52C] uppercase tracking-widest">
-                  Statistical Verification Engine
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
-                  Active Real-time Audit
-                </span>
-              </div>
-              <h2 className="text-xl md:text-2xl font-black tracking-tight mt-0.5">
-                Data Credential Integrity & Compliance Scorecard
-              </h2>
-              <p className="text-xs md:text-sm text-slate-300 max-w-2xl mt-1 leading-relaxed">
-                Calculated statistical compliance index based on phone verification, email format check, PIN code validation, and division allocation across the Karnataka Circle.
-              </p>
-            </div>
-          </div>
-
-          {/* Overall Health Score Gauge Box */}
-          <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10 shrink-0">
-            <div className="relative w-16 h-16 flex items-center justify-center">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  className="text-white/10"
-                  strokeWidth="3.5"
-                  stroke="currentColor"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path
-                  className="text-emerald-400"
-                  strokeDasharray={`${healthScore}, 100`}
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                  stroke="currentColor"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-              </svg>
-              <span className="absolute text-sm font-black">{healthScore}%</span>
-            </div>
-            <div>
-              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Composite Health</div>
-              <div className="text-lg font-black text-emerald-400">High Credibility</div>
-              <div className="text-[11px] text-slate-300">Audited across {totalLeads} records</div>
-            </div>
-          </div>
-        </div>
-
-        {/* 5 Pictorial Credential Verification Progress Bars */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-6">
-          {dataQualityItems.map((item: any, idx: number) => (
-            <div key={idx} className="bg-white/5 rounded-xl p-3.5 border border-white/10 space-y-2">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-bold text-slate-200 truncate">{item.name}</span>
-                <span className="font-mono font-black text-[#FAB52C]">{item.pct}%</span>
-              </div>
-              <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="h-full rounded-full transition-all duration-500" 
-                  style={{ 
-                    width: `${item.pct}%`, 
-                    backgroundColor: item.pct >= 85 ? '#10B981' : item.pct >= 60 ? '#F59E0B' : '#EF4444' 
-                  }}
-                />
-              </div>
-              <div className="flex justify-between items-center text-[11px] text-slate-400">
-                <span>{item.count?.toLocaleString()} Verified</span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-white/10 text-slate-300">
-                  {item.status}
-                </span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
