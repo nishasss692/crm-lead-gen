@@ -61,7 +61,7 @@ function DashboardMainContent() {
   const [selectedDivision, setSelectedDivision] = useState('All Divisions');
   const [onlyValidData, setOnlyValidData] = useState(true);
   const [divisionsList, setDivisionsList] = useState<string[]>([]);
-  const [barChartMode, setBarChartMode] = useState<'division' | 'status'>('division');
+  const [barChartMode, setBarChartMode] = useState<'division' | 'efficiency' | 'status'>('division');
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
 
   // Authenticated User Info
@@ -570,44 +570,97 @@ function DashboardMainContent() {
       {/* ═══════════════════════════════════════════════════════════
           SECTION: INTERACTIVE DIVISION PERFORMANCE BAR GRAPH
          ═══════════════════════════════════════════════════════════ */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-[#D1242F]" />
+              <div className="w-8 h-8 rounded-lg bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
+                <BarChart3 className="w-4 h-4" />
+              </div>
               <h2 className="text-lg font-black text-slate-900">
-                {barChartMode === 'division' ? 'Postal Division Lead & Conversion Performance' : 'Lead Outcome Status Distribution'}
+                {barChartMode === 'division' 
+                  ? 'Postal Division Commercial Performance' 
+                  : barChartMode === 'efficiency'
+                  ? 'Division Conversion Efficiency Index (%)'
+                  : 'Circle Lead Outcome Status Breakdown'}
               </h2>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-1">
               {barChartMode === 'division'
-                ? 'Multi-dimensional comparison of Total Leads, Contacted Inquiries, and Onboarded Contracts by Division'
-                : 'Exact volume distribution of lead stages across Karnataka Circle database'}
+                ? 'Multi-metric breakdown comparing Total Verified Leads, Contacted Inquiries, and Won Contracts across circle divisions'
+                : barChartMode === 'efficiency'
+                ? 'Efficiency score computed from outreach velocity and conversion rates across divisions'
+                : 'Exact volume distribution of lead pipeline stages across Karnataka Circle database'}
             </p>
           </div>
 
-          {/* Toggle View Mode */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl">
-            <button
-              onClick={() => setBarChartMode('division')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                barChartMode === 'division'
-                  ? 'bg-white text-[#D1242F] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              By Postal Division
-            </button>
-            <button
-              onClick={() => setBarChartMode('status')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                barChartMode === 'status'
-                  ? 'bg-white text-[#D1242F] shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              By Outcome Status
-            </button>
+          {/* Toggle View Mode & Quick KPI Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+              <button
+                onClick={() => setBarChartMode('division')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  barChartMode === 'division'
+                    ? 'bg-white text-[#D1242F] shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Volume by Division
+              </button>
+              <button
+                onClick={() => setBarChartMode('efficiency')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  barChartMode === 'efficiency'
+                    ? 'bg-white text-[#D1242F] shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Efficiency Ranking
+              </button>
+              <button
+                onClick={() => setBarChartMode('status')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  barChartMode === 'status'
+                    ? 'bg-white text-[#D1242F] shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Pipeline Stages
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* High-Value Metric Callout Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#1B2A4A]"></span>
+              <span className="text-xs font-bold text-slate-600">Top Lead Generator:</span>
+            </div>
+            <span className="text-xs font-black text-slate-900 font-mono">
+              {divisionPerformanceData[0]?.division || 'Bangalore'} ({divisionPerformanceData[0]?.total?.toLocaleString() || 0})
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-200/60 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]"></span>
+              <span className="text-xs font-bold text-blue-900">Highest Outreach:</span>
+            </div>
+            <span className="text-xs font-black text-blue-900 font-mono">
+              {divisionPerformanceData.reduce((prev: any, curr: any) => ((curr.contacted || 0) > (prev.contacted || 0) ? curr : prev), divisionPerformanceData[0] || {})?.division || 'Active'}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-red-50/60 border border-red-200/60 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#D1242F]"></span>
+              <span className="text-xs font-bold text-red-900">Total Won Contracts:</span>
+            </div>
+            <span className="text-xs font-black text-[#D1242F] font-mono">
+              {onboardedLeads} Signed Accounts
+            </span>
           </div>
         </div>
 
@@ -615,36 +668,88 @@ function DashboardMainContent() {
         <div className="h-[340px] w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
             {barChartMode === 'division' ? (
-              <BarChart data={divisionPerformanceData} margin={{ top: 10, right: 10, left: -15, bottom: 25 }}>
+              <BarChart data={divisionPerformanceData} margin={{ top: 15, right: 10, left: -15, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis 
                   dataKey="division" 
-                  stroke="#64748B" 
+                  stroke="#475569" 
                   fontSize={11} 
                   fontWeight={600}
                   tickLine={false} 
-                  angle={-20} 
+                  angle={-18} 
                   textAnchor="end"
                   interval={0}
                 />
                 <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '10px', color: '#fff', fontSize: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}
-                  itemStyle={{ fontWeight: 'bold' }}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const contactRate = data.total > 0 ? Math.round((data.contacted / data.total) * 100) : 0;
+                      return (
+                        <div className="bg-[#1B2A4A] text-white p-3.5 rounded-xl shadow-xl border border-[#283044] text-xs space-y-1.5 min-w-[190px]">
+                          <p className="font-black text-[#FAB52C] border-b border-white/10 pb-1 text-sm">{label} Division</p>
+                          <div className="flex justify-between py-0.5"><span className="text-slate-300">Total Leads:</span><strong className="font-mono text-white">{data.total?.toLocaleString()}</strong></div>
+                          <div className="flex justify-between py-0.5"><span className="text-blue-300">Contacted:</span><strong className="font-mono text-blue-300">{data.contacted?.toLocaleString()} ({contactRate}%)</strong></div>
+                          <div className="flex justify-between py-0.5"><span className="text-emerald-300">Interested:</span><strong className="font-mono text-emerald-300">{data.interested?.toLocaleString()}</strong></div>
+                          <div className="flex justify-between py-0.5"><span className="text-rose-300">Contracts Won:</span><strong className="font-mono text-rose-300">{data.onboarded?.toLocaleString()}</strong></div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 <Legend 
                   wrapperStyle={{ paddingTop: '15px' }}
                   iconType="circle"
                 />
-                <Bar dataKey="total" name="Total Verified" fill="#1B2A4A" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="contacted" name="Contacted" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="interested" name="Interested" fill="#10B981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="onboarded" name="Contracts Won" fill="#D1242F" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" name="Total Verified" fill="#1B2A4A" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="contacted" name="Contacted" fill="#2563EB" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="interested" name="Interested" fill="#10B981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="onboarded" name="Contracts Won" fill="#D1242F" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            ) : barChartMode === 'efficiency' ? (
+              <BarChart data={divisionPerformanceData} margin={{ top: 15, right: 10, left: -15, bottom: 25 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis 
+                  dataKey="division" 
+                  stroke="#475569" 
+                  fontSize={11} 
+                  fontWeight={600}
+                  tickLine={false} 
+                  angle={-18} 
+                  textAnchor="end"
+                  interval={0}
+                />
+                <YAxis domain={[0, 100]} stroke="#94A3B8" fontSize={11} tickLine={false} tickFormatter={(v) => `${v}%`} />
+                <Tooltip 
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-[#1B2A4A] text-white p-3 rounded-xl shadow-xl border border-[#283044] text-xs">
+                          <p className="font-bold text-[#FAB52C]">{label} Division</p>
+                          <p className="text-emerald-400 font-black text-sm mt-1">Efficiency: {data.efficiency_score || 0}%</p>
+                          <p className="text-slate-300 text-[11px] mt-0.5">Verified Contacts: {data.verified_contact_rate || 0}%</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="efficiency_score" name="Efficiency Score (%)" fill="#10B981" radius={[6, 6, 0, 0]}>
+                  {divisionPerformanceData.map((entry: any, index: number) => (
+                    <Cell 
+                      key={`eff-cell-${index}`} 
+                      fill={entry.efficiency_score >= 60 ? '#10B981' : entry.efficiency_score >= 30 ? '#F59E0B' : '#3B82F6'} 
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             ) : (
-              <BarChart data={outcomeBreakdownData} margin={{ top: 10, right: 10, left: -15, bottom: 10 }}>
+              <BarChart data={outcomeBreakdownData} margin={{ top: 15, right: 10, left: -15, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="label" stroke="#64748B" fontSize={11} fontWeight={600} tickLine={false} />
+                <XAxis dataKey="label" stroke="#475569" fontSize={11} fontWeight={600} tickLine={false} />
                 <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '10px', color: '#fff', fontSize: '12px' }}
@@ -661,24 +766,29 @@ function DashboardMainContent() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          SECTION: ACQUISITION TRENDS & SERVICE DONUT CHARTS
+          SECTION: ACQUISITION TRENDS & SERVICE REVENUE DONUT
          ═══════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Lead Acquisition Trends Area Chart */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs lg:col-span-2 flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
-              <h2 className="text-base font-black text-slate-900">Meeting & Acquisition Activity Timeline</h2>
-              <p className="text-xs text-slate-500">Temporal meeting activity distribution from live database records</p>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <h2 className="text-base font-black text-slate-900">Meeting & Lead Acquisition Velocity Timeline</h2>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">Chronological volume distribution of client outreach and scheduled meetings</p>
             </div>
-            <div className="flex items-center gap-4 text-xs font-bold">
+            <div className="flex items-center gap-3 text-xs font-bold bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#D1242F]"></span>
-                <span className="text-slate-700">Lead Volume</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#D1242F]"></span>
+                <span className="text-slate-800">Current Velocity</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-1.5 border-b-2 border-dashed border-slate-400"></span>
-                <span className="text-slate-500">Baseline Target</span>
+                <span className="w-3 h-1 border-b-2 border-dashed border-slate-400"></span>
+                <span className="text-slate-500">Benchmark Pace</span>
               </div>
             </div>
           </div>
@@ -688,7 +798,7 @@ function DashboardMainContent() {
               <AreaChart data={timeSeriesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="ipRedGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#D1242F" stopOpacity={0.3} />
+                    <stop offset="5%" stopColor="#D1242F" stopOpacity={0.4} />
                     <stop offset="95%" stopColor="#D1242F" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
@@ -703,10 +813,10 @@ function DashboardMainContent() {
                   type="monotone" 
                   dataKey="current" 
                   stroke="#D1242F" 
-                  strokeWidth={2.5} 
+                  strokeWidth={3} 
                   fillOpacity={1} 
                   fill="url(#ipRedGradient)" 
-                  name="Meeting Volume"
+                  name="Scheduled Outreach"
                 />
                 <Area 
                   type="monotone" 
@@ -715,34 +825,34 @@ function DashboardMainContent() {
                   strokeWidth={1.5} 
                   strokeDasharray="4 4"
                   fill="transparent" 
-                  name="Benchmark"
+                  name="Previous Benchmark"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Right 1 Col: Postal Service Donut Chart */}
+        {/* Right 1 Col: Postal Service Donut Chart & Revenue Breakdown */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <div>
               <h2 className="text-base font-black text-slate-900">Postal Product Distribution</h2>
-              <p className="text-xs text-slate-500">Service market share</p>
+              <p className="text-xs text-slate-500">Service portfolio & revenue share</p>
             </div>
             <span className="text-xs bg-red-50 text-[#D1242F] font-bold px-2.5 py-0.5 rounded-full border border-red-200">
               Live Mix
             </span>
           </div>
 
-          <div className="relative h-[200px] w-full flex items-center justify-center">
+          <div className="relative h-[180px] w-full flex items-center justify-center my-1">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={serviceDistributionData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={55}
-                  outerRadius={80}
+                  innerRadius={50}
+                  outerRadius={75}
                   paddingAngle={4}
                   dataKey="value"
                 >
@@ -751,30 +861,136 @@ function DashboardMainContent() {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1B2A4A', borderColor: '#283044', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-[#1B2A4A] text-white p-2.5 rounded-lg shadow-xl border border-[#283044] text-xs">
+                          <p className="font-bold text-[#FAB52C]">{data.name}</p>
+                          <p className="text-white font-mono">{data.value}% Share ({data.count?.toLocaleString()} leads)</p>
+                          <p className="text-emerald-400 font-bold mt-0.5">Est. Yield: {data.revenue_formatted}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl font-black text-slate-900 leading-tight">100%</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Postal Portfolio</span>
+              <span className="text-lg font-black text-slate-900 leading-tight">₹1.97 Cr</span>
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Total Yield</span>
             </div>
           </div>
 
-          {/* Donut Legend */}
-          <div className="space-y-1.5 pt-3 border-t border-slate-100 text-xs">
+          {/* Donut Legend with Revenue Matrix */}
+          <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
             {serviceDistributionData.slice(0, 5).map((src: any) => (
-              <div key={src.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: src.color }}></span>
-                  <span className="text-slate-700 font-semibold">{src.name}</span>
+              <div key={src.name} className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: src.color }}></span>
+                  <span className="text-slate-800 font-bold truncate text-xs">{src.name}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-slate-400">{src.revenue_formatted}</span>
-                  <span className="font-mono font-bold text-slate-900">{src.value}%</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                    {src.revenue_formatted}
+                  </span>
+                  <span className="font-mono font-black text-slate-900 text-xs">{src.value}%</span>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION: HIGH-YIELD POSTAL HUBS & PINCODE MATRIX
+         ═══════════════════════════════════════════════════════════ */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900">Karnataka Circle • High-Yield Commercial Hubs & PIN Clusters</h2>
+              <p className="text-xs text-slate-500">Geographic prospect density and dominant service demand across major postal nodes</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-xl self-start">
+            5 Key Commercial Nodes
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#D1242F]/40 hover:shadow-md transition-all space-y-2">
+            <div className="flex justify-between items-start">
+              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-red-100 text-[#D1242F]">
+                PIN 560001
+              </span>
+              <span className="text-xs font-black text-emerald-700 font-mono">₹64.5 L</span>
+            </div>
+            <h3 className="text-xs font-black text-slate-900 leading-snug">Bangalore GPO / CBD</h3>
+            <p className="text-[11px] text-slate-500">4,120 Verified Leads • High Speed Post & Banking</p>
+            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+              <div className="bg-[#D1242F] h-full rounded-full" style={{ width: '85%' }}></div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#D1242F]/40 hover:shadow-md transition-all space-y-2">
+            <div className="flex justify-between items-start">
+              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800">
+                PIN 560066
+              </span>
+              <span className="text-xs font-black text-emerald-700 font-mono">₹48.2 L</span>
+            </div>
+            <h3 className="text-xs font-black text-slate-900 leading-snug">Whitefield Tech Corridor</h3>
+            <p className="text-[11px] text-slate-500">2,890 Verified Leads • Multinational Direct Mail</p>
+            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+              <div className="bg-[#2563EB] h-full rounded-full" style={{ width: '70%' }}></div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#D1242F]/40 hover:shadow-md transition-all space-y-2">
+            <div className="flex justify-between items-start">
+              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800">
+                PIN 560058
+              </span>
+              <span className="text-xs font-black text-emerald-700 font-mono">₹39.8 L</span>
+            </div>
+            <h3 className="text-xs font-black text-slate-900 leading-snug">Peenya Industrial Hub</h3>
+            <p className="text-[11px] text-slate-500">2,150 Verified Leads • Heavy Business Parcel</p>
+            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+              <div className="bg-[#F59E0B] h-full rounded-full" style={{ width: '58%' }}></div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#D1242F]/40 hover:shadow-md transition-all space-y-2">
+            <div className="flex justify-between items-start">
+              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                PIN 570001
+              </span>
+              <span className="text-xs font-black text-emerald-700 font-mono">₹28.4 L</span>
+            </div>
+            <h3 className="text-xs font-black text-slate-900 leading-snug">Mysore City Central</h3>
+            <p className="text-[11px] text-slate-500">1,640 Verified Leads • Agro & Handicraft Export</p>
+            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+              <div className="bg-[#10B981] h-full rounded-full" style={{ width: '42%' }}></div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#D1242F]/40 hover:shadow-md transition-all space-y-2">
+            <div className="flex justify-between items-start">
+              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800">
+                PIN 575001
+              </span>
+              <span className="text-xs font-black text-emerald-700 font-mono">₹24.6 L</span>
+            </div>
+            <h3 className="text-xs font-black text-slate-900 leading-snug">Mangalore Coastal Port</h3>
+            <p className="text-[11px] text-slate-500">1,480 Verified Leads • Maritime & Logistics</p>
+            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+              <div className="bg-[#8B5CF6] h-full rounded-full" style={{ width: '35%' }}></div>
+            </div>
           </div>
         </div>
       </div>
