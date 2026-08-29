@@ -178,7 +178,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-[#113254] hover:bg-[#0a1f35] focus:outline-none focus:ring-4 focus:ring-[#113254]/20 rounded-xl text-white text-sm font-bold shadow-lg shadow-[#113254]/20 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group"
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-[#113254] hover:bg-[#0a1f35] focus:outline-none focus:ring-4 focus:ring-[#113254]/20 rounded-xl text-white text-sm font-bold shadow-lg shadow-[#113254]/20 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group cursor-pointer"
             >
               {loading ? (
                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -193,8 +193,49 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {/* Quick Demo Credentials */}
+          <div className="pt-4 border-t border-slate-200">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+              Quick Demo Accounts:
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => { setUsername('co_user'); setPassword('password123'); }}
+                className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
+              >
+                <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Central Officer (CO)</div>
+                <div className="text-slate-500 text-[11px]">co_user / password123</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUsername('ro_user'); setPassword('password123'); }}
+                className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
+              >
+                <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Regional Officer (RO)</div>
+                <div className="text-slate-500 text-[11px]">ro_user / password123</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUsername('div_user'); setPassword('password123'); }}
+                className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
+              >
+                <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Division Officer</div>
+                <div className="text-slate-500 text-[11px]">div_user / password123</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUsername('me_user'); setPassword('password123'); }}
+                className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
+              >
+                <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Marketing Exec (ME)</div>
+                <div className="text-slate-500 text-[11px]">me_user / password123</div>
+              </button>
+            </div>
+          </div>
           
-          <p className="text-center text-sm font-medium text-slate-500 pt-6">
+          <p className="text-center text-sm font-medium text-slate-500 pt-2">
             Need help logging in? <a href="#" className="text-[#d1242f] hover:underline font-bold">Contact IT Support</a>
           </p>
         </div>

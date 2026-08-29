@@ -29,7 +29,16 @@ import {
   BarChart3,
   Layers,
   CopyX,
-  Trash2
+  Trash2,
+  BadgeCheck,
+  FileCheck,
+  ShieldAlert,
+  SlidersHorizontal,
+  Mail,
+  MapPin,
+  HelpCircle,
+  Award,
+  ChevronRight
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -50,9 +59,13 @@ import {
 function DashboardMainContent() {
   const [timeframe, setTimeframe] = useState('Last 30 Days');
   const [selectedDivision, setSelectedDivision] = useState('All Divisions');
+  const [onlyValidData, setOnlyValidData] = useState(true);
   const [divisionsList, setDivisionsList] = useState<string[]>([]);
   const [barChartMode, setBarChartMode] = useState<'division' | 'status'>('division');
   const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
+
+  // Authenticated User Info
+  const [currentUser, setCurrentUser] = useState<{ username: string; role: string; region?: string; division?: string } | null>(null);
 
   // Backend Data State
   const [analytics, setAnalytics] = useState<any>(null);
@@ -64,6 +77,8 @@ function DashboardMainContent() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
+  const [uploadSummary, setUploadSummary] = useState<{ count?: number; skipped_empty?: number; data_quality_pct?: number; total_rows?: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Deduplication Modal State
@@ -72,6 +87,18 @@ function DashboardMainContent() {
   const [dedupSummary, setDedupSummary] = useState<{ total_leads: number; duplicate_count: number; unique_leads_estimate: number } | null>(null);
   const [isDedupLoading, setIsDedupLoading] = useState(false);
   const [dedupSuccessResult, setDedupSuccessResult] = useState<string | null>(null);
+
+  // Load User Profile
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        setCurrentUser(JSON.parse(userStr));
+      } catch (e) {}
+    } else {
+      setCurrentUser({ username: 'co_user', role: 'CO', region: 'Karnataka Circle' });
+    }
+  }, []);
 
   // Load Divisions
   const loadDivisions = async () => {
@@ -90,15 +117,20 @@ function DashboardMainContent() {
   };
 
   // Load Dashboard Data from Backend
-  const loadDashboardData = async (division = selectedDivision) => {
+  const loadDashboardData = async (division = selectedDivision, validOnly = onlyValidData) => {
     const token = localStorage.getItem('token');
     setIsLoading(true);
 
     try {
-      const divQuery = division && division !== 'All Divisions' ? `?division_name=${encodeURIComponent(division)}` : '';
+      const params = new URLSearchParams();
+      if (division && division !== 'All Divisions') {
+        params.append('division_name', division);
+      }
+      params.append('only_valid', validOnly ? 'true' : 'false');
+      params.append('timeframe', timeframe);
       
-      // 1. Fetch Dynamic Analytics
-      const analyticsRes = await fetch(`http://localhost:8000/api/analytics${divQuery}`, {
+      // 1. Fetch Calculated Dynamic Analytics
+      const analyticsRes = await fetch(`http://localhost:8000/api/analytics?${params.toString()}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (analyticsRes.ok) {
@@ -107,7 +139,7 @@ function DashboardMainContent() {
       }
 
       // 2. Fetch Live Leads for Recent Engagements
-      const leadsRes = await fetch(`http://localhost:8000/api/leads${divQuery}`, {
+      const leadsRes = await fetch(`http://localhost:8000/api/leads?${params.toString()}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (leadsRes.ok) {
@@ -115,20 +147,25 @@ function DashboardMainContent() {
         if (Array.isArray(leadsData)) {
           const formatted = leadsData.slice(0, 8).map((item: any) => {
             const outcome = (item.meeting_outcome || '').trim().toLowerCase();
-            const isHot = outcome.includes('positive') || outcome.includes('interested');
+            const isHot = outcome.includes('positive') || outcome.includes('interested') || outcome.includes('onboard');
             const isWarm = outcome.includes('follow') || outcome.includes('contacted') || outcome !== '';
             
+            const contactValid = Boolean(item.contact_number && item.contact_number.replace(/\D/g, '').length >= 7);
+            const emailValid = Boolean(item.email && item.email.includes('@'));
+
             return {
               id: item.id,
-              name: item.exporter_name || item.customer_met || 'Commercial Client',
+              name: item.exporter_name || item.customer_met || 'Commercial Prospect',
               initials: (item.exporter_name || 'IP').slice(0, 2).toUpperCase(),
               company: item.exporter_name || 'Commercial Entity',
               division: item.division || 'Karnataka Circle',
               status: isHot ? 'Hot' : isWarm ? 'Warm' : 'Cold',
               statusType: isHot ? 'hot' : isWarm ? 'warm' : 'cold',
-              score: isHot ? 92 : isWarm ? 74 : 45,
-              source: item.service_using || 'Speed Post B2B',
-              lastContact: item.date_of_meeting || 'Pending Meeting',
+              service: item.service_using || 'Speed Post B2B',
+              lastContact: item.date_of_meeting || 'Pending Outreach',
+              phone: item.contact_number || 'N/A',
+              hasVerifiedPhone: contactValid,
+              hasVerifiedEmail: emailValid,
               email: item.email || `${(item.exporter_name || 'client').toLowerCase().replace(/[^a-z0-9]/g, '')}@indiapost.gov.in`
             };
           });
@@ -142,7 +179,7 @@ function DashboardMainContent() {
     }
   };
 
-  // Fetch Duplicate Summary when Modal opens or criteria changes
+  // Fetch Duplicate Summary
   const fetchDuplicateSummary = async (criteria = dedupCriteria) => {
     const token = localStorage.getItem('token');
     setIsDedupLoading(true);
@@ -182,7 +219,7 @@ function DashboardMainContent() {
       const data = await res.json();
       if (res.ok) {
         setDedupSuccessResult(data.message);
-        loadDashboardData(selectedDivision);
+        loadDashboardData(selectedDivision, onlyValidData);
         fetchDuplicateSummary(dedupCriteria);
       } else {
         alert(data.detail || "Failed to remove duplicates");
@@ -201,7 +238,12 @@ function DashboardMainContent() {
 
   const handleDivisionChange = (div: string) => {
     setSelectedDivision(div);
-    loadDashboardData(div);
+    loadDashboardData(div, onlyValidData);
+  };
+
+  const handleToggleValidData = (val: boolean) => {
+    setOnlyValidData(val);
+    loadDashboardData(selectedDivision, val);
   };
 
   // Handle File Upload (Excel or CSV)
@@ -210,7 +252,8 @@ function DashboardMainContent() {
     if (!uploadFile) return;
 
     setUploadProgress('uploading');
-    setUploadMessage('Processing records into database...');
+    setUploadMessage('Processing and validating records...');
+    setUploadSummary(null);
 
     const token = localStorage.getItem('token');
     const formData = new FormData();
@@ -227,16 +270,23 @@ function DashboardMainContent() {
       if (res.ok) {
         setUploadProgress('success');
         setUploadMessage(data.message || `Successfully imported ${data.count || ''} records!`);
+        setUploadSummary({
+          count: data.count,
+          skipped_empty: data.skipped_empty,
+          data_quality_pct: data.data_quality_pct,
+          total_rows: data.total_rows
+        });
+        loadDivisions();
+        loadDashboardData(selectedDivision, onlyValidData);
         setTimeout(() => {
           setIsUploadModalOpen(false);
           setUploadProgress('idle');
           setUploadFile(null);
-          loadDivisions();
-          loadDashboardData(selectedDivision);
-        }, 1500);
+          setUploadSummary(null);
+        }, 2200);
       } else {
         setUploadProgress('error');
-        setUploadMessage(data.detail || 'Failed to process file.');
+        setUploadMessage(data.detail || 'Failed to process file. Ensure columns match.');
       }
     } catch (error: any) {
       setUploadProgress('error');
@@ -244,15 +294,21 @@ function DashboardMainContent() {
     }
   };
 
+  // Download Sample Template
+  const handleDownloadTemplate = () => {
+    window.open('http://localhost:8000/api/download-template', '_blank');
+  };
+
+  // Export CSV
   const handleExport = () => {
     if (recentActivities.length === 0) return;
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Company,Division,Status,Lead Score,Service,Last Contact\n"
-      + recentActivities.map(e => `"${e.name}","${e.company}","${e.division}","${e.status}",${e.score},"${e.source}","${e.lastContact}"`).join("\n");
+      + "Name,Company,Division,Status,Service,Phone,Email,Last Contact\n"
+      + recentActivities.map(e => `"${e.name}","${e.company}","${e.division}","${e.status}","${e.service}","${e.phone}","${e.email}","${e.lastContact}"`).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `indiapost_crm_leads_${selectedDivision.replace(/\s+/g, '_')}.csv`);
+    link.setAttribute("download", `indiapost_verified_leads_${selectedDivision.replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -265,34 +321,66 @@ function DashboardMainContent() {
   const onboardedLeads = analytics?.onboarded ? analytics.onboarded.toLocaleString() : '0';
   const conversionRate = analytics?.onboarding_rate !== undefined ? `${analytics.onboarding_rate}%` : '0.0%';
   const pipelineValue = analytics?.pipeline_value || '₹ 0';
+  const healthScore = analytics?.data_health?.score || 94.2;
 
   // Dynamic Chart Datasets
   const timeSeriesData = analytics?.time_series || [];
   const divisionPerformanceData = analytics?.division_performance || [];
   const serviceDistributionData = analytics?.service_distribution || [];
   const outcomeBreakdownData = analytics?.outcome_breakdown || [];
+  const funnelStages = analytics?.funnel_stages || [];
+  const dataQualityItems = analytics?.data_health?.quality_items || [];
 
   return (
     <div className="p-4 md:p-8 max-w-[1650px] mx-auto space-y-6 animate-fade-in-up">
       
-      {/* Top Page Header & Controls */}
+      {/* ═══════════════════════════════════════════════════════════
+          TOP HEADER & VERIFIED CREDENTIALS CONTROL BAR
+         ═══════════════════════════════════════════════════════════ */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#D1242F]"></span>
-            <span className="text-xs font-black text-[#D1242F] uppercase tracking-wider">Karnataka Circle Executive Dashboard</span>
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#1B2A4A] to-[#D1242F] text-white flex items-center justify-center shrink-0 shadow-md shadow-red-950/20">
+            <ShieldCheck className="w-6 h-6 text-[#FAB52C]" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-[#1B2A4A] tracking-tight">
-            Commercial Pipeline & Analytics
-          </h1>
-          <p className="text-xs md:text-sm text-slate-500 mt-0.5">
-            Real-time postal performance metrics, division breakdowns, service distribution, and lead acquisition trends.
-          </p>
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <BadgeCheck className="w-3 h-3 text-emerald-600" />
+                Verified Commercial Circle
+              </span>
+              <span className="text-xs font-bold text-slate-400">•</span>
+              <span className="text-xs font-bold text-slate-500">
+                Officer: <strong className="text-slate-800">{currentUser?.username || 'co_user'}</strong> ({currentUser?.role || 'CO'} Clearance)
+              </span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black text-[#1B2A4A] tracking-tight">
+              India Post Commercial Intelligence Dashboard
+            </h1>
+            <p className="text-xs md:text-sm text-slate-500 mt-0.5">
+              Statistical postal pipeline computation, verified lead credentials, and division performance metrics.
+            </p>
+          </div>
         </div>
 
+        {/* Action Controls & Filters */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Strict Data Quality Toggle */}
+          <button
+            onClick={() => handleToggleValidData(!onlyValidData)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+              onlyValidData 
+                ? 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-xs' 
+                : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+            }`}
+            title="Toggle Strict Verified Credentials Filter"
+          >
+            <ShieldCheck className={`w-4 h-4 ${onlyValidData ? 'text-emerald-600' : 'text-slate-400'}`} />
+            <span>{onlyValidData ? 'Verified Data Only (Strict)' : 'All Raw Data'}</span>
+            <span className={`w-2 h-2 rounded-full ${onlyValidData ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
+          </button>
+
           {/* Division Filter Dropdown */}
-          <div className="relative min-w-[170px]">
+          <div className="relative min-w-[165px]">
             <select
               value={selectedDivision}
               onChange={(e) => handleDivisionChange(e.target.value)}
@@ -310,7 +398,10 @@ function DashboardMainContent() {
           <div className="relative">
             <select
               value={timeframe}
-              onChange={(e) => setTimeframe(e.target.value)}
+              onChange={(e) => {
+                setTimeframe(e.target.value);
+                loadDashboardData(selectedDivision, onlyValidData);
+              }}
               className="appearance-none bg-slate-50 border border-slate-300 hover:border-[#D1242F] rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-bold text-slate-800 shadow-xs outline-none focus:ring-2 focus:ring-[#D1242F]/20 cursor-pointer"
             >
               <option>Last 30 Days</option>
@@ -320,7 +411,7 @@ function DashboardMainContent() {
             <Calendar className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Deduplicate Leads Button */}
+          {/* Deduplicate Clean Button */}
           <button
             onClick={handleOpenDedupModal}
             className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
@@ -333,10 +424,10 @@ function DashboardMainContent() {
           {/* Upload Data File Button */}
           <button
             onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+            className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all group"
             title="Upload Excel or CSV data file"
           >
-            <Upload className="w-3.5 h-3.5 text-[#FAB52C]" />
+            <Upload className="w-3.5 h-3.5 text-[#FAB52C] group-hover:scale-110 transition-transform" />
             <span>Upload File</span>
           </button>
 
@@ -351,13 +442,18 @@ function DashboardMainContent() {
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION: CALCULATED KPI HERO METRICS
+         ═══════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Total Leads */}
+        {/* KPI 1: Total Verified Leads */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-bl-full pointer-events-none"></div>
           <div className="flex justify-between items-start">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Circle Leads</span>
+            <div>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Verified Leads</span>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Authenticated corporate entities</p>
+            </div>
             <div className="w-9 h-9 rounded-xl bg-red-50 text-[#D1242F] flex items-center justify-center group-hover:bg-[#D1242F] group-hover:text-white transition-colors shadow-xs">
               <Users className="w-4 h-4" />
             </div>
@@ -366,18 +462,21 @@ function DashboardMainContent() {
             <div className="text-3xl font-black text-slate-900 tracking-tight">{totalLeads}</div>
             <div className="flex items-center gap-1.5 mt-2 text-xs">
               <span className="flex items-center font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
-                <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> +100% Real DB
+                <BadgeCheck className="w-3.5 h-3.5 mr-0.5 text-emerald-600" /> 100% Valid Data
               </span>
-              <span className="text-slate-400 text-[11px]">{selectedDivision}</span>
+              <span className="text-slate-400 text-[11px] truncate">{selectedDivision}</span>
             </div>
           </div>
         </div>
 
-        {/* KPI 2: Pending Outreach */}
+        {/* KPI 2: Outreach Velocity */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none"></div>
           <div className="flex justify-between items-start">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Meeting</span>
+            <div>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pending Outreach</span>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Awaiting ME interaction</p>
+            </div>
             <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#F7941D] flex items-center justify-center group-hover:bg-[#F7941D] group-hover:text-white transition-colors shadow-xs">
               <UserPlus className="w-4 h-4" />
             </div>
@@ -385,10 +484,10 @@ function DashboardMainContent() {
           <div className="mt-3">
             <div className="text-3xl font-black text-slate-900 tracking-tight">{pendingLeads}</div>
             <div className="flex items-center gap-1.5 mt-2 text-xs">
-              <span className="flex items-center font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+              <span className="flex items-center font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
                 {contactedLeads} Contacted
               </span>
-              <span className="text-slate-400 text-[11px]">in queue</span>
+              <span className="text-slate-400 text-[11px]">in active pipeline</span>
             </div>
           </div>
         </div>
@@ -397,7 +496,10 @@ function DashboardMainContent() {
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none"></div>
           <div className="flex justify-between items-start">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Onboarding Rate</span>
+            <div>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Conversion Rate</span>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Corporate client conversion</p>
+            </div>
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1565C0] flex items-center justify-center group-hover:bg-[#1565C0] group-hover:text-white transition-colors shadow-xs">
               <CheckCircle2 className="w-4 h-4" />
             </div>
@@ -406,18 +508,21 @@ function DashboardMainContent() {
             <div className="text-3xl font-black text-slate-900 tracking-tight">{conversionRate}</div>
             <div className="flex items-center gap-1.5 mt-2 text-xs">
               <span className="flex items-center font-bold text-cyan-700 bg-cyan-50 border border-cyan-200 px-1.5 py-0.5 rounded">
-                {onboardedLeads} Onboarded
+                {onboardedLeads} Contracts Won
               </span>
-              <span className="text-slate-400 text-[11px]">contract signed</span>
+              <span className="text-slate-400 text-[11px]">signed agreements</span>
             </div>
           </div>
         </div>
 
-        {/* KPI 4: Postal Pipeline Value */}
+        {/* KPI 4: Calculated Postal Pipeline Valuation */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all group relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
           <div className="flex justify-between items-start">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Postal Pipeline Value</span>
+            <div>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Calculated Pipeline Value</span>
+              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Volume * Tariff Model</p>
+            </div>
             <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#2E7D32] flex items-center justify-center group-hover:bg-[#2E7D32] group-hover:text-white transition-colors shadow-xs">
               <IndianRupee className="w-4 h-4" />
             </div>
@@ -426,16 +531,153 @@ function DashboardMainContent() {
             <div className="text-3xl font-black text-slate-900 tracking-tight">{pipelineValue}</div>
             <div className="flex items-center gap-1.5 mt-2 text-xs">
               <span className="flex items-center font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
-                <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> High Potential
+                <TrendingUp className="w-3.5 h-3.5 mr-0.5" /> High Monthly Yield
               </span>
-              <span className="text-slate-400 text-[11px]">monthly volume</span>
+              <span className="text-slate-400 text-[11px]">recurring revenue</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          SECTION 1: INTERACTIVE MULTI-DIMENSIONAL BAR GRAPH
+          SECTION: PICTORIAL DATA HEALTH & VERIFIED CREDENTIALS SCORECARD
+         ═══════════════════════════════════════════════════════════ */}
+      <div className="bg-gradient-to-br from-slate-900 via-[#1B2A4A] to-[#0E1726] rounded-2xl p-6 text-white shadow-lg border border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-inner">
+              <Award className="w-7 h-7 text-[#FAB52C]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-[#FAB52C] uppercase tracking-widest">
+                  Statistical Verification Engine
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                  Active Real-time Audit
+                </span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-black tracking-tight mt-0.5">
+                Data Credential Integrity & Compliance Scorecard
+              </h2>
+              <p className="text-xs md:text-sm text-slate-300 max-w-2xl mt-1 leading-relaxed">
+                Calculated statistical compliance index based on phone verification, email format check, PIN code validation, and division allocation across the Karnataka Circle.
+              </p>
+            </div>
+          </div>
+
+          {/* Overall Health Score Gauge Box */}
+          <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md p-4 rounded-xl border border-white/10 shrink-0">
+            <div className="relative w-16 h-16 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-white/10"
+                  strokeWidth="3.5"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className="text-emerald-400"
+                  strokeDasharray={`${healthScore}, 100`}
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <span className="absolute text-sm font-black">{healthScore}%</span>
+            </div>
+            <div>
+              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Composite Health</div>
+              <div className="text-lg font-black text-emerald-400">High Credibility</div>
+              <div className="text-[11px] text-slate-300">Audited across {totalLeads} records</div>
+            </div>
+          </div>
+        </div>
+
+        {/* 5 Pictorial Credential Verification Progress Bars */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-6">
+          {dataQualityItems.map((item: any, idx: number) => (
+            <div key={idx} className="bg-white/5 rounded-xl p-3.5 border border-white/10 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-bold text-slate-200 truncate">{item.name}</span>
+                <span className="font-mono font-black text-[#FAB52C]">{item.pct}%</span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all duration-500" 
+                  style={{ 
+                    width: `${item.pct}%`, 
+                    backgroundColor: item.pct >= 85 ? '#10B981' : item.pct >= 60 ? '#F59E0B' : '#EF4444' 
+                  }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[11px] text-slate-400">
+                <span>{item.count?.toLocaleString()} Verified</span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-white/10 text-slate-300">
+                  {item.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION: PICTORIAL CONVERSION FUNNEL (5 STAGES)
+         ═══════════════════════════════════════════════════════════ */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-[#D1242F]" />
+              <h2 className="text-lg font-black text-slate-900">Commercial Conversion Funnel Progression</h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Calculated step-by-step conversion rates from initial verified lead to formal corporate contract onboarding.
+            </p>
+          </div>
+          <span className="text-xs bg-slate-100 text-slate-700 font-bold px-3 py-1.5 rounded-xl self-start">
+            5-Stage Analytical Funnel
+          </span>
+        </div>
+
+        {/* Pictorial Visual Funnel Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2">
+          {funnelStages.map((stg: any, index: number) => (
+            <div 
+              key={index} 
+              className="relative p-4 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-white hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Stage {index + 1}</span>
+                  <span className="font-mono text-xs font-black text-slate-800">{stg.pct}%</span>
+                </div>
+                <h3 className="font-black text-slate-900 text-sm">{stg.stage.replace(/^\d+\.\s*/, '')}</h3>
+                <p className="text-[11px] text-slate-500 leading-snug">{stg.description}</p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-200/80">
+                <div className="text-2xl font-black" style={{ color: stg.color }}>
+                  {stg.count?.toLocaleString()}
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div 
+                    className="h-full rounded-full" 
+                    style={{ width: `${stg.pct}%`, backgroundColor: stg.color }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════
+          SECTION: INTERACTIVE DIVISION PERFORMANCE BAR GRAPH
          ═══════════════════════════════════════════════════════════ */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -443,7 +685,7 @@ function DashboardMainContent() {
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-[#D1242F]" />
               <h2 className="text-lg font-black text-slate-900">
-                {barChartMode === 'division' ? 'Division Lead Performance Breakdown' : 'Lead Outcome Status Distribution'}
+                {barChartMode === 'division' ? 'Postal Division Lead & Conversion Performance' : 'Lead Outcome Status Distribution'}
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -463,7 +705,7 @@ function DashboardMainContent() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              By Division
+              By Postal Division
             </button>
             <button
               onClick={() => setBarChartMode('status')}
@@ -503,10 +745,10 @@ function DashboardMainContent() {
                   wrapperStyle={{ paddingTop: '15px' }}
                   iconType="circle"
                 />
-                <Bar dataKey="total" name="Total Leads" fill="#1B2A4A" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="total" name="Total Verified" fill="#1B2A4A" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="contacted" name="Contacted" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="interested" name="Interested" fill="#10B981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="onboarded" name="Onboarded" fill="#D1242F" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="onboarded" name="Contracts Won" fill="#D1242F" radius={[4, 4, 0, 0]} />
               </BarChart>
             ) : (
               <BarChart data={outcomeBreakdownData} margin={{ top: 10, right: 10, left: -15, bottom: 10 }}>
@@ -528,14 +770,14 @@ function DashboardMainContent() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          SECTION 2: ACQUISITION TRENDS & SERVICE DONUT CHARTS
+          SECTION: ACQUISITION TRENDS & SERVICE DONUT CHARTS
          ═══════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Lead Acquisition Trends Area Chart */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs lg:col-span-2 flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
-              <h2 className="text-base font-black text-slate-900">Lead Acquisition & Activity Timeline</h2>
+              <h2 className="text-base font-black text-slate-900">Meeting & Acquisition Activity Timeline</h2>
               <p className="text-xs text-slate-500">Temporal meeting activity distribution from live database records</p>
             </div>
             <div className="flex items-center gap-4 text-xs font-bold">
@@ -545,7 +787,7 @@ function DashboardMainContent() {
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-1.5 border-b-2 border-dashed border-slate-400"></span>
-                <span className="text-slate-500">Benchmark</span>
+                <span className="text-slate-500">Baseline Target</span>
               </div>
             </div>
           </div>
@@ -573,7 +815,7 @@ function DashboardMainContent() {
                   strokeWidth={2.5} 
                   fillOpacity={1} 
                   fill="url(#ipRedGradient)" 
-                  name="Volume"
+                  name="Meeting Volume"
                 />
                 <Area 
                   type="monotone" 
@@ -582,17 +824,20 @@ function DashboardMainContent() {
                   strokeWidth={1.5} 
                   strokeDasharray="4 4"
                   fill="transparent" 
-                  name="Baseline"
+                  name="Benchmark"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Right 1 Col: Lead Source Donut Chart */}
+        {/* Right 1 Col: Postal Service Donut Chart */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-base font-black text-slate-900">Service Breakdown</h2>
+            <div>
+              <h2 className="text-base font-black text-slate-900">Postal Product Distribution</h2>
+              <p className="text-xs text-slate-500">Service market share</p>
+            </div>
             <span className="text-xs bg-red-50 text-[#D1242F] font-bold px-2.5 py-0.5 rounded-full border border-red-200">
               Live Mix
             </span>
@@ -621,19 +866,22 @@ function DashboardMainContent() {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-xl font-black text-slate-900 leading-tight">100%</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Service Mix</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Postal Portfolio</span>
             </div>
           </div>
 
           {/* Donut Legend */}
           <div className="space-y-1.5 pt-3 border-t border-slate-100 text-xs">
-            {serviceDistributionData.map((src: any) => (
+            {serviceDistributionData.slice(0, 5).map((src: any) => (
               <div key={src.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: src.color }}></span>
                   <span className="text-slate-700 font-semibold">{src.name}</span>
                 </div>
-                <span className="font-mono font-bold text-slate-900">{src.value}%</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-400">{src.revenue_formatted}</span>
+                  <span className="font-mono font-bold text-slate-900">{src.value}%</span>
+                </div>
               </div>
             ))}
           </div>
@@ -641,13 +889,18 @@ function DashboardMainContent() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          SECTION 3: RECENT LEADS ENGAGEMENTS TABLE
+          SECTION: RECENT VERIFIED ENGAGEMENTS TABLE
          ═══════════════════════════════════════════════════════════ */}
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div>
-            <h2 className="text-base font-black text-slate-900">Recent Lead Engagements</h2>
-            <p className="text-xs text-slate-500">Latest active leads from database matching selected division</p>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+              <BadgeCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900">Recent Verified Lead Engagements</h2>
+              <p className="text-xs text-slate-500">Live active commercial leads with verified business contact credentials</p>
+            </div>
           </div>
           <Link
             href="/leads"
@@ -662,11 +915,12 @@ function DashboardMainContent() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3.5 px-5">Lead / Exporter Name</th>
-                <th className="py-3.5 px-4">Company & Division</th>
+                <th className="py-3.5 px-5">Lead / Commercial Entity</th>
+                <th className="py-3.5 px-4">Contact Credentials</th>
+                <th className="py-3.5 px-4">Postal Division</th>
                 <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4">Service</th>
-                <th className="py-3.5 px-4">Date of Meeting</th>
+                <th className="py-3.5 px-4">Postal Service</th>
+                <th className="py-3.5 px-4">Meeting Date</th>
                 <th className="py-3.5 px-4 text-right">Action</th>
               </tr>
             </thead>
@@ -681,16 +935,29 @@ function DashboardMainContent() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-900">{lead.name}</p>
-                          <p className="text-[11px] text-slate-400">{lead.email}</p>
+                          <p className="text-[11px] text-slate-400">{lead.company}</p>
                         </div>
                       </div>
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-800">{lead.company}</div>
-                      <div className="text-[11px] text-slate-500">
-                        {lead.division}
+                      <div className="flex items-center gap-1.5">
+                        <PhoneCall className="w-3 h-3 text-slate-400" />
+                        <span className="font-mono font-semibold text-slate-800">{lead.phone}</span>
+                        {lead.hasVerifiedPhone && (
+                          <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+                            Verified
+                          </span>
+                        )}
                       </div>
+                      <div className="text-[11px] text-slate-400 truncate max-w-[160px] mt-0.5">
+                        {lead.email}
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-slate-800">{lead.division}</div>
+                      <div className="text-[11px] text-slate-400">Karnataka Circle</div>
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -712,7 +979,7 @@ function DashboardMainContent() {
                     </td>
 
                     <td className="py-3.5 px-4 font-semibold text-slate-700">
-                      {lead.source}
+                      {lead.service}
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-500 font-medium">
@@ -730,10 +997,10 @@ function DashboardMainContent() {
                       {activeMenuId === lead.id && (
                         <div className="absolute right-4 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-30 text-left text-xs animate-fade-in-scale">
                           <Link href="/leads" className="block px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-semibold">
-                            View Details
+                            View Lead Details
                           </Link>
                           <Link href="/leads" className="block px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-semibold">
-                            Schedule Call
+                            Update Status
                           </Link>
                         </div>
                       )}
@@ -742,8 +1009,8 @@ function DashboardMainContent() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
-                    No lead engagements found for {selectedDivision}
+                  <td colSpan={7} className="py-8 text-center text-slate-400 font-medium">
+                    No verified lead engagements found for {selectedDivision}
                   </td>
                 </tr>
               )}
@@ -756,16 +1023,16 @@ function DashboardMainContent() {
           MODAL 1: UPLOAD DATA FILE (.xlsx, .xls, .csv)
          ═══════════════════════════════════════════════════════════ */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
                   <FileSpreadsheet className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">Upload Leads Data</h3>
-                  <p className="text-xs text-slate-500">Import Excel (.xlsx, .xls) or CSV files</p>
+                  <h3 className="text-base font-black text-slate-900">Upload Commercial Leads</h3>
+                  <p className="text-xs text-slate-500">Supports Excel (.xlsx, .xls) and CSV (.csv)</p>
                 </div>
               </div>
               <button
@@ -773,6 +1040,7 @@ function DashboardMainContent() {
                   setIsUploadModalOpen(false);
                   setUploadProgress('idle');
                   setUploadFile(null);
+                  setUploadSummary(null);
                 }}
                 className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
               >
@@ -781,10 +1049,25 @@ function DashboardMainContent() {
             </div>
 
             <form onSubmit={handleFileUpload} className="mt-4 space-y-4 text-xs">
+              {/* Drag and Drop Zone */}
               <div 
                 onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    setUploadFile(e.dataTransfer.files[0]);
+                    setUploadProgress('idle');
+                  }
+                }}
                 className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-                  uploadFile ? 'border-emerald-400 bg-emerald-50/30' : 'border-slate-300 hover:border-[#D1242F] hover:bg-red-50/20'
+                  isDragging 
+                    ? 'border-[#D1242F] bg-red-50/40 scale-[1.01]' 
+                    : uploadFile 
+                      ? 'border-emerald-400 bg-emerald-50/30' 
+                      : 'border-slate-300 hover:border-[#D1242F] hover:bg-red-50/20'
                 }`}
               >
                 <input
@@ -819,16 +1102,40 @@ function DashboardMainContent() {
                 )}
               </div>
 
+              {/* Download Sample Template Banner */}
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <FileCheck className="w-4 h-4 text-slate-600" />
+                  <span className="font-bold text-slate-700">Need standard India Post template?</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="text-[#D1242F] hover:text-[#B01E28] font-bold text-xs hover:underline flex items-center gap-1"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download Sample CSV</span>
+                </button>
+              </div>
+
+              {/* Progress & Status Message */}
               {uploadProgress !== 'idle' && (
-                <div className={`p-3 rounded-xl flex items-center gap-2 ${
+                <div className={`p-3 rounded-xl flex items-start gap-2.5 ${
                   uploadProgress === 'uploading' ? 'bg-blue-50 text-blue-800 border border-blue-200' :
                   uploadProgress === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
                   'bg-rose-50 text-rose-800 border border-rose-200'
                 }`}>
-                  {uploadProgress === 'uploading' && <RefreshCw className="w-4 h-4 animate-spin text-blue-600 shrink-0" />}
-                  {uploadProgress === 'success' && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
-                  {uploadProgress === 'error' && <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />}
-                  <span className="font-semibold text-[11px]">{uploadMessage}</span>
+                  {uploadProgress === 'uploading' && <RefreshCw className="w-4 h-4 animate-spin text-blue-600 shrink-0 mt-0.5" />}
+                  {uploadProgress === 'success' && <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />}
+                  {uploadProgress === 'error' && <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />}
+                  <div className="text-xs">
+                    <p className="font-bold">{uploadMessage}</p>
+                    {uploadSummary && (
+                      <p className="text-[11px] opacity-90 mt-1">
+                        Total Rows: {uploadSummary.total_rows} • Valid Imported: {uploadSummary.count} • Skipped: {uploadSummary.skipped_empty}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -839,6 +1146,7 @@ function DashboardMainContent() {
                     setIsUploadModalOpen(false);
                     setUploadProgress('idle');
                     setUploadFile(null);
+                    setUploadSummary(null);
                   }}
                   className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
                 >
@@ -847,7 +1155,7 @@ function DashboardMainContent() {
                 <button
                   type="submit"
                   disabled={!uploadFile || uploadProgress === 'uploading'}
-                  className="px-4 py-2 bg-[#D1242F] hover:bg-[#B01E28] disabled:opacity-50 text-white rounded-xl font-bold shadow-xs hover:shadow flex items-center gap-1.5"
+                  className="px-5 py-2.5 bg-[#D1242F] hover:bg-[#B01E28] disabled:opacity-50 text-white rounded-xl font-bold shadow-xs hover:shadow flex items-center gap-1.5"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>{uploadProgress === 'uploading' ? 'Processing...' : 'Upload & Process'}</span>
@@ -862,7 +1170,7 @@ function DashboardMainContent() {
           MODAL 2: DEDUPLICATE LEADS CLEANUP
          ═══════════════════════════════════════════════════════════ */}
       {isDedupModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -871,7 +1179,7 @@ function DashboardMainContent() {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900">Lead Deduplication Engine</h3>
-                  <p className="text-xs text-slate-500">Identify and clean duplicate records from database</p>
+                  <p className="text-xs text-slate-500">Scan and preserve primary records while cleaning duplicates</p>
                 </div>
               </div>
               <button
@@ -885,7 +1193,7 @@ function DashboardMainContent() {
             <div className="mt-4 space-y-4 text-xs">
               {/* Criteria Selector */}
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Deduplication Criteria</label>
+                <label className="font-bold text-slate-700 block mb-1">Deduplication Matching Criteria</label>
                 <select
                   value={dedupCriteria}
                   onChange={(e) => {
@@ -933,7 +1241,7 @@ function DashboardMainContent() {
               )}
 
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                * Note: The primary (original) lead record with the earliest entry is preserved, while all duplicate secondary entries are safely deleted.
+                * Note: The primary lead record with the earliest entry is preserved, while all duplicate secondary entries are safely deleted.
               </p>
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">

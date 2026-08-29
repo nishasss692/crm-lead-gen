@@ -1,8 +1,23 @@
 'use client';
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import LeadsTable, { Lead } from '../components/LeadsTable';
-import { CopyX, Trash2, Check, RefreshCw, X, Download, Filter, Search } from 'lucide-react';
+import { 
+  CopyX, 
+  Trash2, 
+  Check, 
+  RefreshCw, 
+  X, 
+  Download, 
+  Filter, 
+  Search, 
+  Upload, 
+  FileSpreadsheet, 
+  FileCheck, 
+  AlertTriangle,
+  ShieldCheck,
+  BadgeCheck
+} from 'lucide-react';
 
 function LeadsPageContent() {
   const router = useRouter();
@@ -10,10 +25,20 @@ function LeadsPageContent() {
   const statusFilter = searchParams.get('status');
 
   const [selectedDivision, setSelectedDivision] = useState('');
+  const [onlyValidLeads, setOnlyValidLeads] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Upload Modal State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [uploadSummary, setUploadSummary] = useState<{ count?: number; skipped_empty?: number; data_quality_pct?: number; total_rows?: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Deduplication Modal State
   const [isDedupModalOpen, setIsDedupModalOpen] = useState(false);
@@ -36,22 +61,39 @@ function LeadsPageContent() {
     }
   };
 
-  const fetchLeads = async (token: string, division = selectedDivision) => {
+  const fetchLeads = async (token: string, division = selectedDivision, validOnly = onlyValidLeads) => {
     setLoading(true);
     try {
-      const divQuery = division && division !== 'All Divisions' ? `?division_name=${encodeURIComponent(division)}` : '';
-      const res = await fetch(`http://localhost:8000/api/leads${divQuery}`, {
+      const params = new URLSearchParams();
+      if (division && division !== 'All Divisions') {
+        params.append('division_name', division);
+      }
+      params.append('only_valid', validOnly ? 'true' : 'false');
+
+      const res = await fetch(`http://localhost:8000/api/leads?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         const formattedData = data.map((item: any) => ({
-          id: item.id, slNo: item.sl_no, exporterName: item.exporter_name, address: item.address,
-          pincode: item.pincode, divisionId: item.division_id, division: item.division,
-          region: item.region, assignedMeName: item.assigned_agent, dateOfMeeting: item.date_of_meeting,
-          customerMet: item.customer_met, contactNumber: item.contact_number, email: item.email,
-          serviceUsing: item.service_using, monthlyVolume: item.monthly_volume, meetingOutcome: item.meeting_outcome,
-          contractId: item.contract_id, remarks: item.remarks
+          id: item.id, 
+          slNo: item.sl_no, 
+          exporterName: item.exporter_name, 
+          address: item.address,
+          pincode: item.pincode, 
+          divisionId: item.division_id, 
+          division: item.division,
+          region: item.region, 
+          assignedMeName: item.assigned_agent, 
+          dateOfMeeting: item.date_of_meeting,
+          customerMet: item.customer_met, 
+          contactNumber: item.contact_number, 
+          email: item.email,
+          serviceUsing: item.service_using, 
+          monthlyVolume: item.monthly_volume, 
+          meetingOutcome: item.meeting_outcome,
+          contractId: item.contract_id, 
+          remarks: item.remarks
         }));
         setLeads(formattedData);
       }
@@ -69,8 +111,62 @@ function LeadsPageContent() {
       return;
     }
     fetchDivisions(token);
-    fetchLeads(token, selectedDivision);
-  }, [router, selectedDivision]);
+    fetchLeads(token, selectedDivision, onlyValidLeads);
+  }, [router, selectedDivision, onlyValidLeads]);
+
+  // Handle File Upload
+  const handleFileUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile) return;
+
+    setUploadProgress('uploading');
+    setUploadMessage('Processing records...');
+    setUploadSummary(null);
+
+    const token = localStorage.getItem('token');
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+
+    try {
+      const res = await fetch('http://localhost:8000/api/upload-excel', {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setUploadProgress('success');
+        setUploadMessage(data.message || `Successfully imported ${data.count || ''} records!`);
+        setUploadSummary({
+          count: data.count,
+          skipped_empty: data.skipped_empty,
+          data_quality_pct: data.data_quality_pct,
+          total_rows: data.total_rows
+        });
+        if (token) {
+          fetchDivisions(token);
+          fetchLeads(token, selectedDivision, onlyValidLeads);
+        }
+        setTimeout(() => {
+          setIsUploadModalOpen(false);
+          setUploadProgress('idle');
+          setUploadFile(null);
+          setUploadSummary(null);
+        }, 2000);
+      } else {
+        setUploadProgress('error');
+        setUploadMessage(data.detail || 'Failed to process file.');
+      }
+    } catch (error: any) {
+      setUploadProgress('error');
+      setUploadMessage(error.message || 'Network error occurred while uploading.');
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    window.open('http://localhost:8000/api/download-template', '_blank');
+  };
 
   // Fetch Duplicate Summary
   const fetchDuplicateSummary = async (criteria = dedupCriteria) => {
@@ -112,7 +208,7 @@ function LeadsPageContent() {
       const data = await res.json();
       if (res.ok) {
         setDedupSuccessResult(data.message);
-        if (token) fetchLeads(token, selectedDivision);
+        if (token) fetchLeads(token, selectedDivision, onlyValidLeads);
         fetchDuplicateSummary(dedupCriteria);
       } else {
         alert(data.detail || "Failed to remove duplicates");
@@ -199,29 +295,60 @@ function LeadsPageContent() {
         {/* Header Title Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-[11px] font-black text-[#D1242F] uppercase tracking-wider mb-1">
-              Karnataka Postal Circle • Lead Workspace
-            </h3>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <BadgeCheck className="w-3 h-3 text-emerald-600" />
+                Validated Workspace
+              </span>
+              <span className="text-xs font-bold text-slate-400">•</span>
+              <span className="text-[11px] font-black text-[#D1242F] uppercase tracking-wider">
+                Karnataka Postal Circle
+              </span>
+            </div>
             <h1 className="text-3xl font-black text-[#1B2A4A] tracking-tight">{getTitle()}</h1>
             <p className="text-sm font-medium text-slate-500 mt-1">
-              {filtered.length.toLocaleString()} records matching active circle filters
+              {filtered.length.toLocaleString()} verified records matching active circle filters
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Strict Valid Filter Toggle */}
+            <button
+              onClick={() => setOnlyValidLeads(!onlyValidLeads)}
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                onlyValidLeads 
+                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-xs' 
+                  : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+              }`}
+            >
+              <ShieldCheck className={`w-3.5 h-3.5 ${onlyValidLeads ? 'text-emerald-600' : 'text-slate-400'}`} />
+              <span>{onlyValidLeads ? 'Verified Valid Only' : 'All Records'}</span>
+            </button>
+
+            {/* Deduplicate Clean Button */}
             <button
               onClick={handleOpenDedupModal}
-              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-4 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
             >
-              <CopyX className="w-4 h-4 text-amber-700" />
+              <CopyX className="w-3.5 h-3.5 text-amber-700" />
               <span>Clean Duplicates</span>
             </button>
 
+            {/* Upload File Button */}
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+            >
+              <Upload className="w-3.5 h-3.5 text-[#FAB52C]" />
+              <span>Upload File</span>
+            </button>
+
+            {/* Export CSV Button */}
             <button 
               onClick={handleExportCSV} 
-              className="flex items-center px-4 py-2.5 bg-[#1B2A4A] hover:bg-[#283044] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all gap-1.5"
+              className="flex items-center px-3.5 py-2.5 bg-[#D1242F] hover:bg-[#B01E28] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all gap-1.5"
             >
-              <Download className="w-4 h-4 text-[#FAB52C]" />
+              <Download className="w-3.5 h-3.5" />
               <span>Export CSV</span>
             </button>
           </div>
@@ -251,8 +378,7 @@ function LeadsPageContent() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-[#D1242F] focus:ring-2 focus:ring-[#D1242F]/20 shadow-xs"
-              >
-              </input>
+              />
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             </div>
           </div>
@@ -273,10 +399,157 @@ function LeadsPageContent() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          DEDUPLICATE LEADS MODAL
+          MODAL 1: UPLOAD DATA FILE (.xlsx, .xls, .csv)
+         ═══════════════════════════════════════════════════════════ */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Upload Commercial Leads</h3>
+                  <p className="text-xs text-slate-500">Supports Excel (.xlsx, .xls) and CSV (.csv)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setUploadProgress('idle');
+                  setUploadFile(null);
+                  setUploadSummary(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleFileUpload} className="mt-4 space-y-4 text-xs">
+              {/* Drag and Drop Zone */}
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    setUploadFile(e.dataTransfer.files[0]);
+                    setUploadProgress('idle');
+                  }
+                }}
+                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+                  isDragging 
+                    ? 'border-[#D1242F] bg-red-50/40 scale-[1.01]' 
+                    : uploadFile 
+                      ? 'border-emerald-400 bg-emerald-50/30' 
+                      : 'border-slate-300 hover:border-[#D1242F] hover:bg-red-50/20'
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setUploadFile(e.target.files[0]);
+                      setUploadProgress('idle');
+                    }
+                  }}
+                />
+
+                <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mx-auto mb-2">
+                  <Upload className="w-6 h-6 text-[#D1242F]" />
+                </div>
+
+                {uploadFile ? (
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">{uploadFile.name}</p>
+                    <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+                      Ready to upload ({(uploadFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">Click to browse or drag file here</p>
+                    <p className="text-[11px] text-slate-400 mt-1">Supports Excel spreadsheet (.xlsx, .xls) and CSV</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Download Sample Template Banner */}
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <FileCheck className="w-4 h-4 text-slate-600" />
+                  <span className="font-bold text-slate-700">Need standard India Post template?</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="text-[#D1242F] hover:text-[#B01E28] font-bold text-xs hover:underline flex items-center gap-1"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download Sample CSV</span>
+                </button>
+              </div>
+
+              {/* Progress & Status Message */}
+              {uploadProgress !== 'idle' && (
+                <div className={`p-3 rounded-xl flex items-start gap-2.5 ${
+                  uploadProgress === 'uploading' ? 'bg-blue-50 text-blue-800 border border-blue-200' :
+                  uploadProgress === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                  'bg-rose-50 text-rose-800 border border-rose-200'
+                }`}>
+                  {uploadProgress === 'uploading' && <RefreshCw className="w-4 h-4 animate-spin text-blue-600 shrink-0 mt-0.5" />}
+                  {uploadProgress === 'success' && <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />}
+                  {uploadProgress === 'error' && <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />}
+                  <div className="text-xs">
+                    <p className="font-bold">{uploadMessage}</p>
+                    {uploadSummary && (
+                      <p className="text-[11px] opacity-90 mt-1">
+                        Total Rows: {uploadSummary.total_rows} • Valid Imported: {uploadSummary.count} • Skipped: {uploadSummary.skipped_empty}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUploadModalOpen(false);
+                    setUploadProgress('idle');
+                    setUploadFile(null);
+                    setUploadSummary(null);
+                  }}
+                  className="px-4 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!uploadFile || uploadProgress === 'uploading'}
+                  className="px-5 py-2.5 bg-[#D1242F] hover:bg-[#B01E28] disabled:opacity-50 text-white rounded-xl font-bold shadow-xs hover:shadow flex items-center gap-1.5"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{uploadProgress === 'uploading' ? 'Processing...' : 'Upload & Process'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL 2: DEDUPLICATE LEADS CLEANUP
          ═══════════════════════════════════════════════════════════ */}
       {isDedupModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -298,7 +571,7 @@ function LeadsPageContent() {
 
             <div className="mt-4 space-y-4 text-xs">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Deduplication Criteria</label>
+                <label className="font-bold text-slate-700 block mb-1">Deduplication Matching Criteria</label>
                 <select
                   value={dedupCriteria}
                   onChange={(e) => {
