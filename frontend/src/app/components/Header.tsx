@@ -1,55 +1,40 @@
 'use client';
 import React from 'react';
-import { ShieldCheck, Database, Sparkles } from 'lucide-react';
 import IndiaPostLogo from './IndiaPostLogo';
 
-export default function Header({ toggleSidebar }: { toggleSidebar?: () => void }) {
+export default function Header({ 
+  toggleSidebar, 
+  isSidebarOpen 
+}: { 
+  toggleSidebar?: () => void;
+  isSidebarOpen?: boolean;
+}) {
   return (
-    <header className="bg-white border-b-2 border-slate-200/80 h-20 flex items-center px-4 md:px-8 justify-between shrink-0 shadow-sm relative z-20">
+    <header className="bg-white border-b-[3px] border-[#D1242F] h-18 md:h-20 flex items-center px-4 md:px-8 justify-between shrink-0 shadow-xs relative z-30">
       
-      {/* Left side: India Post Logo & Toggle */}
-      <div className="flex items-center space-x-4">
-        {toggleSidebar && (
-          <button 
-            onClick={toggleSidebar} 
-            className="p-2 -ml-2 text-slate-600 hover:text-[#D1242F] hover:bg-red-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-200 transition-colors"
-            title="Toggle Navigation Menu"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        )}
-        
-        <IndiaPostLogo size="md" variant="header" />
+      {/* Left side: India Post Logo with Sanskrit & Department of Posts */}
+      <div className="flex items-center space-x-3 shrink-0">
+        <IndiaPostLogo size="md" variant="official" />
       </div>
       
-      {/* Center: Karnataka Postal Circle Title */}
-      <div className="hidden md:flex flex-1 flex-col justify-center items-center px-4">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[#FAB52C] animate-pulse"></span>
-          <h1 className="text-[#1B2A4A] font-black text-base sm:text-lg tracking-tight text-center">
-            Karnataka Postal Circle
-          </h1>
-          <span className="h-2 w-2 rounded-full bg-[#D1242F]"></span>
-        </div>
-        <h2 className="text-[#D1242F] font-bold text-[11px] tracking-wider uppercase text-center mt-0.5">
-          Operational Lead Management & Analytics CRM
+      {/* Center: Karnataka Postal Circle Title & Subtitle */}
+      <div className="flex-1 flex flex-col justify-center items-center px-2 text-center">
+        <h1 
+          className="text-[#9E1B1B] font-serif font-bold text-xl sm:text-2xl md:text-[26px] tracking-tight leading-none"
+          style={{ fontFamily: 'Georgia, Cambria, "Times New Roman", Times, serif' }}
+        >
+          Karnataka Postal Circle
+        </h1>
+        <h2 className="text-[#9E1B1B] font-bold text-xs sm:text-sm tracking-normal leading-tight mt-1">
+          Advanced Lead Management Dashboard
         </h2>
       </div>
       
-      {/* Right side: Official Badges & Live Status */}
-      <div className="flex items-center gap-2.5">
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-          <span className="text-[11px] font-bold text-emerald-700">Live DB Connected</span>
-        </div>
-
-        <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200">
-          <ShieldCheck className="w-4 h-4 text-[#2E7D32]" />
-          <span className="text-xs font-bold text-slate-700">Govt. of India</span>
-        </div>
+      {/* Right side spacer to keep center aligned */}
+      <div className="shrink-0 w-16 md:w-32 flex justify-end items-center">
+        {/* Subtle circle status or space reservation */}
       </div>
     </header>
   );
 }
+

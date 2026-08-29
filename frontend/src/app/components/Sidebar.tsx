@@ -3,28 +3,25 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import ChangePasswordModal from './ChangePasswordModal';
-import IndiaPostLogo from './IndiaPostLogo';
 import { 
-  LayoutDashboard, 
-  Users, 
-  PhoneCall, 
-  Clock, 
-  Heart, 
-  Star, 
-  Briefcase, 
-  KeyRound, 
+  ChevronLeft,
+  ChevronRight,
   LogOut,
-  Sparkles
+  KeyRound
 } from 'lucide-react';
 
-function SidebarContent() {
+function SidebarContent({ 
+  onToggleCollapse 
+}: { 
+  onToggleCollapse?: () => void 
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const statusParam = searchParams.get('status');
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [user, setUser] = useState<{username: string, role: string} | null>(null);
+  const [user, setUser] = useState<{ username: string; role: string; full_name?: string } | null>(null);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -32,6 +29,8 @@ function SidebarContent() {
       try {
         setUser(JSON.parse(userStr));
       } catch (e) {}
+    } else {
+      setUser({ username: 'ME1', role: 'Marketing Executive', full_name: 'Marketing Executive' });
     }
   }, []);
 
@@ -41,144 +40,126 @@ function SidebarContent() {
     router.push('/login');
   };
 
-  const getLinkClass = (path: string, status?: string) => {
-    let isActive = false;
-    if (path === '/') {
-      isActive = pathname === '/';
-    } else if (path === '/leads') {
-      isActive = pathname === '/leads' && (statusParam === status || (!statusParam && !status));
-    }
-    
-    return `flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
-      isActive 
-        ? 'bg-gradient-to-r from-[#D1242F] to-[#B01E28] text-white shadow-md shadow-red-900/30 font-bold' 
-        : 'text-slate-300 hover:bg-white/10 hover:text-white font-medium'
-    }`;
-  };
+  const navItems = [
+    { label: 'Dashboard', badge: 'HM', href: '/', isActive: pathname === '/' },
+    { label: 'Contact pending', badge: 'CP', href: '/leads?status=pending', isActive: pathname === '/leads' && statusParam === 'pending' },
+    { label: 'Contacted', badge: 'CT', href: '/leads?status=contacted', isActive: pathname === '/leads' && statusParam === 'contacted' },
+    { label: 'Follow-up Required', badge: 'FU', href: '/leads?status=followup', isActive: pathname === '/leads' && statusParam === 'followup' },
+    { label: 'Interested', badge: 'IN', href: '/leads?status=interested', isActive: pathname === '/leads' && statusParam === 'interested' },
+    { label: 'Willing to onboard', badge: 'WO', href: '/leads?status=willing', isActive: pathname === '/leads' && statusParam === 'willing' },
+    { label: 'Onboarded', badge: 'OC', href: '/leads?status=onboarded', isActive: pathname === '/leads' && statusParam === 'onboarded' },
+  ];
 
   return (
-    <>
-      {/* Brand Header */}
-      <div className="p-4 border-b border-white/10">
-        <IndiaPostLogo size="sm" variant="compact" textColor="light" />
-      </div>
-      
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-6 custom-scrollbar">
-        <div>
-          <div className="px-3 mb-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
-            Executive Analytics
-          </div>
-          <ul className="space-y-1">
-            <li>
-              <Link href="/" className={getLinkClass('/')}>
-                <LayoutDashboard className="w-4 h-4 mr-3 shrink-0 text-[#FAB52C]" />
-                <span className="text-sm">Overview Dashboard</span>
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <div className="px-3 mb-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
-            Lead Management
-          </div>
-          <ul className="space-y-1">
-            <li>
-              <Link href="/leads" className={getLinkClass('/leads')}>
-                <Users className="w-4 h-4 mr-3 shrink-0 text-slate-300" />
-                <span className="text-sm">All Leads Directory</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/leads?status=pending" className={getLinkClass('/leads', 'pending')}>
-                <Users className="w-4 h-4 mr-3 shrink-0 text-amber-400" />
-                <span className="text-sm">Contact Pending</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/leads?status=contacted" className={getLinkClass('/leads', 'contacted')}>
-                <PhoneCall className="w-4 h-4 mr-3 shrink-0 text-blue-400" />
-                <span className="text-sm">Contacted</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/leads?status=followup" className={getLinkClass('/leads', 'followup')}>
-                <Clock className="w-4 h-4 mr-3 shrink-0 text-orange-400" />
-                <span className="text-sm">Follow-up Required</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/leads?status=interested" className={getLinkClass('/leads', 'interested')}>
-                <Heart className="w-4 h-4 mr-3 shrink-0 text-emerald-400" />
-                <span className="text-sm">Interested</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/leads?status=willing" className={getLinkClass('/leads', 'willing')}>
-                <Star className="w-4 h-4 mr-3 shrink-0 text-yellow-400" />
-                <span className="text-sm">Willing to Onboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link href="/leads?status=onboarded" className={getLinkClass('/leads', 'onboarded')}>
-                <Briefcase className="w-4 h-4 mr-3 shrink-0 text-cyan-400" />
-                <span className="text-sm">Onboarded</span>
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </nav>
-
-      {/* User Account Info */}
-      <div className="p-4 border-t border-white/10 bg-black/10">
+    <div className="flex flex-col h-full bg-[#0d2238] text-slate-300 select-none">
+      {/* Top Section: Red Leads Management Icon */}
+      <div className="p-4 pb-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md" style={{ background: 'linear-gradient(135deg, #F7941D, #D1242F)' }}>
-            {user?.username?.charAt(0).toUpperCase() || 'U'}
+          <div className="w-9 h-9 rounded-xl bg-[#D1242F] text-white font-black text-lg flex items-center justify-center shadow-md shrink-0">
+            L
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-white capitalize truncate">{user?.username || 'Officer'}</p>
-            <p className="text-xs text-slate-400 font-medium truncate">{user?.role ? `${user.role} Officer` : 'Authorized Officer'}</p>
+          <div className="leading-tight">
+            <h2 className="text-white font-bold text-sm tracking-tight">Leads</h2>
+            <h2 className="text-white font-bold text-sm tracking-tight">Management</h2>
           </div>
         </div>
-        
-        <div className="mt-3 space-y-1">
-          <button 
-            onClick={() => setIsPasswordModalOpen(true)}
-            className="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors flex items-center gap-2"
+
+        {/* Collapse Sidebar Button */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="mt-3.5 flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors py-1 px-2 rounded hover:bg-white/5 w-full font-medium"
           >
-            <KeyRound className="w-3.5 h-3.5" />
-            <span>Change Password</span>
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span>Collapse sidebar</span>
           </button>
-          <button 
+        )}
+      </div>
+
+      {/* Navigation section */}
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 custom-scrollbar">
+        <div>
+          <div className="px-2 mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Lead Operations
+          </div>
+          <div className="space-y-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  item.isActive
+                    ? 'bg-white/10 text-white border border-white/20 shadow-xs'
+                    : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                }`}
+              >
+                <span
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                    item.isActive
+                      ? 'bg-white text-[#0d2238]'
+                      : 'bg-white/10 text-slate-300 border border-white/10'
+                  }`}
+                >
+                  {item.badge}
+                </span>
+                <span className="truncate">{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Account Section */}
+      <div className="p-3 border-t border-white/10 bg-[#0a1b2d]">
+        <div className="px-1 mb-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          My Account
+        </div>
+        <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-[#B8E986] text-[#1B4D1B] font-extrabold text-xs flex items-center justify-center shrink-0">
+              AR
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white truncate">{user?.username || 'ME1'}</p>
+              <p className="text-[10px] text-slate-400 truncate">Marketing Executive</p>
+            </div>
+          </div>
+          <button
             onClick={handleLogout}
-            className="w-full text-left px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-lg transition-colors flex items-center gap-2"
+            title="Sign Out"
+            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
-      
+
       <ChangePasswordModal 
         isOpen={isPasswordModalOpen} 
         onClose={() => setIsPasswordModalOpen(false)} 
       />
-    </>
+    </div>
   );
 }
 
-export default function Sidebar() {
+export default function Sidebar({ 
+  onToggleCollapse 
+}: { 
+  onToggleCollapse?: () => void;
+  isSidebarOpen?: boolean;
+  setIsSidebarOpen?: (open: boolean) => void;
+}) {
   return (
-    <aside className="w-64 bg-[#1B2A4A] text-slate-300 flex flex-col h-full shrink-0 shadow-2xl z-20 relative" style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}>
+    <aside className="w-64 bg-[#0d2238] text-slate-300 flex flex-col h-full shrink-0 shadow-xl z-20 relative select-none">
       <Suspense fallback={
         <div className="p-5 flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#D1242F] rounded-lg"></div>
-          <div className="w-32 h-10 bg-white/10 rounded"></div>
+          <div className="w-9 h-9 bg-[#D1242F] rounded-lg"></div>
+          <div className="w-32 h-8 bg-white/10 rounded"></div>
         </div>
       }>
-        <SidebarContent />
+        <SidebarContent onToggleCollapse={onToggleCollapse} />
       </Suspense>
     </aside>
   );
 }
+
