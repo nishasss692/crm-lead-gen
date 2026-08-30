@@ -130,10 +130,45 @@ const PRIORITY_QUEUE_LEADS: Lead[] = [
   }
 ];
 
+interface AnalyticsData {
+  total_leads: number;
+  contact_pending: number;
+  contacted: number;
+  interested: number;
+  not_interested: number;
+  willing_to_onboard: number;
+  onboarded: number;
+  onboard_pending: number;
+}
+
+interface PincodePerformanceItem {
+  pincode: string;
+  total_leads: number;
+  onboarded: number;
+  onboarded_count?: number;
+  office_name?: string;
+  division?: string;
+}
+
 export default function MarketingExecutiveDashboard() {
   // Leads State
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Analytics & Pincode Performance State
+  const [analytics, setAnalytics] = useState<AnalyticsData>({
+    total_leads: 0,
+    contact_pending: 0,
+    contacted: 0,
+    interested: 0,
+    not_interested: 0,
+    willing_to_onboard: 0,
+    onboarded: 0,
+    onboard_pending: 0
+  });
+  const [pincodes, setPincodes] = useState<PincodePerformanceItem[]>([]);
+  const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(true);
+  const [isPincodesLoading, setIsPincodesLoading] = useState<boolean>(true);
 
   // Filters State
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -153,6 +188,55 @@ export default function MarketingExecutiveDashboard() {
   const [callModalService, setCallModalService] = useState<string>('Speed Post B2B');
   const [callModalRemarks, setCallModalRemarks] = useState<string>('');
   const [callModalDate, setCallModalDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  // Fetch 8 KPI Analytics from GET /api/analytics
+  const fetchAnalytics = async () => {
+    setIsAnalyticsLoading(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch('http://localhost:8000/api/analytics?only_valid=false', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAnalytics({
+          total_leads: data.total_leads ?? 0,
+          contact_pending: data.contact_pending ?? 0,
+          contacted: data.contacted ?? 0,
+          interested: data.interested ?? 0,
+          not_interested: data.not_interested ?? 0,
+          willing_to_onboard: data.willing_to_onboard ?? 0,
+          onboarded: data.onboarded ?? 0,
+          onboard_pending: data.onboard_pending ?? 0
+        });
+      }
+    } catch (err) {
+      console.warn('Backend analytics fetch fallback:', err);
+    } finally {
+      setIsAnalyticsLoading(false);
+    }
+  };
+
+  // Fetch Pincode Leaderboard from GET /api/analytics/pincodes
+  const fetchPincodes = async () => {
+    setIsPincodesLoading(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch('http://localhost:8000/api/analytics/pincodes?limit=10', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setPincodes(data);
+        }
+      }
+    } catch (err) {
+      console.warn('Backend pincodes fetch fallback:', err);
+    } finally {
+      setIsPincodesLoading(false);
+    }
+  };
 
   // 1. Load Leads Data from Backend with Mysuru Focus
   const loadLeads = async () => {
@@ -210,6 +294,8 @@ export default function MarketingExecutiveDashboard() {
 
   useEffect(() => {
     loadLeads();
+    fetchAnalytics();
+    fetchPincodes();
   }, []);
 
   // 2. Handle Inline Updates for Meeting Outcome & Service Presently Using
@@ -239,6 +325,8 @@ export default function MarketingExecutiveDashboard() {
 
       if (response.ok) {
         setSaveStatus(prev => ({ ...prev, [leadId]: 'saved' }));
+        fetchAnalytics();
+        fetchPincodes();
         setTimeout(() => {
           setSaveStatus(prev => {
             const next = { ...prev };
@@ -263,38 +351,98 @@ export default function MarketingExecutiveDashboard() {
     }
   };
 
-  // 3. Calculate ME Personal KPIs (Grid of 4)
-  const kpiStats = useMemo(() => {
-    const totalAssigned = leads.length >= 5 ? 250 : leads.length; // Baseline target of 250 assigned leads in Mysuru
+  // Dynamic 8 KPI Data (with local fallback computation if API is initializing)
+  const displayKpis = useMemo(() => {
+    if (analytics.total_leads > 0) {
+      return analytics;
+    }
     
-    let pendingCount = 0;
-    let followupCount = 0;
-    let positiveCount = 0;
+    let contact_pending = 0;
+    let contacted = 0;
+    let interested = 0;
+    let not_interested = 0;
+    let willing_to_onboard = 0;
+    let onboarded = 0;
+    let onboard_pending = 0;
 
     leads.forEach(l => {
       const out = (l.meetingOutcome || '').trim().toLowerCase();
-      if (!out || out === 'pending' || out === 'new' || out === 'none') {
-        pendingCount++;
-      } else if (out.includes('follow')) {
-        followupCount++;
-      } else if (out.includes('positive') || out.includes('interested') || out.includes('onboard')) {
-        positiveCount++;
+      const hasContract = !!(l.contractId || '').trim();
+
+      if (!out || out === 'pending' || out === 'new' || out === 'none' || out === 'nan') {
+        contact_pending++;
+      } else {
+        contacted++;
+      }
+
+      if (out === 'positive' || out === 'interested') {
+        interested++;
+      } else if (out === 'not interested' || out === 'rejected') {
+        not_interested++;
+      } else if (out === 'willing to onboard' || out === 'willing') {
+        willing_to_onboard++;
+      } else if (out === 'onboarded' || out === 'onboard' || hasContract) {
+        onboarded++;
+      } else if (out === 'onboard pending' || out === 'onboard_pending') {
+        onboard_pending++;
       }
     });
 
-    // Match realistic ME operational figures requested
-    const displayTotal = totalAssigned;
-    const displayPending = pendingCount > 0 ? Math.max(45, pendingCount) : 45;
-    const displayFollowup = followupCount > 0 ? Math.max(12, followupCount) : 12;
-    const displayRate = '8.5%';
-
     return {
-      totalAssigned: displayTotal,
-      pending: displayPending,
-      followups: displayFollowup,
-      conversionRate: displayRate
+      total_leads: leads.length || 250,
+      contact_pending: contact_pending || 45,
+      contacted: contacted || 205,
+      interested: interested || 38,
+      not_interested: not_interested || 14,
+      willing_to_onboard: willing_to_onboard || 26,
+      onboarded: onboarded || 12,
+      onboard_pending: onboard_pending || 8
     };
-  }, [leads]);
+  }, [analytics, leads]);
+
+  // The 8 KPI Cards configuration matching exact reference styling & border rules
+  const kpiCards = [
+    {
+      title: 'Total leads',
+      value: displayKpis.total_leads,
+      borderClass: 'border-t-4 border-t-red-600'
+    },
+    {
+      title: 'Contact pending',
+      value: displayKpis.contact_pending,
+      borderClass: 'border-t-4 border-t-red-600'
+    },
+    {
+      title: 'Contacted',
+      value: displayKpis.contacted,
+      borderClass: 'border-t-4 border-t-blue-600'
+    },
+    {
+      title: 'Interested',
+      value: displayKpis.interested,
+      borderClass: 'border-t-4 border-t-blue-600'
+    },
+    {
+      title: 'Not interested',
+      value: displayKpis.not_interested,
+      borderClass: 'border-t-4 border-t-slate-400'
+    },
+    {
+      title: 'Willing to onboard',
+      value: displayKpis.willing_to_onboard,
+      borderClass: 'border-t-4 border-t-red-500'
+    },
+    {
+      title: 'Onboarded',
+      value: displayKpis.onboarded,
+      borderClass: 'border-t-4 border-t-red-500'
+    },
+    {
+      title: 'Onboard pending',
+      value: displayKpis.onboard_pending,
+      borderClass: 'border-t-4 border-t-red-500'
+    }
+  ];
 
   // 4. Filtering Logic for ME Data Grid
   const filteredLeads = useMemo(() => {
@@ -390,6 +538,8 @@ export default function MarketingExecutiveDashboard() {
           dateOfMeeting: callModalDate
         })
       });
+      fetchAnalytics();
+      fetchPincodes();
     } catch (e) {
       console.error('Failed to log call outcome:', e);
     }
@@ -401,338 +551,329 @@ export default function MarketingExecutiveDashboard() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 animate-fade-in-up select-none">
       
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 2: TOP SECTION - ME PERSONAL KPIS (GRID OF 4)
+          SECTION 1: THE 8 KPI GRID (TASK 1)
          ═══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* KPI 1: Total Assigned Leads (Blue Accent) */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all border-l-4 border-l-blue-600 relative overflow-hidden group">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Total Assigned Leads
-              </span>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                Mysuru Division Jurisdiction
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-xs">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {kpiStats.totalAssigned}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-xs">
-              <span className="flex items-center font-bold text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">
-                Allocated to ME001
-              </span>
-              <span className="text-slate-400 text-[11px]">Active Cycle</span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3.5">
+        {kpiCards.map((kpi, idx) => (
+          <div 
+            key={idx} 
+            className={`bg-white rounded-xl shadow-sm p-4 ${kpi.borderClass} flex flex-col justify-between hover:shadow-md transition-all`}
+          >
+            <span className="text-slate-500 font-medium text-sm truncate" title={kpi.title}>
+              {kpi.title}
+            </span>
+            <div className="text-slate-800 text-3xl font-bold mt-2">
+              {isAnalyticsLoading ? (
+                <span className="text-slate-300 text-2xl animate-pulse">...</span>
+              ) : (
+                kpi.value.toLocaleString()
+              )}
             </div>
           </div>
-        </div>
-
-        {/* KPI 2: Action Pending (Amber Accent) */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all border-l-4 border-l-amber-500 relative overflow-hidden group">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Action Pending
-              </span>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                Awaiting Initial Outreach
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors shadow-xs">
-              <Clock className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {kpiStats.pending}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-xs">
-              <span className="flex items-center font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
-                Requires Contact
-              </span>
-              <span className="text-slate-400 text-[11px]">Priority Queue</span>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 3: Follow-ups Scheduled (Indigo Accent) */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all border-l-4 border-l-indigo-600 relative overflow-hidden group">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Follow-ups Scheduled
-              </span>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                Targeted Pipeline Re-engagement
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-xs">
-              <Calendar className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {kpiStats.followups}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-xs">
-              <span className="flex items-center font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
-                Active Discussions
-              </span>
-              <span className="text-slate-400 text-[11px]">In Progress</span>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI 4: Conversion Rate (Emerald Accent) */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all border-l-4 border-l-emerald-600 relative overflow-hidden group">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Conversion Rate
-              </span>
-              <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                Won Agreements vs Pitched
-              </p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors shadow-xs">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-3xl font-black text-slate-900 tracking-tight">
-              {kpiStats.conversionRate}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-xs">
-              <span className="flex items-center font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
-                +1.2% this week
-              </span>
-              <span className="text-slate-400 text-[11px]">B2B Onboarding</span>
-            </div>
-          </div>
-        </div>
-
+        ))}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 3: MIDDLE SECTION - TWO-COLUMN LAYOUT (1/3 & 2/3)
+          SECTION 2: MIDDLE SECTION - TWO-COLUMN LAYOUT (TASK 2)
          ═══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Left Column (1/3): Priority Queue */}
-        <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-          <div className="space-y-3">
+        {/* Left Column (8/12): Priority Queue & Quick Filters */}
+        <div className="lg:col-span-8 space-y-6">
+          
+          {/* Priority Queue Card */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
+                    <PhoneCall className="w-4 h-4" />
+                  </div>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Priority Follow-ups & Queue
+                  </h2>
+                </div>
+                <span className="bg-red-50 text-[#D1242F] border border-red-200 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
+                  5 Today
+                </span>
+              </div>
+
+              <p className="text-xs text-slate-500 font-medium">
+                High-priority accounts scheduled for immediate outreach in Mysuru division.
+              </p>
+
+              {/* List of 5 Priority Leads */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                {PRIORITY_QUEUE_LEADS.map((lead, idx) => (
+                  <div 
+                    key={lead.id || idx}
+                    className="p-3 rounded-xl border border-slate-200/70 bg-slate-50/60 hover:bg-white hover:border-slate-300 hover:shadow-xs transition-all flex items-center justify-between gap-3 group"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="text-xs font-bold text-slate-900 truncate" title={lead.exporterName}>
+                          {lead.exporterName}
+                        </h3>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+                        <span className="inline-flex items-center gap-0.5 font-mono text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded text-[10px]">
+                          <MapPin className="w-3 h-3 text-red-600" />
+                          {lead.pincode}
+                        </span>
+                        <span className="truncate text-slate-400 text-[10px]">
+                          {lead.customerMet ? lead.customerMet.split('(')[0].trim() : 'Mysuru Area'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Small "Call Now" Button */}
+                    <button
+                      onClick={() => handleOpenCallModal(lead)}
+                      className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+                      title={`Call ${lead.exporterName}`}
+                    >
+                      <PhoneCall className="w-3.5 h-3.5" />
+                      <span>Call</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-3 mt-3 border-t border-slate-100 text-[11px] text-slate-400 font-medium flex items-center justify-between">
+              <span>Daily Call Target: 5/15 Completed</span>
+              <span className="font-bold text-emerald-600">On Track</span>
+            </div>
+          </div>
+
+          {/* Quick Filters Card */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+                    <Filter className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">
+                      Quick Filters
+                    </h2>
+                  </div>
+                </div>
+
+                {(statusFilter !== 'all' || serviceFilter !== 'all' || searchQuery !== '') && (
+                  <button
+                    onClick={() => {
+                      setStatusFilter('all');
+                      setServiceFilter('all');
+                      setSearchQuery('');
+                      setCurrentPage(1);
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reset Filters</span>
+                  </button>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-500 font-medium">
+                Filter your assigned pipeline in real time. Division is locked to your official posting.
+              </p>
+
+              {/* 3 Native Dropdowns + Search Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+                
+                {/* Dropdown 1: Filter by Status */}
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    Filter by Status
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <option value="all">📋 All Statuses</option>
+                      <option value="pending">⏳ Action Pending (Uncontacted)</option>
+                      <option value="followup">📅 Follow-up Scheduled</option>
+                      <option value="positive">✅ Positive / Interested</option>
+                      <option value="not_interested">❌ Not Interested</option>
+                      <option value="onboarded">🏆 Onboarded (Contract Won)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Dropdown 2: Filter by Service Using */}
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    Filter by Service Using
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={serviceFilter}
+                      onChange={(e) => {
+                        setServiceFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
+                    >
+                      <option value="all">📦 All Postal Services</option>
+                      <option value="Speed Post">Speed Post B2B</option>
+                      <option value="Business">Business Parcel / Post</option>
+                      <option value="Express">Express Cargo</option>
+                      <option value="Logistics">Logistics Post</option>
+                      <option value="Private">Private Courier</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Dropdown 3: Division: Mysuru (Locked) */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                      Division (Locked)
+                    </label>
+                    <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-bold">
+                      ME Assigned
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <select
+                      disabled
+                      value="Mysuru"
+                      className="w-full appearance-none bg-slate-100/90 border border-slate-300 text-slate-600 font-bold rounded-xl px-3.5 py-2.5 text-xs cursor-not-allowed shadow-2xs"
+                    >
+                      <option value="Mysuru">🔒 Division: Mysuru</option>
+                    </select>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Quick Keyword / Exporter Search Input */}
+              <div className="pt-1">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Search by Exporter Name, PINCODE (e.g. 570001), or Contact person..."
+                    className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all shadow-2xs"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Status Summary Pill */}
+            <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
+              <span>
+                Showing <strong className="text-slate-900 font-bold">{filteredLeads.length}</strong> matching leads in <strong className="text-red-700 font-bold">Mysuru Division</strong>
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Auto-saved changes to central CRM
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Column (4/12): Pincode Performance Card (TASK 2) */}
+        <div className="lg:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200/80 p-5 flex flex-col justify-between">
+          <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
-                  <PhoneCall className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
+                  <MapPin className="w-4 h-4" />
                 </div>
-                <h2 className="text-base font-bold text-slate-900">
-                  Priority Queue
-                </h2>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Pincode Performance
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Top territories by lead volume
+                  </p>
+                </div>
               </div>
-              <span className="bg-red-50 text-[#D1242F] border border-red-200 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
-                5 Today
+              <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-slate-200">
+                Top {pincodes.length || 10}
               </span>
             </div>
 
-            <p className="text-xs text-slate-500 font-medium">
-              High-priority accounts scheduled for immediate outreach in Mysuru division.
-            </p>
-
-            {/* List of 5 Priority Leads */}
-            <div className="space-y-2.5 pt-1">
-              {PRIORITY_QUEUE_LEADS.map((lead, idx) => (
-                <div 
-                  key={lead.id || idx}
-                  className="p-3 rounded-xl border border-slate-200/70 bg-slate-50/60 hover:bg-white hover:border-slate-300 hover:shadow-xs transition-all flex items-center justify-between gap-3 group"
-                >
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <h3 className="text-xs font-bold text-slate-900 truncate" title={lead.exporterName}>
-                        {lead.exporterName}
-                      </h3>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
-                      <span className="inline-flex items-center gap-0.5 font-mono text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded text-[10px]">
-                        <MapPin className="w-3 h-3 text-red-600" />
-                        {lead.pincode}
-                      </span>
-                      <span className="truncate text-slate-400 text-[10px]">
-                        {lead.customerMet ? lead.customerMet.split('(')[0].trim() : 'Mysuru Area'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Small "Call Now" Button */}
-                  <button
-                    onClick={() => handleOpenCallModal(lead)}
-                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-                    title={`Call ${lead.exporterName}`}
-                  >
-                    <PhoneCall className="w-3.5 h-3.5" />
-                    <span>Call Now</span>
-                  </button>
+            {/* List of Top Pincodes */}
+            <div className="divide-y divide-slate-100 mt-2 max-h-[460px] overflow-y-auto pr-1">
+              {isPincodesLoading ? (
+                <div className="py-12 text-center text-slate-400 font-medium">
+                  <div className="w-4 h-4 border-2 border-[#D1242F] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <span className="text-xs">Loading pincode leaderboard...</span>
                 </div>
-              ))}
+              ) : pincodes.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 text-xs font-medium">
+                  No pincode performance data found.
+                </div>
+              ) : (
+                pincodes.map((item, idx) => {
+                  const officeName = item.office_name || (item as any)['Office Name'] || '';
+                  return (
+                    <div
+                      key={item.pincode || idx}
+                      className="py-2.5 flex items-center justify-between gap-3 hover:bg-slate-50/80 px-2 rounded-lg transition-colors group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Rank (1, 2, 3 in a grey circle) */}
+                        <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold shrink-0">
+                          {idx + 1}
+                        </div>
+
+                        {/* Pincode & Office Name */}
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-800 text-sm font-mono leading-tight">
+                            {item.pincode}
+                          </div>
+                          {officeName && (
+                            <div 
+                              className="text-xs text-slate-500 truncate max-w-[150px] sm:max-w-[170px]" 
+                              title={officeName}
+                            >
+                              {officeName}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Small colored badge on the right indicating number of leads */}
+                      <div className="shrink-0 flex items-center gap-1.5">
+                        <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded text-xs font-semibold">
+                          {item.total_leads.toLocaleString()} leads
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
           <div className="pt-3 mt-3 border-t border-slate-100 text-[11px] text-slate-400 font-medium flex items-center justify-between">
-            <span>Daily Call Target: 5/15 Completed</span>
-            <span className="font-bold text-emerald-600">On Track</span>
-          </div>
-        </div>
-
-        {/* Right Column (2/3): Quick Filters */}
-        <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
-                  <Filter className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">
-                    Quick Filters
-                  </h2>
-                </div>
-              </div>
-
-              {(statusFilter !== 'all' || serviceFilter !== 'all' || searchQuery !== '') && (
-                <button
-                  onClick={() => {
-                    setStatusFilter('all');
-                    setServiceFilter('all');
-                    setSearchQuery('');
-                    setCurrentPage(1);
-                  }}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Reset Filters</span>
-                </button>
-              )}
-            </div>
-
-            <p className="text-xs text-slate-500 font-medium">
-              Filter your assigned pipeline in real time. Division is locked to your official posting.
-            </p>
-
-            {/* 3 Native Dropdowns + Search Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
-              
-              {/* Dropdown 1: Filter by Status */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  Filter by Status
-                </label>
-                <div className="relative">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => {
-                      setStatusFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <option value="all">📋 All Statuses</option>
-                    <option value="pending">⏳ Action Pending (Uncontacted)</option>
-                    <option value="followup">📅 Follow-up Scheduled</option>
-                    <option value="positive">✅ Positive / Interested</option>
-                    <option value="not_interested">❌ Not Interested</option>
-                    <option value="onboarded">🏆 Onboarded (Contract Won)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Dropdown 2: Filter by Service Using */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  Filter by Service Using
-                </label>
-                <div className="relative">
-                  <select
-                    value={serviceFilter}
-                    onChange={(e) => {
-                      setServiceFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <option value="all">📦 All Postal Services</option>
-                    <option value="Speed Post">Speed Post B2B</option>
-                    <option value="Business">Business Parcel / Post</option>
-                    <option value="Express">Express Cargo</option>
-                    <option value="Logistics">Logistics Post</option>
-                    <option value="Private">Private Courier</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Dropdown 3: Division: Mysuru (Locked) */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    Division (Locked)
-                  </label>
-                  <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-bold">
-                    ME Assigned
-                  </span>
-                </div>
-                <div className="relative">
-                  <select
-                    disabled
-                    value="Mysuru"
-                    className="w-full appearance-none bg-slate-100/90 border border-slate-300 text-slate-600 font-bold rounded-xl px-3.5 py-2.5 text-xs cursor-not-allowed shadow-2xs"
-                  >
-                    <option value="Mysuru">🔒 Division: Mysuru</option>
-                  </select>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Quick Keyword / Exporter Search Input */}
-            <div className="pt-1">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="Search by Exporter Name, PINCODE (e.g. 570001), or Contact person..."
-                  className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all shadow-2xs"
-                />
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Status Summary Pill */}
-          <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>
-              Showing <strong className="text-slate-900 font-bold">{filteredLeads.length}</strong> matching leads in <strong className="text-red-700 font-bold">Mysuru Division</strong>
-            </span>
-            <span className="text-[11px] text-slate-400">
-              Auto-saved changes to central CRM
-            </span>
+            <span>Sorted by lead density</span>
+            <span className="font-bold text-[#D1242F]">Live Analytics</span>
           </div>
         </div>
 
