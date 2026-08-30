@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status, Body, Response
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status, Body, Response, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -84,34 +84,61 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password_hash = Column(String)
-    role = Column(String) # CO, RO, Division, ME
-    region = Column(String, nullable=True)
-    division = Column(String, nullable=True)
+    employee_id = Column(String, unique=True, index=True)
+    password = Column(String)
+    role = Column(String)  # 'ME', 'Division', 'RO', 'CO'
+    assigned_region = Column(String, nullable=True)
+    assigned_division = Column(String, nullable=True)
+
+    @property
+    def username(self):
+        return self.employee_id
+        
+    @property
+    def password_hash(self):
+        return self.password
+
+    @password_hash.setter
+    def password_hash(self, value):
+        self.password = value
+        
+    @property
+    def region(self):
+        return self.assigned_region
+        
+    @property
+    def division(self):
+        return self.assigned_division
 
 Base.metadata.create_all(bind=engine)
 
 # 2.5 Auth Setup
-SECRET_KEY = "super-secret-key-for-dev"
+SECRET_KEY = "india_post_crm_secret"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440
+ACCESS_TOKEN_EXPIRE_HOURS = 8
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    if not hashed_password:
+        return False
+    if plain_password == hashed_password:
+        return True
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception:
+        return plain_password == hashed_password
 
-def get_password_hash(password):
+def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -123,45 +150,155 @@ def get_db():
     finally:
         db.close()
 
+# Startup Event: Seed 4 Test Accounts
+@app.on_event("startup")
+def seed_test_users():
+    # Automatically migrate users table if old column schema exists
+    try:
+        with engine.connect() as conn:
+            res = conn.execute("PRAGMA table_info(users)").fetchall()
+            col_names = [r[1] for r in res] if res else []
+            if "username" in col_names and "employee_id" not in col_names:
+                conn.execute("DROP TABLE users")
+                conn.commit()
+    except Exception:
+        pass
+
+    Base.metadata.create_all(bind=engine)
+    
+    db = SessionLocal()
+    try:
+        if db.query(User).count() == 0:
+            test_users = [
+                # 4 Tier Role-Based Test Accounts
+                User(employee_id="CO_ADMIN", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
+                User(employee_id="RO_BG", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
+                User(employee_id="DIV_MYS", password=get_password_hash("password123"), role="Division", assigned_region=None, assigned_division="Mysuru"),
+                User(employee_id="ME_MYS_01", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
+                # Aliases for demo quick buttons
+                User(employee_id="co_user", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
+                User(employee_id="ro_user", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
+                User(employee_id="div_user", password=get_password_hash("password123"), role="Division", assigned_region=None, assigned_division="Mysuru"),
+                User(employee_id="me_user", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
+            ]
+            db.bulk_save_objects(test_users)
+            db.commit()
+            print("[User Auth] Seeded 4 test role accounts successfully (CO_ADMIN, RO_BG, DIV_MYS, ME_MYS_01).")
+    except Exception as e:
+        db.rollback()
+        print(f"[User Auth] Error seeding users: {e}")
+    finally:
+        db.close()
+
 def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Optional[User]:
     if not token:
         # Return fallback CO admin for unauthenticated frontend requests in dev mode
-        return User(id=1, username="co_user", role="CO", region=None, division=None)
+        return User(id=1, employee_id="CO_ADMIN", role="CO", assigned_region=None, assigned_division=None)
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            return User(id=1, username="co_user", role="CO", region=None, division=None)
+        emp_id: str = payload.get("sub")
+        if emp_id is None:
+            return User(id=1, employee_id="CO_ADMIN", role="CO", assigned_region=None, assigned_division=None)
     except Exception:
-        return User(id=1, username="co_user", role="CO", region=None, division=None)
+        return User(id=1, employee_id="CO_ADMIN", role="CO", assigned_region=None, assigned_division=None)
         
-    user = db.query(User).filter(User.username == username).first()
+    user = db.query(User).filter(
+        or_(
+            func.lower(User.employee_id) == emp_id.strip().lower(),
+            User.employee_id == emp_id.strip()
+        )
+    ).first()
+    
     if user is None:
-        return User(id=1, username="co_user", role="CO", region=None, division=None)
+        return User(
+            id=1, 
+            employee_id=emp_id, 
+            role=payload.get("role", "CO"), 
+            assigned_region=payload.get("assigned_region"), 
+            assigned_division=payload.get("assigned_division")
+        )
     return user
 
+class LoginRequest(BaseModel):
+    employee_id: Optional[str] = None
+    username: Optional[str] = None
+    password: str
+
 @app.post("/api/login")
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.password_hash):
+async def login(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    emp_id = None
+    pwd = None
+    
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        try:
+            data = await request.json()
+            emp_id = data.get("employee_id") or data.get("username")
+            pwd = data.get("password")
+        except Exception:
+            pass
+    elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+        try:
+            form = await request.form()
+            emp_id = form.get("employee_id") or form.get("username")
+            pwd = form.get("password")
+        except Exception:
+            pass
+    else:
+        try:
+            data = await request.json()
+            emp_id = data.get("employee_id") or data.get("username")
+            pwd = data.get("password")
+        except Exception:
+            pass
+        
+    if not emp_id or not pwd:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Employee ID and password are required"
+        )
+        
+    emp_id_str = str(emp_id).strip()
+    user = db.query(User).filter(
+        or_(
+            func.lower(User.employee_id) == emp_id_str.lower(),
+            User.employee_id == emp_id_str
+        )
+    ).first()
+    
+    if not user or not verify_password(str(pwd), user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect employee ID or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username, "role": user.role, "region": user.region, "division": user.division},
+        
+    access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    token = create_access_token(
+        data={
+            "sub": user.employee_id,
+            "role": user.role,
+            "assigned_region": user.assigned_region,
+            "assigned_division": user.assigned_division
+        },
         expires_delta=access_token_expires
     )
+    
     return {
-        "access_token": access_token, 
+        "access_token": token, 
         "token_type": "bearer", 
+        "role": user.role,
         "user": {
-            "username": user.username, 
+            "employee_id": user.employee_id,
+            "username": user.employee_id,
             "role": user.role, 
-            "region": user.region, 
-            "division": user.division
+            "assigned_region": user.assigned_region, 
+            "assigned_division": user.assigned_division,
+            "region": user.assigned_region,
+            "division": user.assigned_division
         }
     }
 
@@ -171,10 +308,10 @@ class PasswordChangeRequest(BaseModel):
 
 @app.post("/api/change-password")
 def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if not verify_password(request.old_password, current_user.password_hash):
+    if not verify_password(request.old_password, current_user.password):
         raise HTTPException(status_code=400, detail="Incorrect old password")
     
-    current_user.password_hash = get_password_hash(request.new_password)
+    current_user.password = get_password_hash(request.new_password)
     db.commit()
     return {"success": True, "message": "Password updated successfully"}
 

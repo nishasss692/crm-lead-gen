@@ -127,7 +127,7 @@ export default function LoginPage() {
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">
-                  Username
+                  Employee ID
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -139,7 +139,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="block w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d1242f]/20 focus:border-[#d1242f] transition-all shadow-sm"
-                    placeholder="Enter your username"
+                    placeholder="e.g. CO_ADMIN, RO_BG, DIV_MYS, ME_MYS_01"
                   />
                 </div>
               </div>
@@ -197,40 +197,40 @@ export default function LoginPage() {
           {/* Quick Demo Credentials */}
           <div className="pt-4 border-t border-slate-200">
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
-              Quick Demo Accounts:
+              4-Tier Role Demo Accounts:
             </p>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => { setUsername('co_user'); setPassword('password123'); }}
+                onClick={() => { setUsername('CO_ADMIN'); setPassword('password123'); }}
                 className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
               >
                 <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Central Officer (CO)</div>
-                <div className="text-slate-500 text-[11px]">co_user / password123</div>
+                <div className="text-slate-500 text-[11px]">CO_ADMIN / password123</div>
               </button>
               <button
                 type="button"
-                onClick={() => { setUsername('ro_user'); setPassword('password123'); }}
+                onClick={() => { setUsername('RO_BG'); setPassword('password123'); }}
                 className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
               >
                 <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Regional Officer (RO)</div>
-                <div className="text-slate-500 text-[11px]">ro_user / password123</div>
+                <div className="text-slate-500 text-[11px]">RO_BG / password123</div>
               </button>
               <button
                 type="button"
-                onClick={() => { setUsername('div_user'); setPassword('password123'); }}
+                onClick={() => { setUsername('DIV_MYS'); setPassword('password123'); }}
                 className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
               >
                 <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Division Officer</div>
-                <div className="text-slate-500 text-[11px]">div_user / password123</div>
+                <div className="text-slate-500 text-[11px]">DIV_MYS / password123</div>
               </button>
               <button
                 type="button"
-                onClick={() => { setUsername('me_user'); setPassword('password123'); }}
+                onClick={() => { setUsername('ME_MYS_01'); setPassword('password123'); }}
                 className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
               >
                 <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Marketing Exec (ME)</div>
-                <div className="text-slate-500 text-[11px]">me_user / password123</div>
+                <div className="text-slate-500 text-[11px]">ME_MYS_01 / password123</div>
               </button>
             </div>
           </div>

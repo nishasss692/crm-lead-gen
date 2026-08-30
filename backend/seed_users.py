@@ -1,14 +1,7 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from main import User, Base, engine
-from passlib.context import CryptContext
-
-# Setup password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
+from main import User, Base, engine, get_password_hash
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -19,33 +12,37 @@ def seed_users():
     Base.metadata.create_all(bind=engine)
     
     users_data = [
-        # Central Office (sees everything)
-        User(username="co_user", password_hash=get_password_hash("password123"), role="CO"),
+        # Central Office User (CO)
+        User(employee_id="CO_ADMIN", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
         
-        # Regional Office (sees only North region)
-        User(username="ro_user", password_hash=get_password_hash("password123"), role="RO", region="North"),
+        # Regional Office User (RO)
+        User(employee_id="RO_BG", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
         
-        # Division (sees only Mumbai division)
-        User(username="div_user", password_hash=get_password_hash("password123"), role="Division", division="Mumbai"),
+        # Division User (Division)
+        User(employee_id="DIV_MYS", password=get_password_hash("password123"), role="Division", assigned_region=None, assigned_division="Mysuru"),
         
-        # Marketing Executive (sees only Mumbai division in North region)
-        User(username="me_user", password_hash=get_password_hash("password123"), role="ME", region="North", division="Mumbai"),
+        # Marketing Executive User (ME)
+        User(employee_id="ME_MYS_01", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
+        
+        # Backward compatibility aliases for UI demo buttons
+        User(employee_id="co_user", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
+        User(employee_id="ro_user", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
+        User(employee_id="div_user", password=get_password_hash("password123"), role="Division", assigned_region=None, assigned_division="Mysuru"),
+        User(employee_id="me_user", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
     ]
     
     for u in users_data:
-        existing_user = db.query(User).filter(User.username == u.username).first()
+        existing_user = db.query(User).filter(User.employee_id == u.employee_id).first()
         if existing_user:
-            # Update password and details if user already exists
-            existing_user.password_hash = u.password_hash
+            existing_user.password = u.password
             existing_user.role = u.role
-            existing_user.region = u.region
-            existing_user.division = u.division
+            existing_user.assigned_region = u.assigned_region
+            existing_user.assigned_division = u.assigned_division
         else:
             db.add(u)
             
     db.commit()
-    print("Test users seeded/updated successfully.")
-    
+    print("[User Auth] Seeded/updated 4-tier test accounts successfully: CO_ADMIN, RO_BG, DIV_MYS, ME_MYS_01.")
     db.close()
 
 if __name__ == "__main__":
