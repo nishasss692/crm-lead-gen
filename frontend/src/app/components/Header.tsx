@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
-import { UserCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { LogOut } from 'lucide-react';
 
 export default function Header({ 
   toggleSidebar, 
@@ -9,10 +10,42 @@ export default function Header({
   toggleSidebar?: () => void;
   isSidebarOpen?: boolean;
 }) {
+  const router = useRouter();
+  const [user, setUser] = useState<{
+    employee_id?: string;
+    username?: string;
+    role?: string;
+    assigned_division?: string;
+    division?: string;
+    assigned_region?: string;
+    region?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (userStr) {
+      try {
+        setUser(JSON.parse(userStr));
+      } catch (e) {}
+    }
+  }, []);
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+    router.push('/login');
+  };
+
+  const displayName = user?.employee_id || user?.username || 'CO_ADMIN';
+  const role = user?.role || 'CO';
+  const jurisdiction = user?.assigned_division || user?.division || user?.assigned_region || user?.region || (role === 'CO' ? 'Central Office' : 'Karnataka Circle');
+
   return (
     <header className="bg-white border-b-[3px] border-[#D1242F] h-18 md:h-20 flex items-center px-4 md:px-8 justify-between shrink-0 shadow-xs relative z-30 select-none">
       
-      {/* Left: Placeholder <img src="/india-post-logo.png" /> and Department of Posts / Government of India (dark red) */}
+      {/* Left: India Post Logo and Department of Posts */}
       <div className="flex items-center space-x-3.5 shrink-0">
         {toggleSidebar && (
           <button 
@@ -49,7 +82,7 @@ export default function Header({
         </div>
       </div>
       
-      {/* Center: Karnataka Postal Circle (red-700) and ME Operations Dashboard */}
+      {/* Center: Karnataka Postal Circle */}
       <div className="flex-1 flex flex-col justify-center items-center px-2 text-center">
         <h1 
           className="text-red-700 font-serif font-bold text-lg sm:text-xl md:text-[24px] tracking-tight leading-none"
@@ -58,26 +91,35 @@ export default function Header({
           Karnataka Postal Circle
         </h1>
         <h2 className="text-slate-700 font-bold text-xs sm:text-sm tracking-normal leading-tight mt-1">
-          ME Operations Dashboard
+          {role} Operations Dashboard
         </h2>
       </div>
       
-      {/* Right: Profile showing "ME001 - Mysuru Division" */}
-      <div className="shrink-0 flex items-center justify-end">
+      {/* Right: Dynamic Profile with Quick Logout */}
+      <div className="shrink-0 flex items-center justify-end gap-3">
         <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200/90 px-3 py-1.5 rounded-xl shadow-xs">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#D1242F] to-[#9E1B1B] text-white flex items-center justify-center font-black text-xs shadow-xs">
-            ME
+            {role}
           </div>
           <div className="hidden sm:flex flex-col text-left">
             <div className="flex items-center gap-1">
-              <span className="text-xs font-black text-slate-800">ME001</span>
+              <span className="text-xs font-black text-slate-800">{displayName}</span>
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             </div>
             <span className="text-[11px] font-semibold text-slate-500 leading-tight">
-              Mysuru Division
+              {jurisdiction}
             </span>
           </div>
         </div>
+
+        <button
+          onClick={handleLogout}
+          title="Sign Out"
+          className="p-2 text-slate-500 hover:text-[#D1242F] hover:bg-red-50 rounded-xl border border-slate-200/90 transition-all flex items-center gap-1.5 text-xs font-bold"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="hidden md:inline">Sign Out</span>
+        </button>
       </div>
     </header>
   );

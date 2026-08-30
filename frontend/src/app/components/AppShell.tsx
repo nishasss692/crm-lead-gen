@@ -12,14 +12,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) {
-      if (pathname !== '/login') {
-        router.replace('/login');
-      }
-    } else {
-      if (pathname === '/login') {
-        router.replace('/');
-      }
+    if (!token && pathname !== '/login') {
+      router.replace('/login');
     }
     setIsCheckingAuth(false);
   }, [pathname, router]);
