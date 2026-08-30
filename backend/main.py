@@ -10,12 +10,37 @@ import io
 import re
 import os
 import jwt
+import joblib
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
+# Global ML Model for Lead Scoring
+ml_model = None
+
 # 1. Setup & Config
 app = FastAPI(title="India Post Lead Management API", version="2.5")
+
+@app.on_event("startup")
+def load_ml_model():
+    global ml_model
+    try:
+        model_paths = [
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ml", "lead_scoring_model.pkl"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "ml", "lead_scoring_model.pkl"),
+            os.path.join("ml", "lead_scoring_model.pkl"),
+            "lead_scoring_model.pkl"
+        ]
+        for path in model_paths:
+            if os.path.exists(path):
+                ml_model = joblib.load(path)
+                print(f"[ML Engine] Model loaded successfully from: {path}")
+                break
+        if ml_model is None:
+            print("[ML Engine] Warning: lead_scoring_model.pkl not found. Defaulting to fallback predictions.")
+    except Exception as e:
+        print(f"[ML Engine] Error loading lead scoring model: {e}")
+        ml_model = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -527,6 +552,49 @@ def apply_rbac_filter(query, user: Optional[User]):
         return query
     return query
 
+# 4.5 Machine Learning Lead Scoring Engine
+def _parse_volume(val: Any) -> float:
+    if val is None:
+        return 0.0
+    try:
+        if isinstance(val, (int, float)):
+            return float(val)
+        val_str = str(val).replace(',', '').strip()
+        nums = re.findall(r'\d+(?:\.\d+)?', val_str)
+        if nums:
+            return float(nums[0])
+        return 0.0
+    except Exception:
+        return 0.0
+
+def calculate_win_probability(leads: list[Lead]) -> list[float]:
+    """Scores leads with the ML model and returns win probabilities (0-100%)."""
+    if ml_model is None or not leads:
+        return [0.0] * len(leads)
+    try:
+        records = []
+        for lead in leads:
+            vol = _parse_volume(lead.monthly_volume)
+            srv = (lead.service_using or "").strip()
+            if not srv or srv.lower() in ['nan', 'none', 'null', '']:
+                srv = "None"
+            records.append({
+                'monthly_volume': vol,
+                'service_using': srv
+            })
+        df = pd.DataFrame(records)
+        probas = ml_model.predict_proba(df)[:, 1]
+        return [round(float(p) * 100, 1) for p in probas]
+    except Exception as e:
+        print(f"[ML Engine] Prediction error: {e}")
+        return [0.0] * len(leads)
+
+def lead_to_dict(lead: Lead, win_prob: float = 0.0) -> dict:
+    """Converts a Lead model instance to a JSON-serializable dictionary with win_probability."""
+    res = {c.name: getattr(lead, c.name) for c in lead.__table__.columns}
+    res["win_probability"] = win_prob
+    return res
+
 # 5. Lead Data Endpoints
 @app.get("/api/leads")
 def get_leads(
@@ -585,7 +653,32 @@ def get_leads(
             or (l.service_using and s in l.service_using.lower())
         ]
 
-    return leads_filtered
+    # Calculate win probabilities via ML model
+    scores = calculate_win_probability(leads_filtered)
+    return [lead_to_dict(l, s) for l, s in zip(leads_filtered, scores)]
+
+@app.get("/api/leads/priority")
+def get_priority_leads(
+    division_name: str = "",
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Returns top high-priority prospective leads ordered by predicted win probability."""
+    query = db.query(Lead)
+    query = apply_rbac_filter(query, current_user)
+    
+    if division_name and division_name != "All Divisions":
+        query = query.filter(Lead.division == division_name)
+        
+    all_leads = query.all()
+    if not all_leads:
+        return []
+        
+    scores = calculate_win_probability(all_leads)
+    scored_leads = [lead_to_dict(l, s) for l, s in zip(all_leads, scores)]
+    scored_leads.sort(key=lambda x: x.get("win_probability", 0), reverse=True)
+    return scored_leads[:limit]
 
 @app.get("/api/divisions")
 def get_divisions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

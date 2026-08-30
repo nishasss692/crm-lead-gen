@@ -11,7 +11,10 @@ import {
   AlertCircle, 
   Calendar, 
   X,
-  Download
+  Download,
+  Sparkles,
+  ArrowRight,
+  TrendingUp
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -51,6 +54,27 @@ interface PincodePerformanceItem {
   division?: string;
 }
 
+interface PriorityLead {
+  id: number;
+  exporter_name?: string;
+  exporterName?: string;
+  address?: string;
+  pincode?: string;
+  division?: string;
+  contact_number?: string;
+  contactNumber?: string;
+  service_using?: string;
+  serviceUsing?: string;
+  monthly_volume?: string | number;
+  monthlyVolume?: string | number;
+  meeting_outcome?: string;
+  meetingOutcome?: string;
+  contract_id?: string;
+  contractId?: string;
+  win_probability?: number;
+  winProbability?: number;
+}
+
 export default function MarketingExecutiveDashboard() {
   // Analytics & Pincode Performance State
   const [analytics, setAnalytics] = useState<AnalyticsData>({
@@ -65,8 +89,10 @@ export default function MarketingExecutiveDashboard() {
   });
   const [pincodes, setPincodes] = useState<PincodePerformanceItem[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
+  const [priorityLeads, setPriorityLeads] = useState<PriorityLead[]>([]);
   const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(true);
   const [isPincodesLoading, setIsPincodesLoading] = useState<boolean>(true);
+  const [isPriorityLoading, setIsPriorityLoading] = useState<boolean>(true);
 
   // Quick Filters State
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -124,7 +150,29 @@ export default function MarketingExecutiveDashboard() {
     }
   }, [selectedDivision]);
 
-  // 3. Fetch Divisions from Backend GET /api/divisions
+  // 3. Fetch Priority High-Probability Leads from Backend GET /api/leads/priority
+  const fetchPriorityLeads = useCallback(async (div = selectedDivision) => {
+    setIsPriorityLoading(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&limit=5` : 'limit=5';
+      const res = await fetch(`http://localhost:8000/api/leads/priority?${queryParam}`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setPriorityLeads(data.slice(0, 5));
+        }
+      }
+    } catch (err) {
+      console.warn('Backend priority leads fetch fallback:', err);
+    } finally {
+      setIsPriorityLoading(false);
+    }
+  }, [selectedDivision]);
+
+  // 4. Fetch Divisions from Backend GET /api/divisions
   const fetchDivisions = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
@@ -147,11 +195,12 @@ export default function MarketingExecutiveDashboard() {
     fetchDivisions();
   }, [fetchDivisions]);
 
-  // Reload Analytics & Pincodes on Division Change
+  // Reload Analytics, Pincodes & Priority Leads on Division Change
   useEffect(() => {
     fetchAnalytics(selectedDivision);
     fetchPincodes(selectedDivision);
-  }, [selectedDivision, fetchAnalytics, fetchPincodes]);
+    fetchPriorityLeads(selectedDivision);
+  }, [selectedDivision, fetchAnalytics, fetchPincodes, fetchPriorityLeads]);
 
   // Filtered Pincodes based on status filter and search query
   const filteredPincodes = useMemo(() => {
@@ -456,6 +505,122 @@ export default function MarketingExecutiveDashboard() {
           ))}
         </div>
 
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          SECTION 2.5: PRIORITY FOLLOW-UPS (AI PREDICTIVE WIN SCORING)
+         ═══════════════════════════════════════════════════════════════ */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-[#D1242F] flex items-center justify-center font-bold">
+              <Sparkles className="w-4 h-4 text-[#D1242F]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">
+                  Priority Follow-ups
+                </h2>
+                <span className="bg-emerald-50 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
+                  AI Ranked
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                Top high-priority prospective leads ordered by predicted win probability {selectedDivision !== 'All Divisions' ? `in ${selectedDivision}` : 'across Circle'}.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500 font-medium bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+              Top <strong className="text-slate-900 font-bold">{priorityLeads.length}</strong> Target Opportunities
+            </span>
+          </div>
+        </div>
+
+        {isPriorityLoading ? (
+          <div className="py-8 flex items-center justify-center text-slate-400 text-xs font-medium">
+            <div className="w-5 h-5 border-2 border-[#114b79] border-t-transparent rounded-full animate-spin mr-2"></div>
+            <span>Loading priority AI recommendations...</span>
+          </div>
+        ) : priorityLeads.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-xs font-medium">
+            No priority follow-up recommendations available for the selected division.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 pt-1">
+            {priorityLeads.map((lead, idx) => {
+              const name = lead.exporter_name || lead.exporterName || 'Commercial Prospect';
+              const rawVol = lead.monthly_volume ?? lead.monthlyVolume;
+              const volume = rawVol !== null && rawVol !== undefined && rawVol !== '' ? `${Number(rawVol).toLocaleString()} pcs/mo` : '0 pcs/mo';
+              const rawScore = lead.win_probability ?? lead.winProbability ?? 0;
+              const score = typeof rawScore === 'number' ? rawScore : parseFloat(String(rawScore)) || 0;
+              const service = lead.service_using || lead.serviceUsing || 'Speed Post';
+              const division = lead.division || '';
+
+              let badgeClasses = 'bg-slate-100 text-slate-600';
+              if (score >= 75) {
+                badgeClasses = 'bg-emerald-100 text-emerald-800';
+              } else if (score >= 40) {
+                badgeClasses = 'bg-amber-100 text-amber-800';
+              }
+
+              return (
+                <div
+                  key={lead.id || idx}
+                  className="bg-slate-50/60 hover:bg-white border border-slate-200/80 hover:border-blue-300 rounded-xl p-4 transition-all duration-200 shadow-2xs hover:shadow-md flex flex-col justify-between group"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="w-6 h-6 rounded-md bg-white border border-slate-200 text-slate-500 font-bold text-xs flex items-center justify-center shadow-2xs">
+                        #{idx + 1}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClasses}`}>
+                        <span>{score.toFixed(1)}%</span>
+                        <span className="text-[10px] font-semibold opacity-75">Win</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="font-bold text-slate-900 group-hover:text-blue-700 text-sm tracking-tight leading-snug line-clamp-2 transition-colors" title={name}>
+                        {name}
+                      </h3>
+                      {lead.address && (
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5" title={lead.address}>
+                          {lead.address}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/60 space-y-1 text-xs">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400 font-medium">Monthly Vol:</span>
+                        <span className="font-bold text-slate-800 tabular-nums">{volume}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400 font-medium">Service:</span>
+                        <span className="font-semibold text-slate-600 truncate max-w-[100px]" title={service}>{service}</span>
+                      </div>
+                      {division && (
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400 font-medium">Division:</span>
+                          <span className="font-semibold text-slate-500 truncate max-w-[100px]" title={division}>{division}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {lead.contact_number && (
+                    <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                      <span className="text-slate-400 text-[10px] font-medium">Phone:</span>
+                      <span className="font-mono font-bold text-slate-800 text-[11px]">{lead.contact_number}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════

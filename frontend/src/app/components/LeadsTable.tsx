@@ -5,23 +5,25 @@ import { Edit, Trash2, MapPin, ChevronLeft, ChevronRight, CheckCircle2, Clock, X
 
 export interface Lead {
   id: number;
-  slNo: number;
+  slNo?: number | string;
   exporterName: string;
   address: string;
   pincode: string;
-  divisionId: string;
+  divisionId?: string;
   division: string;
-  region: string;
-  assignedMeName: string;
-  dateOfMeeting: string;
-  customerMet: string;
-  contactNumber: string;
-  email: string;
-  serviceUsing: string;
-  monthlyVolume: number;
-  meetingOutcome: string;
-  contractId: string;
-  remarks: string;
+  region?: string;
+  assignedMeName?: string;
+  dateOfMeeting?: string;
+  customerMet?: string;
+  contactNumber?: string;
+  email?: string;
+  serviceUsing?: string;
+  monthlyVolume?: number | string;
+  meetingOutcome?: string;
+  contractId?: string;
+  remarks?: string;
+  win_probability?: number;
+  winProbability?: number;
 }
 
 interface LeadsTableProps {
@@ -58,7 +60,22 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
     }
   };
 
-  const getOutcomeBadge = (outcome: string, hasContract: string) => {
+  const getWinScoreBadge = (score?: number) => {
+    const s = typeof score === 'number' ? score : parseFloat(String(score || 0)) || 0;
+    let colorClasses = 'bg-slate-100 text-slate-600';
+    if (s >= 75) {
+      colorClasses = 'bg-emerald-100 text-emerald-800';
+    } else if (s >= 40) {
+      colorClasses = 'bg-amber-100 text-amber-800';
+    }
+    return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${colorClasses}`}>
+        <span>{s.toFixed(1)}%</span>
+      </span>
+    );
+  };
+
+  const getOutcomeBadge = (outcome?: string, hasContract?: string) => {
     const out = (outcome || '').trim().toLowerCase();
     const contract = !!(hasContract || '').trim();
     
@@ -124,6 +141,7 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
                 <th className="px-5 py-3.5 font-semibold">Lead / Exporter</th>
                 <th className="px-5 py-3.5 font-semibold w-48 text-center">Location & Pincode</th>
                 <th className="px-5 py-3.5 font-semibold text-center w-36">Status</th>
+                <th className="px-5 py-3.5 font-semibold text-center w-36">AI Win Score</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-slate-700">
@@ -179,12 +197,16 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
                   <td className="px-5 py-3.5 text-center">
                     {getOutcomeBadge(lead.meetingOutcome, lead.contractId)}
                   </td>
+
+                  <td className="px-5 py-3.5 text-center">
+                    {getWinScoreBadge(lead.win_probability ?? lead.winProbability)}
+                  </td>
                 </tr>
               ))}
               
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-14 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-14 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                         <AlertCircle className="w-5 h-5" />

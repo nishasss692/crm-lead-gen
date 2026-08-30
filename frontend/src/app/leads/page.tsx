@@ -93,7 +93,9 @@ function LeadsPageContent() {
           monthlyVolume: item.monthly_volume, 
           meetingOutcome: item.meeting_outcome,
           contractId: item.contract_id, 
-          remarks: item.remarks
+          remarks: item.remarks,
+          win_probability: item.win_probability ?? 0,
+          winProbability: item.win_probability ?? 0
         }));
         setLeads(formattedData);
       }
