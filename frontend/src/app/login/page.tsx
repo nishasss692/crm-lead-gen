@@ -123,7 +123,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6" suppressHydrationWarning>
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -140,6 +140,7 @@ export default function LoginPage() {
                     onChange={(e) => setUsername(e.target.value)}
                     className="block w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d1242f]/20 focus:border-[#d1242f] transition-all shadow-sm"
                     placeholder="e.g. CO_ADMIN, RO_BG, DIV_MYS, ME_MYS_01"
+                    suppressHydrationWarning
                   />
                 </div>
               </div>
@@ -161,6 +162,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="block w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d1242f]/20 focus:border-[#d1242f] transition-all shadow-sm"
                     placeholder="••••••••"
+                    suppressHydrationWarning
                   />
                 </div>
               </div>
@@ -178,6 +180,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
+              suppressHydrationWarning
               className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-[#113254] hover:bg-[#0a1f35] focus:outline-none focus:ring-4 focus:ring-[#113254]/20 rounded-xl text-white text-sm font-bold shadow-lg shadow-[#113254]/20 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group cursor-pointer"
             >
               {loading ? (
@@ -202,6 +205,7 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
+                suppressHydrationWarning
                 onClick={() => { setUsername('CO_ADMIN'); setPassword('password123'); }}
                 className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
               >
@@ -210,6 +214,7 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
+                suppressHydrationWarning
                 onClick={() => { setUsername('RO_BG'); setPassword('password123'); }}
                 className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
               >
@@ -218,6 +223,7 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
+                suppressHydrationWarning
                 onClick={() => { setUsername('DIV_MYS'); setPassword('password123'); }}
                 className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
               >
@@ -226,6 +232,7 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
+                suppressHydrationWarning
                 onClick={() => { setUsername('ME_MYS_01'); setPassword('password123'); }}
                 className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
               >

@@ -23,8 +23,9 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full font-sans m-0 p-0">
+      <body className="min-h-full font-sans m-0 p-0" suppressHydrationWarning>
         <AppShell>
           {children}
         </AppShell>
