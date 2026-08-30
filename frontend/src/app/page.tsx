@@ -60,85 +60,6 @@ export interface Lead {
   remarks?: string;
 }
 
-// Initial Mysuru Demo Priority Queue Leads (to guarantee 5 specific leads to contact today)
-const PRIORITY_QUEUE_LEADS: Lead[] = [
-  {
-    id: 99101,
-    slNo: 1,
-    exporterName: 'Kaynes Technology India Limited',
-    address: 'Plot No. 23-25, Belagola Industrial Area, Mysuru',
-    pincode: '570001',
-    division: 'Mysuru',
-    customerMet: 'Raghavendra Rao (VP Operations)',
-    contactNumber: '+91 98450 12345',
-    email: 'logistics@kaynestechnology.net',
-    serviceUsing: 'Speed Post B2B',
-    meetingOutcome: 'Followup',
-    dateOfMeeting: '2026-08-30',
-    remarks: 'Discussed bulk B2B electronics parcel consignment rates; proposal review scheduled today.'
-  },
-  {
-    id: 99102,
-    slNo: 2,
-    exporterName: 'Millennium Chemi Pharma (Mysore) Pvt Ltd',
-    address: 'Plot No. 49, Hebbal Industrial Area, Mysuru',
-    pincode: '570001',
-    division: 'Mysuru',
-    customerMet: 'Dr. Suresh Nair (Supply Chain Head)',
-    contactNumber: '+91 98801 98765',
-    email: 'supplychain@millenniumchemi.com',
-    serviceUsing: 'Business Parcel',
-    meetingOutcome: '',
-    dateOfMeeting: '',
-    remarks: 'Awaiting initial outreach for pharma sample distribution via Speed Post.'
-  },
-  {
-    id: 99103,
-    slNo: 3,
-    exporterName: 'Sri Ranga Exports & Silks Co-operative',
-    address: 'No. 14, Commercial Complex, Chamundipuram, Mysuru',
-    pincode: '570008',
-    division: 'Mysuru',
-    customerMet: 'M. S. Nagaraj (Secretary)',
-    contactNumber: '+91 97410 54321',
-    email: 'exports@srirangasilks.in',
-    serviceUsing: 'Speed Post B2B',
-    meetingOutcome: 'Positive',
-    dateOfMeeting: '2026-08-29',
-    remarks: 'Interested in weekly handicraft export dispatches; contract agreement ready.'
-  },
-  {
-    id: 99104,
-    slNo: 4,
-    exporterName: 'Cast Craft Private Limited',
-    address: 'Plot No. 112, Belagola Industrial Area, Mysuru',
-    pincode: '570016',
-    division: 'Mysuru',
-    customerMet: 'Anand Kulkarni (Plant Director)',
-    contactNumber: '+91 98440 87654',
-    email: 'dispatch@castcraftindia.com',
-    serviceUsing: 'Express Cargo',
-    meetingOutcome: '',
-    dateOfMeeting: '',
-    remarks: 'Industrial metal parts shipment; need scheduled container pickup.'
-  },
-  {
-    id: 99105,
-    slNo: 5,
-    exporterName: 'Topflite Components Private Limited',
-    address: 'Plot No. 64, Hootagalli Industrial Area, Mysuru',
-    pincode: '570018',
-    division: 'Mysuru',
-    customerMet: 'Vikram Sethi (Procurement Lead)',
-    contactNumber: '+91 99001 12233',
-    email: 'v.sethi@topflite.co.in',
-    serviceUsing: 'Logistics Post',
-    meetingOutcome: 'Followup',
-    dateOfMeeting: '2026-08-28',
-    remarks: 'High monthly volume candidate. Follow-up regarding customized SLA pricing.'
-  }
-];
-
 interface AnalyticsData {
   total_leads: number;
   contact_pending: number;
@@ -184,12 +105,14 @@ export default function MarketingExecutiveDashboard() {
     onboard_pending: 0
   });
   const [pincodes, setPincodes] = useState<PincodePerformanceItem[]>([]);
+  const [divisions, setDivisions] = useState<string[]>([]);
   const [isAnalyticsLoading, setIsAnalyticsLoading] = useState<boolean>(true);
   const [isPincodesLoading, setIsPincodesLoading] = useState<boolean>(true);
 
-  // Filters State
+  // Quick Filters State
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [serviceFilter, setServiceFilter] = useState<string>('all');
+  const [selectedDivision, setSelectedDivision] = useState<string>('All Divisions');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Pagination State
@@ -198,13 +121,6 @@ export default function MarketingExecutiveDashboard() {
 
   // Real-time inline update feedback tracker: { [leadId]: 'saving' | 'saved' }
   const [saveStatus, setSaveStatus] = useState<{ [key: number]: 'saving' | 'saved' }>({});
-
-  // Active Call/Outreach Modal State
-  const [activeCallLead, setActiveCallLead] = useState<Lead | null>(null);
-  const [callModalOutcome, setCallModalOutcome] = useState<string>('Positive');
-  const [callModalService, setCallModalService] = useState<string>('Speed Post B2B');
-  const [callModalRemarks, setCallModalRemarks] = useState<string>('');
-  const [callModalDate, setCallModalDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   // Fetch 8 KPI Analytics from GET /api/analytics
   const fetchAnalytics = async () => {
@@ -299,30 +215,48 @@ export default function MarketingExecutiveDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  // 1. Load Leads Data from Backend with Mysuru Focus
-  const loadLeads = async () => {
+  // Fetch Divisions from GET /api/divisions
+  const fetchDivisions = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch('http://localhost:8000/api/divisions', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setDivisions(data);
+        }
+      }
+    } catch (err) {
+      console.warn('Backend divisions fetch fallback:', err);
+    }
+  };
+
+  // 1. Load Leads Data from Backend
+  const loadLeads = async (div = selectedDivision) => {
     setIsLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
     try {
-      // First try fetching Mysuru division leads
-      const res = await fetch('http://localhost:8000/api/leads?division_name=Mysuru&only_valid=false', {
+      const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&` : '';
+      const res = await fetch(`http://localhost:8000/api/leads?${queryParam}only_valid=false`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
 
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           const formatted: Lead[] = data.map((item: any) => ({
             id: item.id,
             slNo: item.sl_no || item.id,
             exporterName: item.exporter_name || 'Commercial Entity',
-            address: item.address || 'Mysuru District, Karnataka',
-            pincode: item.pincode || '570001',
-            divisionId: item.division_id || '21530020',
-            division: item.division || 'Mysuru',
+            address: item.address || 'Karnataka',
+            pincode: item.pincode || '',
+            divisionId: item.division_id || '',
+            division: item.division || 'Karnataka Circle',
             region: item.region || 'Karnataka Circle',
-            assignedAgent: item.assigned_agent || 'ME001',
+            assignedAgent: item.assigned_agent || '',
             dateOfMeeting: item.date_of_meeting || '',
             customerMet: item.customer_met || '',
             contactNumber: item.contact_number || '',
@@ -333,31 +267,25 @@ export default function MarketingExecutiveDashboard() {
             contractId: item.contract_id || '',
             remarks: item.remarks || ''
           }));
-
-          // Merge backend Mysuru leads with the 5 curated high-priority accounts at the top to ensure rich demo
-          const priorityIds = new Set(PRIORITY_QUEUE_LEADS.map(p => p.id));
-          const existingFiltered = formatted.filter(f => !priorityIds.has(f.id));
-          setLeads([...PRIORITY_QUEUE_LEADS, ...existingFiltered]);
-        } else {
-          // Fallback if no records returned
-          setLeads(PRIORITY_QUEUE_LEADS);
+          setLeads(formatted);
         }
-      } else {
-        setLeads(PRIORITY_QUEUE_LEADS);
       }
     } catch (err) {
-      console.warn('Backend leads fetch fallback to active local dataset:', err);
-      setLeads(PRIORITY_QUEUE_LEADS);
+      console.warn('Backend leads fetch fallback:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadLeads();
+    fetchDivisions();
     fetchAnalytics();
     fetchPincodes();
   }, []);
+
+  useEffect(() => {
+    loadLeads(selectedDivision);
+  }, [selectedDivision]);
 
   // 2. Handle Inline Updates for Meeting Outcome & Service Presently Using
   const handleInlineUpdate = async (leadId: number, field: 'meetingOutcome' | 'serviceUsing' | 'remarks' | 'dateOfMeeting', value: string) => {
@@ -556,58 +484,6 @@ export default function MarketingExecutiveDashboard() {
     return filteredLeads.slice(start, start + itemsPerPage);
   }, [filteredLeads, currentPage]);
 
-  // Open Call Modal for Lead
-  const handleOpenCallModal = (lead: Lead) => {
-    setActiveCallLead(lead);
-    setCallModalOutcome(lead.meetingOutcome || 'Positive');
-    setCallModalService(lead.serviceUsing || 'Speed Post B2B');
-    setCallModalRemarks(lead.remarks || '');
-    setCallModalDate(lead.dateOfMeeting || new Date().toISOString().split('T')[0]);
-  };
-
-  // Submit Call Modal Log
-  const handleSaveCallLog = async () => {
-    if (!activeCallLead) return;
-
-    // Update in leads state
-    setLeads(prev => prev.map(l => {
-      if (l.id === activeCallLead.id) {
-        return {
-          ...l,
-          meetingOutcome: callModalOutcome,
-          serviceUsing: callModalService,
-          remarks: callModalRemarks,
-          dateOfMeeting: callModalDate
-        };
-      }
-      return l;
-    }));
-
-    // Send update to server
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    try {
-      await fetch(`http://localhost:8000/api/leads/${activeCallLead.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          meetingOutcome: callModalOutcome,
-          serviceUsing: callModalService,
-          remarks: callModalRemarks,
-          dateOfMeeting: callModalDate
-        })
-      });
-      fetchAnalytics();
-      fetchPincodes();
-    } catch (e) {
-      console.error('Failed to log call outcome:', e);
-    }
-
-    setActiveCallLead(null);
-  };
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 animate-fade-in-up select-none">
       
@@ -635,220 +511,182 @@ export default function MarketingExecutiveDashboard() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 2: MIDDLE SECTION - PRIORITY QUEUE & QUICK FILTERS
+          SECTION 2: PIPELINE QUICK FILTERS (FULL-WIDTH)
          ═══════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
         
-        {/* Priority Queue Card */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
-                  <PhoneCall className="w-4 h-4" />
-                </div>
-                <h2 className="text-base font-bold text-slate-900">
-                  Priority Follow-ups & Queue
-                </h2>
-              </div>
-              <span className="bg-red-50 text-[#D1242F] border border-red-200 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
-                5 Today
-              </span>
+        {/* Header with Title, Matching Counts, and Reset */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-50 text-[#D1242F] flex items-center justify-center font-bold">
+              <Filter className="w-4 h-4" />
             </div>
-
-            <p className="text-xs text-slate-500 font-medium">
-              High-priority accounts scheduled for immediate outreach in Mysuru division.
-            </p>
-
-            {/* List of 5 Priority Leads */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              {PRIORITY_QUEUE_LEADS.map((lead, idx) => (
-                <div 
-                  key={lead.id || idx}
-                  className="p-3 rounded-xl border border-slate-200/70 bg-slate-50/60 hover:bg-white hover:border-slate-300 hover:shadow-xs transition-all flex items-center justify-between gap-3 group"
-                >
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <h3 className="text-xs font-bold text-slate-900 truncate" title={lead.exporterName}>
-                        {lead.exporterName}
-                      </h3>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
-                      <span className="inline-flex items-center gap-0.5 font-mono text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded text-[10px]">
-                        <MapPin className="w-3 h-3 text-red-600" />
-                        {lead.pincode}
-                      </span>
-                      <span className="truncate text-slate-400 text-[10px]">
-                        {lead.customerMet ? lead.customerMet.split('(')[0].trim() : 'Mysuru Area'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Small "Call Now" Button */}
-                  <button
-                    onClick={() => handleOpenCallModal(lead)}
-                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-lg text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-                    title={`Call ${lead.exporterName}`}
-                  >
-                    <PhoneCall className="w-3.5 h-3.5" />
-                    <span>Call</span>
-                  </button>
-                </div>
-              ))}
+            <div>
+              <h2 className="text-base font-bold text-slate-900">
+                Pipeline Quick Filters
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">
+                Real-time filtering across lead status, postal service, territory division, and search terms.
+              </p>
             </div>
           </div>
 
-          <div className="pt-3 mt-3 border-t border-slate-100 text-[11px] text-slate-400 font-medium flex items-center justify-between">
-            <span>Daily Call Target: 5/15 Completed</span>
-            <span className="font-bold text-emerald-600">On Track</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500 font-medium bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+              Showing <strong className="text-slate-900 font-bold">{filteredLeads.length}</strong> matching records
+            </span>
+            {(statusFilter !== 'all' || serviceFilter !== 'all' || selectedDivision !== 'All Divisions' || searchQuery !== '') && (
+              <button
+                onClick={() => {
+                  setStatusFilter('all');
+                  setServiceFilter('all');
+                  setSelectedDivision('All Divisions');
+                  setSearchQuery('');
+                  setCurrentPage(1);
+                }}
+                className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset All Filters</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Quick Filters Card */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
-                  <Filter className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">
-                    Quick Filters
-                  </h2>
-                </div>
-              </div>
+        {/* 4 Interactive Filter Controls Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+          
+          {/* Dropdown 1: Filter by Lead Status */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+              Meeting Outcome / Status
+            </label>
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
+              >
+                <option value="all">📋 All Statuses</option>
+                <option value="pending">⏳ Action Pending (Uncontacted)</option>
+                <option value="followup">📅 Follow-up Scheduled</option>
+                <option value="positive">✅ Positive / Interested</option>
+                <option value="not_interested">❌ Not Interested</option>
+                <option value="onboarded">🏆 Onboarded (Contract Won)</option>
+              </select>
+            </div>
+          </div>
 
-              {(statusFilter !== 'all' || serviceFilter !== 'all' || searchQuery !== '') && (
-                <button
-                  onClick={() => {
-                    setStatusFilter('all');
-                    setServiceFilter('all');
-                    setSearchQuery('');
-                    setCurrentPage(1);
-                  }}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+          {/* Dropdown 2: Filter by Postal Service */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+              Postal Product / Service
+            </label>
+            <div className="relative">
+              <select
+                value={serviceFilter}
+                onChange={(e) => {
+                  setServiceFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
+              >
+                <option value="all">📦 All Postal Services</option>
+                <option value="Speed Post">Speed Post B2B</option>
+                <option value="Business">Business Parcel / Post</option>
+                <option value="Express">Express Cargo</option>
+                <option value="Logistics">Logistics Post</option>
+                <option value="International">International EMS</option>
+                <option value="Private">Private Courier</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Dropdown 3: Filter by Postal Division */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+              Territory Division
+            </label>
+            <div className="relative">
+              <select
+                value={selectedDivision}
+                onChange={(e) => {
+                  setSelectedDivision(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
+              >
+                <option value="All Divisions">🌐 All Divisions</option>
+                {divisions.map((div) => (
+                  <option key={div} value={div}>
+                    🏢 {div}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Keyword Search Input */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+              Search Exporter / Pincode
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search name, PIN, contact person..."
+                className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl pl-9 pr-8 py-2.5 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all shadow-2xs"
+              />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Reset Filters</span>
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
-
-            <p className="text-xs text-slate-500 font-medium">
-              Filter your assigned pipeline in real time. Division is locked to your official posting.
-            </p>
-
-            {/* 3 Native Dropdowns + Search Bar */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
-              
-              {/* Dropdown 1: Filter by Status */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  Filter by Status
-                </label>
-                <div className="relative">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => {
-                      setStatusFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <option value="all">📋 All Statuses</option>
-                    <option value="pending">⏳ Action Pending (Uncontacted)</option>
-                    <option value="followup">📅 Follow-up Scheduled</option>
-                    <option value="positive">✅ Positive / Interested</option>
-                    <option value="not_interested">❌ Not Interested</option>
-                    <option value="onboarded">🏆 Onboarded (Contract Won)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Dropdown 2: Filter by Service Using */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                  Filter by Service Using
-                </label>
-                <div className="relative">
-                  <select
-                    value={serviceFilter}
-                    onChange={(e) => {
-                      setServiceFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
-                  >
-                    <option value="all">📦 All Postal Services</option>
-                    <option value="Speed Post">Speed Post B2B</option>
-                    <option value="Business">Business Parcel / Post</option>
-                    <option value="Express">Express Cargo</option>
-                    <option value="Logistics">Logistics Post</option>
-                    <option value="Private">Private Courier</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Dropdown 3: Division: Mysuru (Locked) */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                    Division (Locked)
-                  </label>
-                  <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-bold">
-                    ME Assigned
-                  </span>
-                </div>
-                <div className="relative">
-                  <select
-                    disabled
-                    value="Mysuru"
-                    className="w-full appearance-none bg-slate-100/90 border border-slate-300 text-slate-600 font-bold rounded-xl px-3.5 py-2.5 text-xs cursor-not-allowed shadow-2xs"
-                  >
-                    <option value="Mysuru">🔒 Division: Mysuru</option>
-                  </select>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Quick Keyword / Exporter Search Input */}
-            <div className="pt-1">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="Search by Exporter Name, PINCODE (e.g. 570001), or Contact person..."
-                  className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all shadow-2xs"
-                />
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                {searchQuery && (
-                  <button 
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
 
-          {/* Filter Status Summary Pill */}
-          <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>
-              Showing <strong className="text-slate-900 font-bold">{filteredLeads.length}</strong> matching leads in <strong className="text-red-700 font-bold">Mysuru Division</strong>
-            </span>
-            <span className="text-[11px] text-slate-400">
-              Auto-saved changes to central CRM
-            </span>
-          </div>
+        </div>
+
+        {/* Quick Filter Status Pills */}
+        <div className="flex items-center gap-2 pt-2 overflow-x-auto flex-wrap border-t border-slate-100">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 shrink-0">
+            Quick Status:
+          </span>
+          {[
+            { id: 'all', label: 'All Leads' },
+            { id: 'pending', label: '⏳ Pending' },
+            { id: 'followup', label: '📅 Follow-up' },
+            { id: 'positive', label: '✅ Positive' },
+            { id: 'not_interested', label: '❌ Not Interested' },
+            { id: 'onboarded', label: '🏆 Onboarded' }
+          ].map((pill) => (
+            <button
+              key={pill.id}
+              onClick={() => {
+                setStatusFilter(pill.id);
+                setCurrentPage(1);
+              }}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === pill.id
+                  ? 'bg-[#114b79] text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
+              }`}
+            >
+              {pill.label}
+            </button>
+          ))}
         </div>
 
       </div>
@@ -1237,24 +1075,15 @@ export default function MarketingExecutiveDashboard() {
                         />
                       </td>
 
-                      {/* Remarks / Action Button */}
+                      {/* Remarks */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-between gap-2">
-                          <input
-                            type="text"
-                            value={lead.remarks || ''}
-                            placeholder="Add meeting notes..."
-                            onChange={(e) => handleInlineUpdate(lead.id, 'remarks', e.target.value)}
-                            className="bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-300 focus:border-[#D1242F] rounded-md px-2 py-1 text-xs text-slate-700 outline-none flex-1 truncate placeholder-slate-400"
-                          />
-                          <button
-                            onClick={() => handleOpenCallModal(lead)}
-                            className="shrink-0 p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                            title="Log full outreach details"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        <input
+                          type="text"
+                          value={lead.remarks || ''}
+                          placeholder="Add meeting notes..."
+                          onChange={(e) => handleInlineUpdate(lead.id, 'remarks', e.target.value)}
+                          className="bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-300 focus:border-[#D1242F] rounded-md px-2 py-1 text-xs text-slate-700 outline-none w-full truncate placeholder-slate-400"
+                        />
                       </td>
 
                     </tr>
@@ -1317,141 +1146,6 @@ export default function MarketingExecutiveDashboard() {
         </div>
 
       </div>
-
-      {/* ═══════════════════════════════════════════════════════════════
-          CALL OUTREACH & STATUS LOG MODAL
-         ═══════════════════════════════════════════════════════════════ */}
-      {activeCallLead && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-scale-up">
-            
-            {/* Modal Header */}
-            <div className="bg-[#1B2A4A] text-white px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold">
-                  <PhoneCall className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">
-                    ME Outreach Logger
-                  </h3>
-                  <p className="text-[11px] text-slate-300 font-medium">
-                    {activeCallLead.exporterName}
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setActiveCallLead(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-4 text-xs">
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800">{activeCallLead.exporterName}</span>
-                  <span className="font-mono bg-white border border-slate-200 px-2 py-0.5 rounded text-[11px] text-slate-600">
-                    PIN: {activeCallLead.pincode}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500">{activeCallLead.address}</p>
-                <div className="pt-2 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-600 font-medium">Contact: {activeCallLead.contactNumber || 'N/A'}</span>
-                  {activeCallLead.contactNumber && (
-                    <a 
-                      href={`tel:${activeCallLead.contactNumber}`}
-                      className="inline-flex items-center gap-1 text-emerald-600 font-bold hover:underline"
-                    >
-                      <Phone className="w-3 h-3" /> Dial Number
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {/* Form Controls */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Meeting Outcome
-                  </label>
-                  <select
-                    value={callModalOutcome}
-                    onChange={(e) => setCallModalOutcome(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#D1242F]/20"
-                  >
-                    <option value="Positive">✅ Positive (High Interest / Ready)</option>
-                    <option value="Followup">📅 Follow-up Required</option>
-                    <option value="Not interested">❌ Not Interested</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Service Presently Using / Pitched
-                  </label>
-                  <select
-                    value={callModalService}
-                    onChange={(e) => setCallModalService(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#D1242F]/20"
-                  >
-                    <option value="Speed Post B2B">Speed Post B2B</option>
-                    <option value="Business Parcel">Business Parcel</option>
-                    <option value="Express Cargo">Express Cargo</option>
-                    <option value="Logistics Post">Logistics Post</option>
-                    <option value="International EMS">International EMS</option>
-                    <option value="Private Courier">Private Courier</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Date of Interaction / Scheduled Next Meeting
-                  </label>
-                  <input
-                    type="date"
-                    value={callModalDate}
-                    onChange={(e) => setCallModalDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                    Executive Notes & Remarks
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={callModalRemarks}
-                    onChange={(e) => setCallModalRemarks(e.target.value)}
-                    placeholder="Enter discussion summary, tariff proposal discussed, or callback time..."
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#D1242F]/20"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="bg-slate-50 px-6 py-3.5 border-t border-slate-200 flex justify-end gap-2.5">
-              <button
-                onClick={() => setActiveCallLead(null)}
-                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveCallLog}
-                className="px-5 py-2 bg-[#D1242F] hover:bg-[#B01E28] text-white font-bold rounded-xl text-xs shadow-xs hover:shadow transition-all"
-              >
-                Save Outcome & Update CRM
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );
