@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Building2, ArrowRight, ShieldCheck, Mail, Lock } from 'lucide-react';
+import { Lock, User, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,234 +17,215 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const formData = new URLSearchParams();
-      formData.append('username', username);
-      formData.append('password', password);
-
       const res = await fetch('http://localhost:8000/api/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: formData.toString(),
+        body: JSON.stringify({
+          employee_id: employeeId.trim(),
+          password: password,
+        }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('token', data.access_token);
+          localStorage.setItem('role', data.role);
+          if (data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+        }
         router.push('/');
       } else {
-        const data = await res.json();
-        setError(data.detail || 'Login failed');
+        setError('Invalid Employee ID or Password.');
       }
     } catch (err) {
-      setError('Network error or server down');
+      setError('Unable to connect to server. Please check your backend connection.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleQuickFill = (id: string, pass: string) => {
+    setEmployeeId(id);
+    setPassword(pass);
+    setError('');
+  };
+
   return (
-    <div className="min-h-screen flex w-full bg-[#f8f9fa] overflow-hidden">
-      
-      {/* Left Panel: Visuals */}
-      <div className="hidden lg:flex w-[55%] relative flex-col justify-between p-12 overflow-hidden bg-[#0b1b36]">
-        {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
-          <Image 
-            src="/india-map.jpg" 
-            alt="India CRM Map" 
-            fill 
-            className="object-cover opacity-60 mix-blend-screen scale-105"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-br from-[#0b1b36]/80 via-[#113254]/60 to-[#d1242f]/40 backdrop-blur-[2px]" />
-        </div>
-
-        {/* Top Content */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="w-12 h-12 bg-[#d1242f] rounded-xl flex items-center justify-center text-white shadow-xl shadow-red-500/20 border border-red-400/30">
-            <Building2 className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-white font-extrabold text-2xl tracking-tight leading-none">Apex<span className="text-red-400">CRM</span></h1>
-            <p className="text-slate-300 text-sm font-medium">Enterprise Lead Management</p>
-          </div>
-        </div>
-
-        {/* Middle/Bottom Content */}
-        <div className="relative z-10 max-w-lg mb-10">
-          <h2 className="text-5xl font-extrabold text-white leading-tight mb-6 tracking-tight">
-            Connecting <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-rose-200">Opportunities</span> Across India.
-          </h2>
-          <p className="text-lg text-slate-300 font-medium mb-8 leading-relaxed">
-            Empower your regional and division teams with real-time insights, analytics, and lead tracking. Unified operations from North to South.
-          </p>
-          
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              <span className="text-white font-semibold text-sm">Secure Access</span>
-            </div>
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10">
-               <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-               <span className="text-white font-semibold text-sm">Real-time Sync</span>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 sm:p-6 select-none">
+      {/* Central Login Card */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 max-w-md w-full p-8 relative overflow-hidden">
         
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 right-20 w-64 h-64 bg-rose-500/20 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-blue-500/20 rounded-full blur-[120px] pointer-events-none" />
-      </div>
+        {/* Top Decorative Border */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#D1242F] via-[#A31D1D] to-[#114b79]" />
 
-      {/* Right Panel: Login Form */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-center items-center p-8 sm:p-12 relative">
-        <div className="w-full max-w-[420px] space-y-8 relative z-10">
-          
-          <div className="text-center lg:text-left mb-10">
-            {/* Mobile Logo */}
-            <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-[#d1242f] rounded-xl flex items-center justify-center text-white shadow-lg">
-                <Building2 className="w-6 h-6" />
-              </div>
-              <div className="text-left">
-                <h1 className="text-[#113254] font-extrabold text-2xl tracking-tight leading-none">Apex<span className="text-red-500">CRM</span></h1>
-                <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Lead Management</p>
-              </div>
+        {/* Official Header Branding */}
+        <div className="text-center mb-7 pt-1">
+          <div className="flex justify-center items-center gap-3 mb-3">
+            <div className="relative w-12 h-12 shrink-0">
+              <img 
+                src="/india-post-logo.png" 
+                alt="India Post Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
-
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#113254] tracking-tight mb-3">
-              Welcome back
-            </h2>
-            <p className="text-slate-500 font-medium">
-              Please enter your credentials to access your dashboard.
-            </p>
+            <div className="text-left">
+              <p 
+                className="text-[10px] font-bold text-[#A31D1D] tracking-wider leading-none mb-0.5"
+                style={{ fontFamily: "'Noto Sans Devanagari', 'Segoe UI', system-ui, sans-serif" }}
+              >
+                भारतीय डाक
+              </p>
+              <p className="text-[#9E1B1B] font-black text-base leading-tight tracking-tight">
+                Department of Posts
+              </p>
+              <p className="text-slate-500 text-[11px] font-medium leading-none">
+                Government of India
+              </p>
+            </div>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6" suppressHydrationWarning>
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
-                  Employee ID
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-[#d1242f] transition-colors" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d1242f]/20 focus:border-[#d1242f] transition-all shadow-sm"
-                    placeholder="e.g. CO_ADMIN, RO_BG, DIV_MYS, ME_MYS_01"
-                    suppressHydrationWarning
-                  />
-                </div>
-              </div>
+          <div className="mt-4 pt-3 border-t border-gray-100">
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              Karnataka Postal Circle CRM
+            </h1>
+            <p className="text-xs text-gray-500 font-medium mt-1">
+              Commercial Operations & Lead Management System
+            </p>
+          </div>
+        </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-bold text-slate-700">
-                    Password
-                  </label>
-                </div>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-[#d1242f] transition-colors" />
-                  </div>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d1242f]/20 focus:border-[#d1242f] transition-all shadow-sm"
-                    placeholder="••••••••"
-                    suppressHydrationWarning
-                  />
-                </div>
-              </div>
-            </div>
-
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-                <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-red-600 font-bold text-xs">!</span>
-                </div>
-                <p className="text-sm font-semibold text-red-600">{error}</p>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              suppressHydrationWarning
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-[#113254] hover:bg-[#0a1f35] focus:outline-none focus:ring-4 focus:ring-[#113254]/20 rounded-xl text-white text-sm font-bold shadow-lg shadow-[#113254]/20 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 group cursor-pointer"
+        {/* Login Form */}
+        <form onSubmit={handleLogin} className="space-y-4" suppressHydrationWarning>
+          <div>
+            <label 
+              htmlFor="employee_id" 
+              className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5"
             >
-              {loading ? (
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <>
-                  Sign in securely
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Quick Demo Credentials */}
-          <div className="pt-4 border-t border-slate-200">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
-              4-Tier Role Demo Accounts:
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
+              Employee ID
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                <User className="w-4 h-4" />
+              </div>
+              <input
+                id="employee_id"
+                type="text"
+                required
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
+                placeholder="Enter Employee ID (e.g. CO_ADMIN)"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all font-medium"
                 suppressHydrationWarning
-                onClick={() => { setUsername('CO_ADMIN'); setPassword('password123'); }}
-                className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Central Officer (CO)</div>
-                <div className="text-slate-500 text-[11px]">CO_ADMIN / password123</div>
-              </button>
-              <button
-                type="button"
-                suppressHydrationWarning
-                onClick={() => { setUsername('RO_BG'); setPassword('password123'); }}
-                className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Regional Officer (RO)</div>
-                <div className="text-slate-500 text-[11px]">RO_BG / password123</div>
-              </button>
-              <button
-                type="button"
-                suppressHydrationWarning
-                onClick={() => { setUsername('DIV_MYS'); setPassword('password123'); }}
-                className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Division Officer</div>
-                <div className="text-slate-500 text-[11px]">DIV_MYS / password123</div>
-              </button>
-              <button
-                type="button"
-                suppressHydrationWarning
-                onClick={() => { setUsername('ME_MYS_01'); setPassword('password123'); }}
-                className="p-2.5 rounded-lg border border-slate-200 hover:border-[#d1242f] bg-slate-50 hover:bg-red-50/40 text-left transition-all group cursor-pointer"
-              >
-                <div className="font-bold text-slate-800 group-hover:text-[#d1242f]">Marketing Exec (ME)</div>
-                <div className="text-slate-500 text-[11px]">ME_MYS_01 / password123</div>
-              </button>
+              />
             </div>
           </div>
-          
-          <p className="text-center text-sm font-medium text-slate-500 pt-2">
-            Need help logging in? <a href="#" className="text-[#d1242f] hover:underline font-bold">Contact IT Support</a>
+
+          <div>
+            <label 
+              htmlFor="password" 
+              className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5"
+            >
+              Password
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                <Lock className="w-4 h-4" />
+              </div>
+              <input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all font-medium"
+                suppressHydrationWarning
+              />
+            </div>
+          </div>
+
+          {/* Subtle Error Message Placeholder */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2.5 text-red-600 text-xs font-semibold animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            suppressHydrationWarning
+            className="w-full bg-[#114b79] text-white font-semibold rounded-md py-2 mt-4 hover:bg-blue-900 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70 cursor-pointer"
+          >
+            {loading ? (
+              <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+            ) : (
+              <>
+                <span>Access Dashboard</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* 4-Tier Quick Test Accounts */}
+        <div className="mt-6 pt-5 border-t border-gray-200">
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2.5 text-center">
+            Quick Fill Demo Accounts:
           </p>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickFill('CO_ADMIN', 'password123')}
+              className="p-2 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 group-hover:text-[#114b79]">Central Office (CO)</div>
+              <div className="text-gray-500 text-[10px]">CO_ADMIN</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickFill('RO_BG', 'password123')}
+              className="p-2 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 group-hover:text-[#114b79]">Regional Office (RO)</div>
+              <div className="text-gray-500 text-[10px]">RO_BG (Bengaluru)</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickFill('DIV_MYS', 'password123')}
+              className="p-2 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 group-hover:text-[#114b79]">Division Officer</div>
+              <div className="text-gray-500 text-[10px]">DIV_MYS (Mysuru)</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickFill('ME_MYS_01', 'password123')}
+              className="p-2 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 group-hover:text-[#114b79]">Marketing Exec (ME)</div>
+              <div className="text-gray-500 text-[10px]">ME_MYS_01 (Mysuru)</div>
+            </button>
+          </div>
+        </div>
+
+        {/* Footer Security Note */}
+        <div className="mt-6 flex items-center justify-center gap-1.5 text-gray-400 text-[11px]">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Department of Posts Authorized Access Only</span>
         </div>
       </div>
     </div>
