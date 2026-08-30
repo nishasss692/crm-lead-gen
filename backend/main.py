@@ -1014,12 +1014,14 @@ def get_analytics(
 
     # Outcome breakdown for Pictorial charts
     outcome_breakdown = [
-        {"label": "Pending", "status": "Contact Pending", "count": contact_pending, "color": "#F59E0B", "pct": round((contact_pending/total*100) if total>0 else 0, 1)},
-        {"label": "Contacted", "status": "Contacted", "count": contacted, "color": "#3B82F6", "pct": round((contacted/total*100) if total>0 else 0, 1)},
-        {"label": "Interested", "status": "Interested", "count": interested, "color": "#10B981", "pct": round((interested/total*100) if total>0 else 0, 1)},
-        {"label": "Follow-up", "status": "Follow-up Required", "count": follow_up, "color": "#F97316", "pct": round((follow_up/total*100) if total>0 else 0, 1)},
-        {"label": "Onboarded", "status": "Won / Onboarded", "count": onboarded, "color": "#D1242F", "pct": round((onboarded/total*100) if total>0 else 0, 1)},
-        {"label": "Not Interested", "status": "Not Interested", "count": not_interested, "color": "#94A3B8", "pct": round((not_interested/total*100) if total>0 else 0, 1)}
+        {"name": "Contact Pending", "label": "Pending", "status": "Contact Pending", "count": contact_pending, "color": "#F59E0B", "pct": round((contact_pending/total*100) if total>0 else 0, 1)},
+        {"name": "Contacted", "label": "Contacted", "status": "Contacted", "count": contacted, "color": "#3B82F6", "pct": round((contacted/total*100) if total>0 else 0, 1)},
+        {"name": "Interested", "label": "Interested", "status": "Interested", "count": interested, "color": "#10B981", "pct": round((interested/total*100) if total>0 else 0, 1)},
+        {"name": "Willing to Onboard", "label": "Willing", "status": "Willing to Onboard", "count": willing_to_onboard, "color": "#0D9488", "pct": round((willing_to_onboard/total*100) if total>0 else 0, 1)},
+        {"name": "Onboarded", "label": "Onboarded", "status": "Won / Onboarded", "count": onboarded, "color": "#D1242F", "pct": round((onboarded/total*100) if total>0 else 0, 1)},
+        {"name": "Onboard Pending", "label": "Onboard Pending", "status": "Onboard Pending", "count": onboard_pending, "color": "#E11D48", "pct": round((onboard_pending/total*100) if total>0 else 0, 1)},
+        {"name": "Follow-up Required", "label": "Follow-up", "status": "Follow-up Required", "count": follow_up, "color": "#F97316", "pct": round((follow_up/total*100) if total>0 else 0, 1)},
+        {"name": "Not Interested", "label": "Not Interested", "status": "Not Interested", "count": not_interested, "color": "#94A3B8", "pct": round((not_interested/total*100) if total>0 else 0, 1)}
     ]
 
     # Pictorial Data Quality Scorecard items
