@@ -1,32 +1,17 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
-  Users, 
-  Clock, 
-  Calendar, 
-  TrendingUp, 
-  PhoneCall, 
-  MapPin, 
   Filter, 
   Search, 
   RotateCcw, 
+  MapPin, 
+  Building2, 
   CheckCircle2, 
-  XCircle, 
+  Clock, 
   AlertCircle, 
-  Award, 
-  Lock, 
-  ChevronLeft, 
-  ChevronRight, 
-  Phone, 
-  Edit3, 
-  FileText, 
-  Check, 
-  ExternalLink,
-  Sparkles,
-  Zap,
-  Building,
-  Mail,
-  X
+  Calendar, 
+  X,
+  Download
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -37,28 +22,6 @@ import {
   CartesianGrid,
   Tooltip
 } from 'recharts';
-
-// Lead Interface
-export interface Lead {
-  id: number;
-  slNo?: string | number;
-  exporterName: string;
-  address: string;
-  pincode: string;
-  divisionId?: string;
-  division: string;
-  region?: string;
-  assignedAgent?: string;
-  dateOfMeeting?: string;
-  customerMet?: string;
-  contactNumber?: string;
-  email?: string;
-  serviceUsing: string;
-  monthlyVolume?: string | number;
-  meetingOutcome?: string;
-  contractId?: string;
-  remarks?: string;
-}
 
 interface AnalyticsData {
   total_leads: number;
@@ -89,10 +52,6 @@ interface PincodePerformanceItem {
 }
 
 export default function MarketingExecutiveDashboard() {
-  // Leads State
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
   // Analytics & Pincode Performance State
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     total_leads: 0,
@@ -111,23 +70,16 @@ export default function MarketingExecutiveDashboard() {
 
   // Quick Filters State
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [serviceFilter, setServiceFilter] = useState<string>('all');
   const [selectedDivision, setSelectedDivision] = useState<string>('All Divisions');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 10;
-
-  // Real-time inline update feedback tracker: { [leadId]: 'saving' | 'saved' }
-  const [saveStatus, setSaveStatus] = useState<{ [key: number]: 'saving' | 'saved' }>({});
-
-  // Fetch 8 KPI Analytics from GET /api/analytics
-  const fetchAnalytics = async () => {
+  // 1. Fetch 8 KPI Analytics from Backend GET /api/analytics
+  const fetchAnalytics = useCallback(async (div = selectedDivision) => {
     setIsAnalyticsLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const res = await fetch('http://localhost:8000/api/analytics?only_valid=false', {
+      const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&` : '';
+      const res = await fetch(`http://localhost:8000/api/analytics?${queryParam}only_valid=false`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
@@ -148,14 +100,15 @@ export default function MarketingExecutiveDashboard() {
     } finally {
       setIsAnalyticsLoading(false);
     }
-  };
+  }, [selectedDivision]);
 
-  // Fetch Pincode Leaderboard from GET /api/analytics/pincodes
-  const fetchPincodes = async () => {
+  // 2. Fetch Pincode Leaderboard from Backend GET /api/analytics/pincodes
+  const fetchPincodes = useCallback(async (div = selectedDivision) => {
     setIsPincodesLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const res = await fetch('http://localhost:8000/api/analytics/pincodes', {
+      const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}` : '';
+      const res = await fetch(`http://localhost:8000/api/analytics/pincodes?${queryParam}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
@@ -169,27 +122,101 @@ export default function MarketingExecutiveDashboard() {
     } finally {
       setIsPincodesLoading(false);
     }
-  };
+  }, [selectedDivision]);
+
+  // 3. Fetch Divisions from Backend GET /api/divisions
+  const fetchDivisions = useCallback(async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch('http://localhost:8000/api/divisions', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setDivisions(data);
+        }
+      }
+    } catch (err) {
+      console.warn('Backend divisions fetch fallback:', err);
+    }
+  }, []);
+
+  // Initial Load
+  useEffect(() => {
+    fetchDivisions();
+  }, [fetchDivisions]);
+
+  // Reload Analytics & Pincodes on Division Change
+  useEffect(() => {
+    fetchAnalytics(selectedDivision);
+    fetchPincodes(selectedDivision);
+  }, [selectedDivision, fetchAnalytics, fetchPincodes]);
+
+  // Filtered Pincodes based on status filter and search query
+  const filteredPincodes = useMemo(() => {
+    return pincodes.filter(item => {
+      // 1. Search Query on Pincode or Post Office name
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase().trim();
+        const pinMatch = (item.pincode || '').toLowerCase().includes(q);
+        const nameMatch = (item.office_name || '').toLowerCase().includes(q);
+        if (!pinMatch && !nameMatch) return false;
+      }
+
+      // 2. Status Filter: Only show pincodes that have at least 1 lead with that status
+      if (statusFilter === 'pending') {
+        if ((item.pending ?? 0) <= 0) return false;
+      } else if (statusFilter === 'contacted') {
+        if ((item.contacted ?? 0) <= 0) return false;
+      } else if (statusFilter === 'followup') {
+        if ((item.follow_up_required ?? 0) <= 0) return false;
+      } else if (statusFilter === 'positive') {
+        if ((item.interested ?? 0) <= 0) return false;
+      } else if (statusFilter === 'not_interested') {
+        if ((item.not_interested ?? 0) <= 0) return false;
+      } else if (statusFilter === 'willing_to_onboard') {
+        if ((item.willing_to_onboard ?? 0) <= 0) return false;
+      } else if (statusFilter === 'onboarded') {
+        if ((item.onboarded ?? 0) <= 0) return false;
+      }
+
+      return true;
+    });
+  }, [pincodes, searchQuery, statusFilter]);
 
   // Top 10 Pincodes for BarChart Visualization
   const chartData = useMemo(() => {
-    return pincodes.slice(0, 10).map(p => ({
-      pincode: p.pincode,
-      total: p.total ?? p.total_leads ?? 0,
-      office_name: p.office_name || ''
-    }));
-  }, [pincodes]);
+    return filteredPincodes.slice(0, 10).map(p => {
+      let value = p.total ?? p.total_leads ?? 0;
+      if (statusFilter === 'pending') value = p.pending ?? 0;
+      else if (statusFilter === 'contacted') value = p.contacted ?? 0;
+      else if (statusFilter === 'followup') value = p.follow_up_required ?? 0;
+      else if (statusFilter === 'positive') value = p.interested ?? 0;
+      else if (statusFilter === 'not_interested') value = p.not_interested ?? 0;
+      else if (statusFilter === 'willing_to_onboard') value = p.willing_to_onboard ?? 0;
+      else if (statusFilter === 'onboarded') value = p.onboarded ?? 0;
+
+      return {
+        pincode: p.pincode,
+        total: value,
+        office_name: p.office_name || ''
+      };
+    });
+  }, [filteredPincodes, statusFilter]);
 
   // Export Pincode Performance CSV
   const handleExportPincodesCSV = () => {
-    if (!pincodes || pincodes.length === 0) return;
+    const recordsToExport = filteredPincodes.length > 0 ? filteredPincodes : pincodes;
+    if (!recordsToExport || recordsToExport.length === 0) return;
+    
     const headers = [
       "PINCODE", "POST OFFICE", "TOTAL", "PENDING", "CONTACTED", 
       "INTERESTED", "NOT INTERESTED", "FOLLOW-UP REQUIRED", 
       "WILLING TO ONBOARD", "NOT WILLING TO ONBOARD", "ONBOARDED"
     ].join(',');
 
-    const rows = pincodes.map(p => [
+    const rows = recordsToExport.map(p => [
       `"${p.pincode}"`,
       `"${(p.office_name || '#N/A').replace(/"/g, '""')}"`,
       p.total ?? p.total_leads ?? 0,
@@ -208,287 +235,62 @@ export default function MarketingExecutiveDashboard() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `pincode_performance_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `pincode_performance_${selectedDivision.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
-  // Fetch Divisions from GET /api/divisions
-  const fetchDivisions = async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    try {
-      const res = await fetch('http://localhost:8000/api/divisions', {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setDivisions(data);
-        }
-      }
-    } catch (err) {
-      console.warn('Backend divisions fetch fallback:', err);
-    }
-  };
-
-  // 1. Load Leads Data from Backend
-  const loadLeads = async (div = selectedDivision) => {
-    setIsLoading(true);
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-    try {
-      const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&` : '';
-      const res = await fetch(`http://localhost:8000/api/leads?${queryParam}only_valid=false`, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          const formatted: Lead[] = data.map((item: any) => ({
-            id: item.id,
-            slNo: item.sl_no || item.id,
-            exporterName: item.exporter_name || 'Commercial Entity',
-            address: item.address || 'Karnataka',
-            pincode: item.pincode || '',
-            divisionId: item.division_id || '',
-            division: item.division || 'Karnataka Circle',
-            region: item.region || 'Karnataka Circle',
-            assignedAgent: item.assigned_agent || '',
-            dateOfMeeting: item.date_of_meeting || '',
-            customerMet: item.customer_met || '',
-            contactNumber: item.contact_number || '',
-            email: item.email || '',
-            serviceUsing: item.service_using || 'Speed Post B2B',
-            monthlyVolume: item.monthly_volume || '',
-            meetingOutcome: item.meeting_outcome || '',
-            contractId: item.contract_id || '',
-            remarks: item.remarks || ''
-          }));
-          setLeads(formatted);
-        }
-      }
-    } catch (err) {
-      console.warn('Backend leads fetch fallback:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDivisions();
-    fetchAnalytics();
-    fetchPincodes();
-  }, []);
-
-  useEffect(() => {
-    loadLeads(selectedDivision);
-  }, [selectedDivision]);
-
-  // 2. Handle Inline Updates for Meeting Outcome & Service Presently Using
-  const handleInlineUpdate = async (leadId: number, field: 'meetingOutcome' | 'serviceUsing' | 'remarks' | 'dateOfMeeting', value: string) => {
-    // 1. Optimistic UI update
-    setLeads(prev => prev.map(lead => {
-      if (lead.id === leadId) {
-        return { ...lead, [field]: value };
-      }
-      return lead;
-    }));
-
-    // 2. Visual feedback
-    setSaveStatus(prev => ({ ...prev, [leadId]: 'saving' }));
-
-    // 3. Persist to Backend PATCH endpoint
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    try {
-      const response = await fetch(`http://localhost:8000/api/leads/${leadId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ [field]: value })
-      });
-
-      if (response.ok) {
-        setSaveStatus(prev => ({ ...prev, [leadId]: 'saved' }));
-        fetchAnalytics();
-        fetchPincodes();
-        setTimeout(() => {
-          setSaveStatus(prev => {
-            const next = { ...prev };
-            delete next[leadId];
-            return next;
-          });
-        }, 2000);
-      } else {
-        setSaveStatus(prev => {
-          const next = { ...prev };
-          delete next[leadId];
-          return next;
-        });
-      }
-    } catch (error) {
-      console.error('Error updating lead inline:', error);
-      setSaveStatus(prev => {
-        const next = { ...prev };
-        delete next[leadId];
-        return next;
-      });
-    }
-  };
-
-  // Dynamic 8 KPI Data (with local fallback computation if API is initializing)
-  const displayKpis = useMemo(() => {
-    if (analytics.total_leads > 0) {
-      return analytics;
-    }
-    
-    let contact_pending = 0;
-    let contacted = 0;
-    let interested = 0;
-    let not_interested = 0;
-    let willing_to_onboard = 0;
-    let onboarded = 0;
-    let onboard_pending = 0;
-
-    leads.forEach(l => {
-      const out = (l.meetingOutcome || '').trim().toLowerCase();
-      const hasContract = !!(l.contractId || '').trim();
-
-      if (!out || out === 'pending' || out === 'new' || out === 'none' || out === 'nan') {
-        contact_pending++;
-      } else {
-        contacted++;
-      }
-
-      if (out === 'positive' || out === 'interested') {
-        interested++;
-      } else if (out === 'not interested' || out === 'rejected') {
-        not_interested++;
-      } else if (out === 'willing to onboard' || out === 'willing') {
-        willing_to_onboard++;
-      } else if (out === 'onboarded' || out === 'onboard' || hasContract) {
-        onboarded++;
-      } else if (out === 'onboard pending' || out === 'onboard_pending') {
-        onboard_pending++;
-      }
-    });
-
-    return {
-      total_leads: leads.length || 250,
-      contact_pending: contact_pending || 45,
-      contacted: contacted || 205,
-      interested: interested || 38,
-      not_interested: not_interested || 14,
-      willing_to_onboard: willing_to_onboard || 26,
-      onboarded: onboarded || 12,
-      onboard_pending: onboard_pending || 8
-    };
-  }, [analytics, leads]);
-
   // The 8 KPI Cards configuration matching exact reference styling & border rules
   const kpiCards = [
     {
       title: 'Total leads',
-      value: displayKpis.total_leads,
+      value: analytics.total_leads,
       borderClass: 'border-t-4 border-t-red-600'
     },
     {
       title: 'Contact pending',
-      value: displayKpis.contact_pending,
+      value: analytics.contact_pending,
       borderClass: 'border-t-4 border-t-red-600'
     },
     {
       title: 'Contacted',
-      value: displayKpis.contacted,
+      value: analytics.contacted,
       borderClass: 'border-t-4 border-t-blue-600'
     },
     {
       title: 'Interested',
-      value: displayKpis.interested,
+      value: analytics.interested,
       borderClass: 'border-t-4 border-t-blue-600'
     },
     {
       title: 'Not interested',
-      value: displayKpis.not_interested,
+      value: analytics.not_interested,
       borderClass: 'border-t-4 border-t-slate-400'
     },
     {
       title: 'Willing to onboard',
-      value: displayKpis.willing_to_onboard,
+      value: analytics.willing_to_onboard,
       borderClass: 'border-t-4 border-t-red-500'
     },
     {
       title: 'Onboarded',
-      value: displayKpis.onboarded,
+      value: analytics.onboarded,
       borderClass: 'border-t-4 border-t-red-500'
     },
     {
       title: 'Onboard pending',
-      value: displayKpis.onboard_pending,
+      value: analytics.onboard_pending,
       borderClass: 'border-t-4 border-t-red-500'
     }
   ];
-
-  // 4. Filtering Logic for ME Data Grid
-  const filteredLeads = useMemo(() => {
-    return leads.filter(lead => {
-      // 1. Status Filter
-      if (statusFilter !== 'all') {
-        const outcome = (lead.meetingOutcome || '').trim().toLowerCase();
-        if (statusFilter === 'pending') {
-          if (outcome && outcome !== 'none' && outcome !== 'nan' && outcome !== '') return false;
-        } else if (statusFilter === 'followup') {
-          if (!outcome.includes('follow')) return false;
-        } else if (statusFilter === 'positive') {
-          if (!outcome.includes('positive') && !outcome.includes('interested')) return false;
-        } else if (statusFilter === 'not_interested') {
-          if (!outcome.includes('not interested') && !outcome.includes('negative')) return false;
-        } else if (statusFilter === 'onboarded') {
-          if (!lead.contractId && !outcome.includes('onboard')) return false;
-        }
-      }
-
-      // 2. Service Filter
-      if (serviceFilter !== 'all') {
-        const srv = (lead.serviceUsing || '').trim().toLowerCase();
-        if (!srv.includes(serviceFilter.toLowerCase())) {
-          return false;
-        }
-      }
-
-      // 3. Search Query
-      if (searchQuery.trim() !== '') {
-        const query = searchQuery.toLowerCase();
-        const matchesName = (lead.exporterName || '').toLowerCase().includes(query);
-        const matchesPin = (lead.pincode || '').toLowerCase().includes(query);
-        const matchesContact = (lead.contactNumber || '').toLowerCase().includes(query);
-        const matchesPerson = (lead.customerMet || '').toLowerCase().includes(query);
-        const matchesAddress = (lead.address || '').toLowerCase().includes(query);
-        if (!matchesName && !matchesPin && !matchesContact && !matchesPerson && !matchesAddress) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [leads, statusFilter, serviceFilter, searchQuery]);
-
-  // Paginated Data
-  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / itemsPerPage));
-  const paginatedLeads = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredLeads.slice(start, start + itemsPerPage);
-  }, [filteredLeads, currentPage]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 animate-fade-in-up select-none">
       
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 1: THE 8 KPI GRID (TASK 1)
+          SECTION 1: THE 8 KPI GRID (BACKEND POWERED)
          ═══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3.5">
         {kpiCards.map((kpi, idx) => (
@@ -511,7 +313,7 @@ export default function MarketingExecutiveDashboard() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 2: PIPELINE QUICK FILTERS (FULL-WIDTH)
+          SECTION 2: PIPELINE QUICK FILTERS (NO EMOJIS, CLEAN UI)
          ═══════════════════════════════════════════════════════════════ */}
       <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
         
@@ -526,35 +328,33 @@ export default function MarketingExecutiveDashboard() {
                 Pipeline Quick Filters
               </h2>
               <p className="text-xs text-slate-500 font-medium">
-                Real-time filtering across lead status, postal service, territory division, and search terms.
+                Real-time filtering across lead disposition status, territory division, and search terms.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-500 font-medium bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-              Showing <strong className="text-slate-900 font-bold">{filteredLeads.length}</strong> matching records
+              Showing <strong className="text-slate-900 font-bold">{filteredPincodes.length}</strong> pincode territories
             </span>
-            {(statusFilter !== 'all' || serviceFilter !== 'all' || selectedDivision !== 'All Divisions' || searchQuery !== '') && (
+            {(statusFilter !== 'all' || selectedDivision !== 'All Divisions' || searchQuery !== '') && (
               <button
                 onClick={() => {
                   setStatusFilter('all');
-                  setServiceFilter('all');
                   setSelectedDivision('All Divisions');
                   setSearchQuery('');
-                  setCurrentPage(1);
                 }}
-                className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset All Filters</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* 4 Interactive Filter Controls Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+        {/* 3 Interactive Filter Controls Grid (Status, Division, Search) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
           
           {/* Dropdown 1: Filter by Lead Status */}
           <div className="space-y-1.5">
@@ -564,48 +364,22 @@ export default function MarketingExecutiveDashboard() {
             <div className="relative">
               <select
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
               >
-                <option value="all">📋 All Statuses</option>
-                <option value="pending">⏳ Action Pending (Uncontacted)</option>
-                <option value="followup">📅 Follow-up Scheduled</option>
-                <option value="positive">✅ Positive / Interested</option>
-                <option value="not_interested">❌ Not Interested</option>
-                <option value="onboarded">🏆 Onboarded (Contract Won)</option>
+                <option value="all">All Statuses</option>
+                <option value="pending">Action Pending (Uncontacted)</option>
+                <option value="contacted">Contacted</option>
+                <option value="followup">Follow-up Scheduled</option>
+                <option value="positive">Positive / Interested</option>
+                <option value="not_interested">Not Interested</option>
+                <option value="willing_to_onboard">Willing to Onboard</option>
+                <option value="onboarded">Onboarded (Contract Won)</option>
               </select>
             </div>
           </div>
 
-          {/* Dropdown 2: Filter by Postal Service */}
-          <div className="space-y-1.5">
-            <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-              Postal Product / Service
-            </label>
-            <div className="relative">
-              <select
-                value={serviceFilter}
-                onChange={(e) => {
-                  setServiceFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
-              >
-                <option value="all">📦 All Postal Services</option>
-                <option value="Speed Post">Speed Post B2B</option>
-                <option value="Business">Business Parcel / Post</option>
-                <option value="Express">Express Cargo</option>
-                <option value="Logistics">Logistics Post</option>
-                <option value="International">International EMS</option>
-                <option value="Private">Private Courier</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Dropdown 3: Filter by Postal Division */}
+          {/* Dropdown 2: Filter by Postal Division */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
               Territory Division
@@ -613,36 +387,30 @@ export default function MarketingExecutiveDashboard() {
             <div className="relative">
               <select
                 value={selectedDivision}
-                onChange={(e) => {
-                  setSelectedDivision(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => setSelectedDivision(e.target.value)}
                 className="w-full appearance-none bg-slate-50 hover:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
               >
-                <option value="All Divisions">🌐 All Divisions</option>
+                <option value="All Divisions">All Divisions</option>
                 {divisions.map((div) => (
                   <option key={div} value={div}>
-                    🏢 {div}
+                    {div}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Keyword Search Input */}
+          {/* Search Input: Pincode or Post Office name */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-              Search Exporter / Pincode
+              Search Pincode / Post Office
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Search name, PIN, contact person..."
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search PIN (e.g. 570001) or Post Office name..."
                 className="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl pl-9 pr-8 py-2.5 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all shadow-2xs"
               />
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -659,25 +427,24 @@ export default function MarketingExecutiveDashboard() {
 
         </div>
 
-        {/* Quick Filter Status Pills */}
+        {/* Quick Filter Status Pills (Clean Text, No Emojis) */}
         <div className="flex items-center gap-2 pt-2 overflow-x-auto flex-wrap border-t border-slate-100">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 shrink-0">
             Quick Status:
           </span>
           {[
             { id: 'all', label: 'All Leads' },
-            { id: 'pending', label: '⏳ Pending' },
-            { id: 'followup', label: '📅 Follow-up' },
-            { id: 'positive', label: '✅ Positive' },
-            { id: 'not_interested', label: '❌ Not Interested' },
-            { id: 'onboarded', label: '🏆 Onboarded' }
+            { id: 'pending', label: 'Action Pending' },
+            { id: 'contacted', label: 'Contacted' },
+            { id: 'followup', label: 'Follow-up' },
+            { id: 'positive', label: 'Positive' },
+            { id: 'not_interested', label: 'Not Interested' },
+            { id: 'willing_to_onboard', label: 'Willing to Onboard' },
+            { id: 'onboarded', label: 'Onboarded' }
           ].map((pill) => (
             <button
               key={pill.id}
-              onClick={() => {
-                setStatusFilter(pill.id);
-                setCurrentPage(1);
-              }}
+              onClick={() => setStatusFilter(pill.id)}
               className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 statusFilter === pill.id
                   ? 'bg-[#114b79] text-white shadow-xs'
@@ -704,7 +471,7 @@ export default function MarketingExecutiveDashboard() {
                 Top Pincodes by Volume
               </h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Total commercial lead volume per territory
+                Total commercial lead volume per territory {selectedDivision !== 'All Divisions' ? `in ${selectedDivision}` : 'across Circle'}
               </p>
             </div>
             <span className="bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3 py-1 rounded-full border border-blue-100">
@@ -720,7 +487,7 @@ export default function MarketingExecutiveDashboard() {
               </div>
             ) : chartData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 text-xs font-medium">
-                No pincode volume data available for visualization.
+                No pincode volume data available for the selected filters.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
@@ -752,7 +519,7 @@ export default function MarketingExecutiveDashboard() {
                     }}
                     formatter={(value: any, name: any, item: any) => [
                       `${Number(value).toLocaleString()} leads`, 
-                      item?.payload?.office_name ? item.payload.office_name : 'Total Volume'
+                      item?.payload?.office_name ? item.payload.office_name : 'Volume'
                     ]}
                     labelFormatter={(label) => `PIN: ${label}`}
                   />
@@ -760,7 +527,7 @@ export default function MarketingExecutiveDashboard() {
                     dataKey="total" 
                     fill="#1e3a8a" 
                     radius={[6, 6, 0, 0]} 
-                    name="Total Leads" 
+                    name="Leads" 
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -782,14 +549,15 @@ export default function MarketingExecutiveDashboard() {
             </div>
             <button 
               onClick={handleExportPincodesCSV}
-              className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-md font-semibold text-sm transition-colors cursor-pointer shrink-0 shadow-sm"
+              className="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-md font-semibold text-sm transition-colors cursor-pointer shrink-0 shadow-sm inline-flex items-center gap-1.5"
             >
-              ↓ Export CSV
+              <Download className="w-4 h-4" />
+              <span>Export CSV</span>
             </button>
           </div>
 
           {/* Detailed Table */}
-          <div className="overflow-x-auto max-h-[500px] relative">
+          <div className="overflow-x-auto max-h-[550px] relative">
             <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead className="bg-[#114b79] text-white text-xs font-bold uppercase tracking-wider sticky top-0 z-10 shadow-xs">
                 <tr>
@@ -815,14 +583,14 @@ export default function MarketingExecutiveDashboard() {
                       </div>
                     </td>
                   </tr>
-                ) : pincodes.length === 0 ? (
+                ) : filteredPincodes.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-12 text-center text-slate-400 font-medium">
-                      No pincode performance data available.
+                      No pincode performance data found for the selected filters.
                     </td>
                   </tr>
                 ) : (
-                  pincodes.map((item, idx) => (
+                  filteredPincodes.map((item, idx) => (
                     <tr 
                       key={item.pincode || idx} 
                       className="border-b border-gray-100 odd:bg-white even:bg-gray-50/60 hover:bg-blue-50/20 transition-colors"
@@ -886,262 +654,6 @@ export default function MarketingExecutiveDashboard() {
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════════════
-          SECTION 4: BOTTOM SECTION - THE ME DATA GRID (INTERACTIVE)
-         ═══════════════════════════════════════════════════════════════ */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-        
-        {/* Table Top Toolbar */}
-        <div className="px-5 py-4 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">
-                ME Leads Action Center & Inline Pipeline Editor
-              </h2>
-              <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-slate-200">
-                {filteredLeads.length} Records
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Strictly enforce dropdown selections for Meeting Outcome & Service. Changes persist instantly.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-500 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-              Page {currentPage} of {totalPages}
-            </span>
-          </div>
-        </div>
-
-        {/* Wide Table Container with Sticky Headers & Zebra Striping */}
-        <div className="overflow-x-auto max-h-[580px] relative">
-          <table className="w-full text-left border-collapse min-w-[1050px]">
-            {/* Sticky Header with bg-slate-100 */}
-            <thead className="bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider sticky top-0 z-20 shadow-2xs border-b border-slate-200">
-              <tr>
-                <th className="py-3 px-4 w-12 text-center">#</th>
-                <th className="py-3 px-4 min-w-[220px]">Exporter Name & Address</th>
-                <th className="py-3 px-3 w-28 text-center">PINCODE</th>
-                <th className="py-3 px-4 min-w-[160px]">Contact Person / Phone</th>
-                <th className="py-3 px-4 min-w-[180px]">Service Presently Using</th>
-                <th className="py-3 px-4 min-w-[180px]">Meeting Outcome</th>
-                <th className="py-3 px-3 w-32">Meeting Date</th>
-                <th className="py-3 px-4 min-w-[180px]">Remarks / Action</th>
-              </tr>
-            </thead>
-
-            {/* Clean Zebra Striping: odd:bg-white even:bg-slate-50/60 */}
-            <tbody className="divide-y divide-slate-200/70 text-xs text-slate-700 font-medium">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
-                    <div className="inline-flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-[#D1242F] border-t-transparent rounded-full animate-spin"></div>
-                      <span>Loading Mysuru assigned pipeline...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : paginatedLeads.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
-                    No leads found matching the selected filters.
-                  </td>
-                </tr>
-              ) : (
-                paginatedLeads.map((lead, idx) => {
-                  const outcomeVal = lead.meetingOutcome || '';
-                  const outcomeLower = outcomeVal.toLowerCase();
-                  const isSaved = saveStatus[lead.id] === 'saved';
-                  const isSaving = saveStatus[lead.id] === 'saving';
-
-                  return (
-                    <tr 
-                      key={lead.id || idx} 
-                      className="odd:bg-white even:bg-slate-50/60 hover:bg-red-50/15 transition-colors group"
-                    >
-                      {/* # Index */}
-                      <td className="py-3.5 px-4 text-center font-mono text-slate-400 text-xs">
-                        {(currentPage - 1) * itemsPerPage + idx + 1}
-                      </td>
-
-                      {/* Exporter Name & Address */}
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-0.5">
-                          <span className="font-bold text-slate-900 text-xs leading-snug block">
-                            {lead.exporterName}
-                          </span>
-                          <span className="text-[11px] text-slate-500 line-clamp-1 block" title={lead.address}>
-                            {lead.address}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* PINCODE */}
-                      <td className="py-3.5 px-3 text-center">
-                        <span className="inline-flex items-center gap-1 font-mono text-xs font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200/80">
-                          <MapPin className="w-3 h-3 text-[#D1242F]" />
-                          {lead.pincode || '570001'}
-                        </span>
-                      </td>
-
-                      {/* Contact Person & Phone */}
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-0.5">
-                          <span className="font-semibold text-slate-800 block text-xs truncate">
-                            {lead.customerMet || 'Commercial Lead'}
-                          </span>
-                          {lead.contactNumber ? (
-                            <a 
-                              href={`tel:${lead.contactNumber}`} 
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline"
-                            >
-                              <Phone className="w-3 h-3 text-emerald-600" />
-                              {lead.contactNumber}
-                            </a>
-                          ) : (
-                            <span className="text-[11px] text-slate-400 italic">No phone logged</span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* STRICT REQUIREMENT: Service Presently Using MUST be a <select> Dropdown */}
-                      <td className="py-3.5 px-4">
-                        <div className="relative">
-                          <select
-                            value={lead.serviceUsing || 'Speed Post B2B'}
-                            onChange={(e) => handleInlineUpdate(lead.id, 'serviceUsing', e.target.value)}
-                            className="w-full appearance-none bg-white hover:bg-slate-50 border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none transition-colors cursor-pointer shadow-2xs"
-                          >
-                            <option value="Speed Post B2B">Speed Post B2B</option>
-                            <option value="Business Parcel">Business Parcel</option>
-                            <option value="Express Cargo">Express Cargo</option>
-                            <option value="Logistics Post">Logistics Post</option>
-                            <option value="International EMS">International EMS</option>
-                            <option value="Private Courier">Private Courier</option>
-                            <option value="Other">Other</option>
-                          </select>
-                        </div>
-                      </td>
-
-                      {/* STRICT REQUIREMENT: Meeting Outcome MUST be a <select> Dropdown */}
-                      <td className="py-3.5 px-4">
-                        <div className="relative flex items-center gap-1.5">
-                          <select
-                            value={lead.meetingOutcome || ''}
-                            onChange={(e) => handleInlineUpdate(lead.id, 'meetingOutcome', e.target.value)}
-                            className={`w-full appearance-none rounded-lg px-2.5 py-1.5 text-xs font-bold outline-none transition-all cursor-pointer shadow-2xs border ${
-                              outcomeLower.includes('positive')
-                                ? 'bg-emerald-50 text-emerald-900 border-emerald-300 focus:ring-2 focus:ring-emerald-200'
-                                : outcomeLower.includes('follow')
-                                ? 'bg-amber-50 text-amber-900 border-amber-300 focus:ring-2 focus:ring-amber-200'
-                                : outcomeLower.includes('not')
-                                ? 'bg-rose-50 text-rose-900 border-rose-300 focus:ring-2 focus:ring-rose-200'
-                                : 'bg-white text-slate-700 border-slate-300 focus:ring-2 focus:ring-slate-200'
-                            }`}
-                          >
-                            <option value="">⏳ Pending / New</option>
-                            <option value="Positive">✅ Positive</option>
-                            <option value="Followup">📅 Followup</option>
-                            <option value="Not interested">❌ Not interested</option>
-                          </select>
-
-                          {/* Instant Save Feedback Indicator */}
-                          {isSaved && (
-                            <span className="shrink-0 text-emerald-600 font-bold text-xs flex items-center animate-bounce" title="Saved to database">
-                              <Check className="w-4 h-4" />
-                            </span>
-                          )}
-                          {isSaving && (
-                            <span className="shrink-0 text-slate-400 text-xs animate-spin">
-                              ⌛
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Date of Meeting */}
-                      <td className="py-3.5 px-3">
-                        <input
-                          type="date"
-                          value={lead.dateOfMeeting || ''}
-                          onChange={(e) => handleInlineUpdate(lead.id, 'dateOfMeeting', e.target.value)}
-                          className="bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-300 focus:border-[#D1242F] rounded-md px-1.5 py-1 text-xs font-semibold text-slate-700 outline-none w-full cursor-pointer"
-                        />
-                      </td>
-
-                      {/* Remarks */}
-                      <td className="py-3.5 px-4">
-                        <input
-                          type="text"
-                          value={lead.remarks || ''}
-                          placeholder="Add meeting notes..."
-                          onChange={(e) => handleInlineUpdate(lead.id, 'remarks', e.target.value)}
-                          className="bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-300 focus:border-[#D1242F] rounded-md px-2 py-1 text-xs text-slate-700 outline-none w-full truncate placeholder-slate-400"
-                        />
-                      </td>
-
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Table Bottom Pagination Bar */}
-        <div className="px-5 py-3.5 border-t border-slate-200/80 bg-slate-50/70 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <span className="text-slate-500 font-medium">
-            Showing <strong className="text-slate-800 font-bold">{paginatedLeads.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</strong> to <strong className="text-slate-800 font-bold">{Math.min(currentPage * itemsPerPage, filteredLeads.length)}</strong> of <strong className="text-slate-800 font-bold">{filteredLeads.length}</strong> total leads
-          </span>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-slate-700 transition-colors cursor-pointer shadow-2xs"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span>Previous</span>
-            </button>
-
-            {Array.from({ length: totalPages }).map((_, i) => {
-              const pageNum = i + 1;
-              // Show only surrounding pages for clean UI
-              if (pageNum === 1 || pageNum === totalPages || Math.abs(pageNum - currentPage) <= 1) {
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                      currentPage === pageNum
-                        ? 'bg-[#D1242F] text-white shadow-xs'
-                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              }
-              if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
-                return <span key={pageNum} className="text-slate-400 px-1">...</span>;
-              }
-              return null;
-            })}
-
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-slate-700 transition-colors cursor-pointer shadow-2xs"
-            >
-              <span>Next</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
           </div>
         </div>
 
