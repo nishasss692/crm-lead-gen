@@ -509,11 +509,22 @@ def apply_rbac_filter(query, user: Optional[User]):
     if not user or user.role == "CO":
         return query
     elif user.role == "RO":
-        return query.filter(Lead.region == user.region)
+        if user.region:
+            return query.filter(Lead.region == user.region)
+        return query
     elif user.role == "Division":
-        return query.filter(Lead.division == user.division)
+        if user.division:
+            return query.filter(Lead.division == user.division)
+        return query
     elif user.role == "ME":
-        return query.filter(Lead.region == user.region, Lead.division == user.division)
+        filters = []
+        if user.region:
+            filters.append(Lead.region == user.region)
+        if user.division:
+            filters.append(Lead.division == user.division)
+        if filters:
+            return query.filter(*filters)
+        return query
     return query
 
 # 5. Lead Data Endpoints
@@ -619,15 +630,15 @@ def get_analytics(
     total = len(valid_leads)
     unverified_count = max(0, total_raw - total)
     
-    # Metrics Initialization
+    # Metrics Initialization for the 8 exact KPIs
     contact_pending = 0
     contacted = 0
     interested = 0
     not_interested = 0
-    follow_up = 0
-    willing = 0
+    willing_to_onboard = 0
     onboarded = 0
     onboard_pending = 0
+    follow_up = 0
     
     verified_contacts_count = 0
     division_assigned_count = 0
@@ -724,26 +735,25 @@ def get_analytics(
             
         monthly_pipeline_est += lead_pipeline
             
-        # Outcome categorization
-        if not outcome or outcome in ['nan', 'none', 'null', 'pending', 'new', '']:
+        # Exact calculation of 8 KPIs based on meeting_outcome
+        if not outcome or outcome in ['nan', 'none', 'null', '']:
             contact_pending += 1
         else:
             contacted += 1
             
-        if "positive" in outcome or "interested" in outcome:
+        if outcome in ["positive", "interested"]:
             interested += 1
-            if not has_contract:
-                willing += 1
-        elif "not interested" in outcome or "rejected" in outcome or "lost" in outcome:
+        elif outcome in ["not interested", "not_interested", "rejected"]:
             not_interested += 1
+        elif outcome in ["willing to onboard", "willing_to_onboard", "willing"]:
+            willing_to_onboard += 1
+        elif outcome in ["onboarded", "onboard"] or has_contract:
+            onboarded += 1
+        elif outcome in ["onboard pending", "onboard_pending", "onboarding pending"]:
+            onboard_pending += 1
         elif "follow" in outcome or "warm" in outcome:
             follow_up += 1
-            
-        if has_contract or "onboard" in outcome:
-            onboarded += 1
-        else:
-            onboard_pending += 1
-            
+
         # Division Aggregation
         if div_name not in division_map:
             division_map[div_name] = {
@@ -895,8 +905,8 @@ def get_analytics(
         },
         {
             "stage": "4. Willing to Onboard", 
-            "count": willing, 
-            "pct": round((willing / total * 100) if total > 0 else 0, 1), 
+            "count": willing_to_onboard, 
+            "pct": round((willing_to_onboard / total * 100) if total > 0 else 0, 1), 
             "color": "#F59E0B",
             "description": "Pre-contract negotiation and rate confirmation"
         },
@@ -929,18 +939,21 @@ def get_analytics(
     ]
 
     return {
+        # 8 Specific KPIs requested
         "total_leads": total,
-        "total_raw": total_raw,
-        "unverified_count": unverified_count,
-        "is_valid_only": only_valid,
         "contact_pending": contact_pending,
         "contacted": contacted,
         "interested": interested,
         "not_interested": not_interested,
-        "follow_up": follow_up,
-        "willing_to_onboard": willing,
+        "willing_to_onboard": willing_to_onboard,
         "onboarded": onboarded,
         "onboard_pending": onboard_pending,
+        
+        # Extended dashboard metadata
+        "follow_up": follow_up,
+        "total_raw": total_raw,
+        "unverified_count": unverified_count,
+        "is_valid_only": only_valid,
         "contacted_rate": contacted_rate,
         "onboarding_rate": onboarding_rate,
         "pipeline_value": pipeline_formatted,
@@ -973,6 +986,120 @@ def get_analytics(
             for agent, stats in sorted(agents.items(), key=lambda x: x[1]["converted"], reverse=True)
         ]
     }
+
+# 6.5 Pincode Performance Endpoint (Top 10 Pincodes with Total Leads and Onboarded Counts)
+@app.get("/api/analytics/pincodes")
+def get_pincode_performance(
+    division_name: str = "",
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = db.query(Lead)
+    query = apply_rbac_filter(query, current_user)
+    
+    if division_name and division_name != "All Divisions":
+        query = query.filter(Lead.division == division_name)
+        
+    leads = query.all()
+    
+    # Karnataka Post Office / Area lookup for Office Name enrichment
+    PINCODE_OFFICE_MAP = {
+        "560001": "Bengaluru GPO / Raj Bhavan",
+        "560002": "Bengaluru City / Town Hall",
+        "560003": "Malleswaram",
+        "560004": "Basavanagudi",
+        "560005": "Frazer Town",
+        "560008": "HAL 2nd Stage / Indiranagar",
+        "560009": "K.G. Road / Majestic",
+        "560010": "Rajajinagar",
+        "560011": "Jayanagar",
+        "560017": "HAL Old Airport Road",
+        "560020": "Seshadripuram",
+        "560022": "Yeshwanthpur Industrial Suburb",
+        "560025": "Richmond Town",
+        "560027": "Lalbagh / Sudhamanagar",
+        "560034": "Koramangala",
+        "560038": "Indiranagar 100ft Road",
+        "560058": "Peenya Industrial Area Phase I-IV",
+        "560066": "Whitefield",
+        "560068": "Madivala",
+        "560076": "BTM Layout 2nd Stage",
+        "560078": "JP Nagar",
+        "560085": "Banashankari 3rd Stage",
+        "560092": "Yelahanka / Byatarayanapura",
+        "560099": "Bommasandra Industrial Area",
+        "560100": "Electronic City Phase I & II",
+        "561203": "Doddaballapur KIADB",
+        "570001": "Mysuru Head Post Office",
+        "570002": "Mysuru Fort",
+        "570004": "Nazarbad / Mysuru",
+        "570008": "Chamundipuram / Mysuru South",
+        "570016": "Belagola Industrial Area / Metagalli",
+        "570018": "Hootagalli Industrial Area",
+        "570020": "Kuvempunagar",
+        "570023": "Saraswathipuram",
+        "570027": "Hebbal Industrial Area",
+        "571301": "Nanjangud Industrial Area",
+        "571313": "Chamarajanagar",
+        "572101": "Tumakuru Head Post Office",
+        "572106": "Antharasanahalli / Tumakuru",
+        "573201": "Hassan Head Post Office",
+        "574118": "Manipal",
+        "575001": "Mangaluru Head Post Office",
+        "575003": "Kodialbail / Mangaluru",
+        "576101": "Udupi Head Post Office",
+        "577001": "Davanagere Head Post Office",
+        "577002": "Davanagere City",
+        "577201": "Shivamogga Head Post Office",
+        "580001": "Dharwad Head Post Office",
+        "580020": "Hubballi Main",
+        "580030": "Vidyanagar / Hubballi",
+        "581110": "Haveri",
+        "583101": "Ballari Head Post Office",
+        "585101": "Kalaburagi Head Post Office",
+        "586101": "Vijayapura Head Post Office",
+        "587101": "Bagalkote Head Post Office",
+        "590001": "Belagavi Head Post Office",
+        "590014": "Machhe Industrial Area / Belagavi",
+        "591304": "Gokak Falls"
+    }
+
+    pincode_map = {}
+    for lead in leads:
+        raw_pin = (lead.pincode or "").strip()
+        clean_pin = re.sub(r'\D', '', raw_pin)
+        pin = clean_pin if len(clean_pin) == 6 else raw_pin
+        
+        if not pin or pin.lower() in ['nan', 'none', 'null', '0', '000000', '']:
+            continue
+            
+        if pin not in pincode_map:
+            office_name = PINCODE_OFFICE_MAP.get(pin, f"Post Office - {pin}")
+            pincode_map[pin] = {
+                "pincode": pin,
+                "total_leads": 0,
+                "onboarded": 0,
+                "onboarded_count": 0,
+                "office_name": office_name,
+                "Office Name": office_name,
+                "division": lead.division or "Karnataka Circle"
+            }
+            
+        pincode_map[pin]["total_leads"] += 1
+        
+        outcome = (lead.meeting_outcome or "").strip().lower()
+        has_contract = bool((lead.contract_id or "").strip() and (lead.contract_id or "").strip().lower() not in ['nan', 'none', 'null', ''])
+        if outcome in ["onboarded", "onboard"] or has_contract:
+            pincode_map[pin]["onboarded"] += 1
+            pincode_map[pin]["onboarded_count"] += 1
+
+    # Order descending by total_leads and take top limit (default 10)
+    sorted_pincodes = sorted(pincode_map.values(), key=lambda x: x["total_leads"], reverse=True)
+    if limit and limit > 0:
+        sorted_pincodes = sorted_pincodes[:limit]
+        
+    return sorted_pincodes
 
 # 7. Deduplication Endpoints
 def normalize_string(text: Optional[str]) -> str:
