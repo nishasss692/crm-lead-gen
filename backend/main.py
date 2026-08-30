@@ -3,7 +3,7 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, func
+from sqlalchemy import create_engine, Column, Integer, String, func, case, or_, and_
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 import pandas as pd
 import io
@@ -987,119 +987,171 @@ def get_analytics(
         ]
     }
 
-# 6.5 Pincode Performance Endpoint (Top 10 Pincodes with Total Leads and Onboarded Counts)
+# 6.5 Pincode Performance Endpoint (Detailed Breakdown by Pincode with SQLAlchemy Aggregations)
+PINCODE_OFFICE_MAP = {
+    "560001": "Bengaluru GPO / Raj Bhavan",
+    "560002": "Bengaluru City / Town Hall",
+    "560003": "Malleswaram",
+    "560004": "Basavanagudi",
+    "560005": "Frazer Town",
+    "560008": "HAL 2nd Stage / Indiranagar",
+    "560009": "K.G. Road / Majestic",
+    "560010": "Rajajinagar",
+    "560011": "Jayanagar",
+    "560017": "HAL Old Airport Road",
+    "560020": "Seshadripuram",
+    "560022": "Yeshwanthpur Industrial Suburb",
+    "560025": "Richmond Town",
+    "560027": "Lalbagh / Sudhamanagar",
+    "560034": "Koramangala",
+    "560038": "Indiranagar 100ft Road",
+    "560058": "Peenya Industrial Area Phase I-IV",
+    "560066": "Whitefield",
+    "560068": "Madivala",
+    "560076": "BTM Layout 2nd Stage",
+    "560078": "JP Nagar",
+    "560085": "Banashankari 3rd Stage",
+    "560092": "Yelahanka / Byatarayanapura",
+    "560099": "Bommasandra Industrial Area",
+    "560100": "Electronic City Phase I & II",
+    "561203": "Doddaballapur KIADB",
+    "570001": "Mysuru Head Post Office",
+    "570002": "Mysuru Fort",
+    "570004": "Nazarbad / Mysuru",
+    "570008": "Chamundipuram / Mysuru South",
+    "570016": "Belagola Industrial Area / Metagalli",
+    "570018": "Hootagalli Industrial Area",
+    "570020": "Kuvempunagar",
+    "570023": "Saraswathipuram",
+    "570027": "Hebbal Industrial Area",
+    "571301": "Nanjangud Industrial Area",
+    "571313": "Chamarajanagar",
+    "572101": "Tumakuru Head Post Office",
+    "572106": "Antharasanahalli / Tumakuru",
+    "573201": "Hassan Head Post Office",
+    "574118": "Manipal",
+    "575001": "Mangaluru Head Post Office",
+    "575003": "Kodialbail / Mangaluru",
+    "576101": "Udupi Head Post Office",
+    "577001": "Davanagere Head Post Office",
+    "577002": "Davanagere City",
+    "577201": "Shivamogga Head Post Office",
+    "580001": "Dharwad Head Post Office",
+    "580020": "Hubballi Main",
+    "580030": "Vidyanagar / Hubballi",
+    "581110": "Haveri",
+    "583101": "Ballari Head Post Office",
+    "585101": "Kalaburagi Head Post Office",
+    "586101": "Vijayapura Head Post Office",
+    "587101": "Bagalkote Head Post Office",
+    "590001": "Belagavi Head Post Office",
+    "590014": "Machhe Industrial Area / Belagavi",
+    "591304": "Gokak Falls"
+}
+
 @app.get("/api/analytics/pincodes")
 def get_pincode_performance(
     division_name: str = "",
-    limit: int = 10,
+    limit: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    query = db.query(Lead)
+    query = db.query(
+        Lead.pincode,
+        func.count(Lead.id).label("total"),
+        func.count(
+            case(
+                (or_(Lead.meeting_outcome == None, Lead.meeting_outcome == '', func.lower(Lead.meeting_outcome) == 'nan', func.lower(Lead.meeting_outcome) == 'none', func.lower(Lead.meeting_outcome) == 'null'), 1),
+                else_=None
+            )
+        ).label("pending"),
+        func.count(
+            case(
+                (and_(Lead.meeting_outcome != None, Lead.meeting_outcome != '', func.lower(Lead.meeting_outcome) != 'nan', func.lower(Lead.meeting_outcome) != 'none', func.lower(Lead.meeting_outcome) != 'null'), 1),
+                else_=None
+            )
+        ).label("contacted"),
+        func.count(
+            case(
+                (or_(func.lower(Lead.meeting_outcome) == "positive", func.lower(Lead.meeting_outcome) == "interested"), 1),
+                else_=None
+            )
+        ).label("interested"),
+        func.count(
+            case(
+                (or_(func.lower(Lead.meeting_outcome) == "not interested", func.lower(Lead.meeting_outcome) == "not_interested"), 1),
+                else_=None
+            )
+        ).label("not_interested"),
+        func.count(
+            case(
+                (or_(func.lower(Lead.meeting_outcome) == "followup", func.lower(Lead.meeting_outcome) == "follow-up", func.lower(Lead.meeting_outcome) == "follow up"), 1),
+                else_=None
+            )
+        ).label("follow_up_required"),
+        func.count(
+            case(
+                (or_(func.lower(Lead.meeting_outcome) == "willing to onboard", func.lower(Lead.meeting_outcome) == "willing_to_onboard", func.lower(Lead.meeting_outcome) == "willing"), 1),
+                else_=None
+            )
+        ).label("willing_to_onboard"),
+        func.count(
+            case(
+                (or_(func.lower(Lead.meeting_outcome) == "not willing to onboard", func.lower(Lead.meeting_outcome) == "not_willing_to_onboard", func.lower(Lead.meeting_outcome) == "not willing"), 1),
+                else_=None
+            )
+        ).label("not_willing_to_onboard"),
+        func.count(
+            case(
+                (or_(func.lower(Lead.meeting_outcome) == "onboarded", func.lower(Lead.meeting_outcome) == "onboard"), 1),
+                else_=None
+            )
+        ).label("onboarded")
+    )
+    
     query = apply_rbac_filter(query, current_user)
     
     if division_name and division_name != "All Divisions":
         query = query.filter(Lead.division == division_name)
         
-    leads = query.all()
+    # Group by pincode, filter empty pincodes, and order by total leads descending
+    query = query.filter(Lead.pincode != None, Lead.pincode != '', Lead.pincode != '0', Lead.pincode != '000000')
+    query = query.group_by(Lead.pincode).order_by(func.count(Lead.id).desc())
     
-    # Karnataka Post Office / Area lookup for Office Name enrichment
-    PINCODE_OFFICE_MAP = {
-        "560001": "Bengaluru GPO / Raj Bhavan",
-        "560002": "Bengaluru City / Town Hall",
-        "560003": "Malleswaram",
-        "560004": "Basavanagudi",
-        "560005": "Frazer Town",
-        "560008": "HAL 2nd Stage / Indiranagar",
-        "560009": "K.G. Road / Majestic",
-        "560010": "Rajajinagar",
-        "560011": "Jayanagar",
-        "560017": "HAL Old Airport Road",
-        "560020": "Seshadripuram",
-        "560022": "Yeshwanthpur Industrial Suburb",
-        "560025": "Richmond Town",
-        "560027": "Lalbagh / Sudhamanagar",
-        "560034": "Koramangala",
-        "560038": "Indiranagar 100ft Road",
-        "560058": "Peenya Industrial Area Phase I-IV",
-        "560066": "Whitefield",
-        "560068": "Madivala",
-        "560076": "BTM Layout 2nd Stage",
-        "560078": "JP Nagar",
-        "560085": "Banashankari 3rd Stage",
-        "560092": "Yelahanka / Byatarayanapura",
-        "560099": "Bommasandra Industrial Area",
-        "560100": "Electronic City Phase I & II",
-        "561203": "Doddaballapur KIADB",
-        "570001": "Mysuru Head Post Office",
-        "570002": "Mysuru Fort",
-        "570004": "Nazarbad / Mysuru",
-        "570008": "Chamundipuram / Mysuru South",
-        "570016": "Belagola Industrial Area / Metagalli",
-        "570018": "Hootagalli Industrial Area",
-        "570020": "Kuvempunagar",
-        "570023": "Saraswathipuram",
-        "570027": "Hebbal Industrial Area",
-        "571301": "Nanjangud Industrial Area",
-        "571313": "Chamarajanagar",
-        "572101": "Tumakuru Head Post Office",
-        "572106": "Antharasanahalli / Tumakuru",
-        "573201": "Hassan Head Post Office",
-        "574118": "Manipal",
-        "575001": "Mangaluru Head Post Office",
-        "575003": "Kodialbail / Mangaluru",
-        "576101": "Udupi Head Post Office",
-        "577001": "Davanagere Head Post Office",
-        "577002": "Davanagere City",
-        "577201": "Shivamogga Head Post Office",
-        "580001": "Dharwad Head Post Office",
-        "580020": "Hubballi Main",
-        "580030": "Vidyanagar / Hubballi",
-        "581110": "Haveri",
-        "583101": "Ballari Head Post Office",
-        "585101": "Kalaburagi Head Post Office",
-        "586101": "Vijayapura Head Post Office",
-        "587101": "Bagalkote Head Post Office",
-        "590001": "Belagavi Head Post Office",
-        "590014": "Machhe Industrial Area / Belagavi",
-        "591304": "Gokak Falls"
-    }
+    if limit and limit > 0:
+        results = query.limit(limit).all()
+    else:
+        results = query.all()
 
-    pincode_map = {}
-    for lead in leads:
-        raw_pin = (lead.pincode or "").strip()
+    pincode_list = []
+    for r in results:
+        raw_pin = str(r.pincode or "").strip()
         clean_pin = re.sub(r'\D', '', raw_pin)
         pin = clean_pin if len(clean_pin) == 6 else raw_pin
         
         if not pin or pin.lower() in ['nan', 'none', 'null', '0', '000000', '']:
             continue
             
-        if pin not in pincode_map:
-            office_name = PINCODE_OFFICE_MAP.get(pin, f"Post Office - {pin}")
-            pincode_map[pin] = {
-                "pincode": pin,
-                "total_leads": 0,
-                "onboarded": 0,
-                "onboarded_count": 0,
-                "office_name": office_name,
-                "Office Name": office_name,
-                "division": lead.division or "Karnataka Circle"
-            }
-            
-        pincode_map[pin]["total_leads"] += 1
+        office = PINCODE_OFFICE_MAP.get(pin, f"Post Office - {pin}")
         
-        outcome = (lead.meeting_outcome or "").strip().lower()
-        has_contract = bool((lead.contract_id or "").strip() and (lead.contract_id or "").strip().lower() not in ['nan', 'none', 'null', ''])
-        if outcome in ["onboarded", "onboard"] or has_contract:
-            pincode_map[pin]["onboarded"] += 1
-            pincode_map[pin]["onboarded_count"] += 1
+        pincode_list.append({
+            "pincode": pin,
+            "office_name": office,
+            "Office Name": office,
+            "total": int(r.total or 0),
+            "total_leads": int(r.total or 0),
+            "pending": int(r.pending or 0),
+            "contacted": int(r.contacted or 0),
+            "interested": int(r.interested or 0),
+            "not_interested": int(r.not_interested or 0),
+            "follow_up_required": int(r.follow_up_required or 0),
+            "willing_to_onboard": int(r.willing_to_onboard or 0),
+            "not_willing_to_onboard": int(r.not_willing_to_onboard or 0),
+            "onboarded": int(r.onboarded or 0),
+            "onboarded_count": int(r.onboarded or 0)
+        })
 
-    # Order descending by total_leads and take top limit (default 10)
-    sorted_pincodes = sorted(pincode_map.values(), key=lambda x: x["total_leads"], reverse=True)
-    if limit and limit > 0:
-        sorted_pincodes = sorted_pincodes[:limit]
-        
-    return sorted_pincodes
+    return pincode_list
 
 # 7. Deduplication Endpoints
 def normalize_string(text: Optional[str]) -> str:
