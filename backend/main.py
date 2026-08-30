@@ -190,34 +190,31 @@ def seed_test_users():
     finally:
         db.close()
 
-def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Optional[User]:
-    if not token:
-        # Return fallback CO admin for unauthenticated frontend requests in dev mode
-        return User(id=1, employee_id="CO_ADMIN", role="CO", assigned_region=None, assigned_division=None)
+def get_current_user(token: str = Depends(OAuth2PasswordBearer(tokenUrl="api/login"))) -> dict:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        emp_id: str = payload.get("sub")
-        if emp_id is None:
-            return User(id=1, employee_id="CO_ADMIN", role="CO", assigned_region=None, assigned_division=None)
-    except Exception:
-        return User(id=1, employee_id="CO_ADMIN", role="CO", assigned_region=None, assigned_division=None)
+        employee_id = payload.get("employee_id") or payload.get("sub")
+        role = payload.get("role")
+        assigned_region = payload.get("assigned_region")
+        assigned_division = payload.get("assigned_division")
         
-    user = db.query(User).filter(
-        or_(
-            func.lower(User.employee_id) == emp_id.strip().lower(),
-            User.employee_id == emp_id.strip()
-        )
-    ).first()
-    
-    if user is None:
-        return User(
-            id=1, 
-            employee_id=emp_id, 
-            role=payload.get("role", "CO"), 
-            assigned_region=payload.get("assigned_region"), 
-            assigned_division=payload.get("assigned_division")
-        )
-    return user
+        if not employee_id:
+            raise credentials_exception
+            
+        return {
+            "employee_id": employee_id,
+            "role": role,
+            "assigned_region": assigned_region,
+            "assigned_division": assigned_division,
+            "sub": employee_id
+        }
+    except (jwt.PyJWTError, Exception):
+        raise credentials_exception
 
 class LoginRequest(BaseModel):
     employee_id: Optional[str] = None
@@ -307,11 +304,12 @@ class PasswordChangeRequest(BaseModel):
     new_password: str
 
 @app.post("/api/change-password")
-def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if not verify_password(request.old_password, current_user.password):
+def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    user_rec = db.query(User).filter(User.employee_id == current_user.get("employee_id")).first()
+    if not user_rec or not verify_password(request.old_password, user_rec.password):
         raise HTTPException(status_code=400, detail="Incorrect old password")
     
-    current_user.password = get_password_hash(request.new_password)
+    user_rec.password = get_password_hash(request.new_password)
     db.commit()
     return {"success": True, "message": "Password updated successfully"}
 
@@ -497,7 +495,7 @@ def is_valid_lead_record(lead_data: dict) -> bool:
 async def upload_excel(
     file: UploadFile = File(...), 
     db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     filename = (file.filename or "").lower()
     if not (filename.endswith('.xls') or filename.endswith('.xlsx') or filename.endswith('.csv')):
@@ -600,14 +598,14 @@ async def upload_excel(
                 
             # Default division & region from RBAC user context if missing
             if not division:
-                if current_user and current_user.division:
-                    lead_data["division"] = current_user.division
+                if current_user and current_user.get("assigned_division"):
+                    lead_data["division"] = current_user.get("assigned_division")
                 else:
                     lead_data["division"] = "Karnataka Central"
                     
             if not lead_data.get("region"):
-                if current_user and current_user.region:
-                    lead_data["region"] = current_user.region
+                if current_user and current_user.get("assigned_region"):
+                    lead_data["region"] = current_user.get("assigned_region")
                 else:
                     lead_data["region"] = "Karnataka Circle"
             
@@ -667,25 +665,22 @@ def download_template():
     )
 
 # 4. RBAC Filter
-def apply_rbac_filter(query, user: Optional[User]):
-    if not user or user.role == "CO":
+def apply_rbac_filter(query, user: Optional[dict]):
+    if not user:
         return query
-    elif user.role == "RO":
-        if user.region:
-            return query.filter(Lead.region == user.region)
+    role = user.get("role") if isinstance(user, dict) else getattr(user, "role", None)
+    assigned_division = user.get("assigned_division") if isinstance(user, dict) else getattr(user, "assigned_division", None)
+    assigned_region = user.get("assigned_region") if isinstance(user, dict) else getattr(user, "assigned_region", None)
+    
+    if role in ["ME", "Division"]:
+        if assigned_division:
+            return query.filter(Lead.division == assigned_division)
         return query
-    elif user.role == "Division":
-        if user.division:
-            return query.filter(Lead.division == user.division)
+    elif role == "RO":
+        if assigned_region:
+            return query.filter(Lead.region == assigned_region)
         return query
-    elif user.role == "ME":
-        filters = []
-        if user.region:
-            filters.append(Lead.region == user.region)
-        if user.division:
-            filters.append(Lead.division == user.division)
-        if filters:
-            return query.filter(*filters)
+    elif role == "CO":
         return query
     return query
 
@@ -740,13 +735,20 @@ def get_leads(
     search: str = "",
     status_filter: str = "",
     db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    user: dict = Depends(get_current_user)
 ):
     query = db.query(Lead)
-    query = apply_rbac_filter(query, current_user)
     
-    if division_name and division_name != "All Divisions":
-        query = query.filter(Lead.division == division_name)
+    # Strict Authorization Logic
+    if user.get("role") == "ME" or user.get("role") == "Division":
+        query = query.filter(Lead.division == user["assigned_division"])
+    elif user.get("role") == "RO":
+        query = query.filter(Lead.region == user["assigned_region"])
+        if division_name and division_name != "All Divisions":
+            query = query.filter(Lead.division == division_name)
+    elif user.get("role") == "CO":
+        if division_name and division_name != "All Divisions":
+            query = query.filter(Lead.division == division_name)
         
     all_leads = query.order_by(Lead.id.desc()).all()
     
@@ -799,11 +801,11 @@ def get_priority_leads(
     division_name: str = "",
     limit: int = 10,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    user: dict = Depends(get_current_user)
 ):
     """Returns top high-priority prospective leads ordered by predicted win probability."""
     query = db.query(Lead)
-    query = apply_rbac_filter(query, current_user)
+    query = apply_rbac_filter(query, user)
     
     if division_name and division_name != "All Divisions":
         query = query.filter(Lead.division == division_name)
@@ -818,9 +820,30 @@ def get_priority_leads(
     return scored_leads[:limit]
 
 @app.get("/api/divisions")
-def get_divisions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_divisions(
+    db: Session = Depends(get_db), 
+    user: dict = Depends(get_current_user)
+):
+    # Strict Authorization Logic: If an ME requests the list of divisions for the frontend dropdown, the backend should only return a list containing their single assigned division.
+    if user.get("role") == "ME" or user.get("role") == "Division":
+        assigned_div = user.get("assigned_division")
+        if assigned_div:
+            return [assigned_div]
+        return []
+    elif user.get("role") == "RO":
+        query = db.query(Lead.division)
+        if user.get("assigned_region"):
+            query = query.filter(Lead.region == user["assigned_region"])
+        divisions = query.distinct().all()
+        div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
+        return sorted(list(set(div_list)))
+    elif user.get("role") == "CO":
+        query = db.query(Lead.division)
+        divisions = query.distinct().all()
+        div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
+        return sorted(list(set(div_list)))
+        
     query = db.query(Lead.division)
-    query = apply_rbac_filter(query, current_user)
     divisions = query.distinct().all()
     div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
     return sorted(list(set(div_list)))
@@ -832,13 +855,20 @@ def get_analytics(
     timeframe: str = "Last 30 Days", 
     only_valid: bool = True,
     db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    user: dict = Depends(get_current_user)
 ):
     query = db.query(Lead)
-    query = apply_rbac_filter(query, current_user)
     
-    if division_name and division_name != "All Divisions":
-        query = query.filter(Lead.division == division_name)
+    # Strict Authorization Logic
+    if user.get("role") == "ME" or user.get("role") == "Division":
+        query = query.filter(Lead.division == user["assigned_division"])
+    elif user.get("role") == "RO":
+        query = query.filter(Lead.region == user["assigned_region"])
+        if division_name and division_name != "All Divisions":
+            query = query.filter(Lead.division == division_name)
+    elif user.get("role") == "CO":
+        if division_name and division_name != "All Divisions":
+            query = query.filter(Lead.division == division_name)
     
     all_leads = query.all()
     total_raw = len(all_leads)
@@ -1286,7 +1316,7 @@ def get_pincode_performance(
     division_name: str = "",
     limit: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     query = db.query(
         Lead.pincode,
@@ -1403,7 +1433,7 @@ def normalize_phone(phone: Optional[str]) -> str:
     return digits if len(digits) >= 8 else ""
 
 @app.get("/api/leads/duplicates-summary")
-def get_duplicates_summary(criteria: str = "name_and_contact", db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_duplicates_summary(criteria: str = "name_and_contact", db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     query = db.query(Lead)
     query = apply_rbac_filter(query, current_user)
     leads = query.order_by(Lead.id.asc()).all()
@@ -1455,7 +1485,7 @@ class DeduplicateRequest(BaseModel):
     criteria: Optional[str] = "name_and_contact"
 
 @app.post("/api/leads/deduplicate")
-def deduplicate_leads(req: DeduplicateRequest = Body(default=DeduplicateRequest()), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def deduplicate_leads(req: DeduplicateRequest = Body(default=DeduplicateRequest()), db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     query = db.query(Lead)
     query = apply_rbac_filter(query, current_user)
     leads = query.order_by(Lead.id.asc()).all()
@@ -1514,7 +1544,7 @@ def deduplicate_leads(req: DeduplicateRequest = Body(default=DeduplicateRequest(
 
 # 8. Single Lead Update Endpoint
 @app.patch("/api/leads/{lead_id}")
-async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
