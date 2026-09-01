@@ -178,46 +178,72 @@ export default function LoginPage() {
         </form>
 
         {/* 4-Tier Quick Test Accounts */}
-        <div className="mt-6 pt-5 border-t border-gray-200">
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2.5 text-center">
-            Quick Fill Demo Accounts:
+        <div className="mt-5 pt-4 border-t border-gray-200">
+          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 text-center">
+            Official Role Quick Access Demo:
           </p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
             <button
               type="button"
               suppressHydrationWarning
               onClick={() => handleQuickFill('CO_ADMIN', 'password123')}
-              className="p-2 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
-              <div className="font-bold text-gray-800 group-hover:text-[#114b79]">Central Office (CO)</div>
-              <div className="text-gray-500 text-[10px]">CO_ADMIN</div>
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">CO (Central Office)</div>
+              <div className="text-gray-500 text-[9px]">CO_ADMIN (Circle-wide)</div>
             </button>
             <button
               type="button"
               suppressHydrationWarning
               onClick={() => handleQuickFill('RO_BG', 'password123')}
-              className="p-2 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
-              <div className="font-bold text-gray-800 group-hover:text-[#114b79]">Regional Office (RO)</div>
-              <div className="text-gray-500 text-[10px]">RO_BG (Bengaluru)</div>
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (Bengaluru HQ)</div>
+              <div className="text-gray-500 text-[9px]">RO_BG (7 Divs)</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickFill('RO_SK', 'password123')}
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (South Karnataka)</div>
+              <div className="text-gray-500 text-[9px]">RO_SK (14 Divs)</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickFill('RO_NK', 'password123')}
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (North Karnataka)</div>
+              <div className="text-gray-500 text-[9px]">RO_NK (15 Divs)</div>
             </button>
             <button
               type="button"
               suppressHydrationWarning
               onClick={() => handleQuickFill('DIV_MYS', 'password123')}
-              className="p-2 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
-              <div className="font-bold text-gray-800 group-hover:text-[#114b79]">Division Officer</div>
-              <div className="text-gray-500 text-[10px]">DIV_MYS (Mysuru)</div>
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">DO (Mysuru)</div>
+              <div className="text-gray-500 text-[9px]">DIV_MYS (Divisional)</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickFill('DIV_BGE', 'password123')}
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">DO (BG East)</div>
+              <div className="text-gray-500 text-[9px]">DIV_BGE (Divisional)</div>
             </button>
             <button
               type="button"
               suppressHydrationWarning
               onClick={() => handleQuickFill('ME_MYS_01', 'password123')}
-              className="p-2 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group col-span-2 sm:col-span-3 text-center"
             >
-              <div className="font-bold text-gray-800 group-hover:text-[#114b79]">Marketing Exec (ME)</div>
-              <div className="text-gray-500 text-[10px]">ME_MYS_01 (Mysuru)</div>
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">ME (Marketing Executive) • ME_MYS_01 (Mysuru)</div>
             </button>
           </div>
         </div>

@@ -168,22 +168,31 @@ def seed_test_users():
     
     db = SessionLocal()
     try:
-        if db.query(User).count() == 0:
-            test_users = [
-                # 4 Tier Role-Based Test Accounts
-                User(employee_id="CO_ADMIN", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
-                User(employee_id="RO_BG", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
-                User(employee_id="DIV_MYS", password=get_password_hash("password123"), role="Division", assigned_region=None, assigned_division="Mysuru"),
-                User(employee_id="ME_MYS_01", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
-                # Aliases for demo quick buttons
-                User(employee_id="co_user", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
-                User(employee_id="ro_user", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
-                User(employee_id="div_user", password=get_password_hash("password123"), role="Division", assigned_region=None, assigned_division="Mysuru"),
-                User(employee_id="me_user", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
-            ]
-            db.bulk_save_objects(test_users)
+        existing_emp_ids = {u.employee_id for u in db.query(User.employee_id).all() if u.employee_id}
+        test_users = [
+            # CO Accounts
+            User(employee_id="CO_ADMIN", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
+            User(employee_id="co_user", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
+            # RO Accounts (BG, SK, NK)
+            User(employee_id="RO_BG", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
+            User(employee_id="ro_user", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
+            User(employee_id="RO_SK", password=get_password_hash("password123"), role="RO", assigned_region="South Karnataka Region", assigned_division=None),
+            User(employee_id="RO_NK", password=get_password_hash("password123"), role="RO", assigned_region="North Karnataka Region", assigned_division=None),
+            # DO / Divisional Accounts
+            User(employee_id="DIV_MYS", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="Mysuru"),
+            User(employee_id="div_user", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="Mysuru"),
+            User(employee_id="DO_MYS", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="Mysuru"),
+            User(employee_id="DIV_BGE", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="BG East"),
+            User(employee_id="DIV_BGS", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="BG South"),
+            # ME Accounts
+            User(employee_id="ME_MYS_01", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
+            User(employee_id="me_user", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
+        ]
+        to_add = [u for u in test_users if u.employee_id not in existing_emp_ids]
+        if to_add:
+            db.bulk_save_objects(to_add)
             db.commit()
-            print("[User Auth] Seeded 4 test role accounts successfully (CO_ADMIN, RO_BG, DIV_MYS, ME_MYS_01).")
+            print(f"[User Auth] Seeded {len(to_add)} missing test role accounts.")
     except Exception as e:
         db.rollback()
         print(f"[User Auth] Error seeding users: {e}")
@@ -791,23 +800,54 @@ def execute_deduplication(
     }
 
 # 4. RBAC Filter
-def apply_rbac_filter(query, user: Optional[dict]):
+def get_region_variants(region_str: Optional[str]) -> list[str]:
+    if not region_str:
+        return []
+    r = region_str.upper().strip()
+    if "BG" in r or "BENGALURU" in r or "BANGALORE" in r:
+        return ["BG", "BG HQ Region", "Bengaluru HQ Region", "BG REGION", "BG HQ", "Bangalore"]
+    elif "SK" in r or "SOUTH" in r:
+        return ["SK", "SK REGION", "South Karnataka Region", "South Karnataka", "SK Region"]
+    elif "NK" in r or "NORTH" in r:
+        return ["NK", "NK REGION", "North Karnataka Region", "North Karnataka", "NK Region"]
+    return [region_str.strip()]
+
+def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] = None):
     if not user:
         return query
-    role = user.get("role") if isinstance(user, dict) else getattr(user, "role", None)
+    role = str(user.get("role") if isinstance(user, dict) else getattr(user, "role", "") or "").upper().strip()
     assigned_division = user.get("assigned_division") if isinstance(user, dict) else getattr(user, "assigned_division", None)
     assigned_region = user.get("assigned_region") if isinstance(user, dict) else getattr(user, "assigned_region", None)
     
-    if role in ["ME", "Division"]:
+    # 1. ME or DO / Division Officers: Constrained to their assigned division
+    if role in ["ME", "DIVISION", "DO", "DIV"]:
         if assigned_division:
-            return query.filter(Lead.division == assigned_division)
+            clean_div = str(assigned_division).strip()
+            query = query.filter(or_(
+                Lead.division == clean_div,
+                Lead.division.ilike(f"%{clean_div}%"),
+                Lead.division.ilike(f"%{clean_div.replace(' Division', '')}%")
+            ))
         return query
+
+    # 2. RO (Regional Officers): Constrained to their regional jurisdiction
     elif role == "RO":
         if assigned_region:
-            return query.filter(Lead.region == assigned_region)
+            variants = get_region_variants(assigned_region)
+            if variants:
+                query = query.filter(Lead.region.in_(variants))
+        if division_name and division_name != "All Divisions":
+            query = query.filter(Lead.division == division_name)
         return query
-    elif role == "CO":
+
+    # 3. CO (Central / Circle Officers): Full Circle visibility
+    elif role in ["CO", "ADMIN", "CO_ADMIN"]:
+        if division_name and division_name != "All Divisions":
+            query = query.filter(Lead.division == division_name)
         return query
+
+    if division_name and division_name != "All Divisions":
+        query = query.filter(Lead.division == division_name)
     return query
 
 # 4.5 Machine Learning Lead Scoring Engine
@@ -857,28 +897,17 @@ def lead_to_dict(lead: Lead, win_prob: float = 0.0) -> dict:
 @app.get("/api/leads")
 def get_leads(
     division_name: str = "", 
-    only_valid: bool = True,
+    only_valid: bool = False,
     search: str = "",
     status_filter: str = "",
     db: Session = Depends(get_db), 
     user: dict = Depends(get_current_user)
 ):
     query = db.query(Lead)
-    
-    # Strict Authorization Logic
-    if user.get("role") == "ME" or user.get("role") == "Division":
-        query = query.filter(Lead.division == user["assigned_division"])
-    elif user.get("role") == "RO":
-        query = query.filter(Lead.region == user["assigned_region"])
-        if division_name and division_name != "All Divisions":
-            query = query.filter(Lead.division == division_name)
-    elif user.get("role") == "CO":
-        if division_name and division_name != "All Divisions":
-            query = query.filter(Lead.division == division_name)
-        
+    query = apply_rbac_filter(query, user, division_name)
     all_leads = query.order_by(Lead.id.desc()).all()
     
-    # Filter valid credentials if only_valid is true
+    # Filter valid credentials only if specifically requested
     if only_valid:
         leads_filtered = [
             l for l in all_leads
@@ -931,11 +960,7 @@ def get_priority_leads(
 ):
     """Returns top high-priority prospective leads ordered by predicted win probability."""
     query = db.query(Lead)
-    query = apply_rbac_filter(query, user)
-    
-    if division_name and division_name != "All Divisions":
-        query = query.filter(Lead.division == division_name)
-        
+    query = apply_rbac_filter(query, user, division_name)
     all_leads = query.all()
     if not all_leads:
         return []
@@ -950,21 +975,19 @@ def get_divisions(
     db: Session = Depends(get_db), 
     user: dict = Depends(get_current_user)
 ):
-    # Strict Authorization Logic: If an ME requests the list of divisions for the frontend dropdown, the backend should only return a list containing their single assigned division.
-    if user.get("role") == "ME" or user.get("role") == "Division":
+    role = str(user.get("role") or "").upper().strip()
+    if role in ["ME", "DIVISION", "DO", "DIV"]:
         assigned_div = user.get("assigned_division")
         if assigned_div:
-            return [assigned_div]
+            return [assigned_div.strip()]
         return []
-    elif user.get("role") == "RO":
+    elif role == "RO":
         query = db.query(Lead.division)
-        if user.get("assigned_region"):
-            query = query.filter(Lead.region == user["assigned_region"])
-        divisions = query.distinct().all()
-        div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
-        return sorted(list(set(div_list)))
-    elif user.get("role") == "CO":
-        query = db.query(Lead.division)
+        assigned_reg = user.get("assigned_region")
+        if assigned_reg:
+            variants = get_region_variants(assigned_reg)
+            if variants:
+                query = query.filter(Lead.region.in_(variants))
         divisions = query.distinct().all()
         div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
         return sorted(list(set(div_list)))
@@ -979,27 +1002,16 @@ def get_divisions(
 def get_analytics(
     division_name: str = "", 
     timeframe: str = "Last 30 Days", 
-    only_valid: bool = True,
+    only_valid: bool = False,
     db: Session = Depends(get_db), 
     user: dict = Depends(get_current_user)
 ):
     query = db.query(Lead)
-    
-    # Strict Authorization Logic
-    if user.get("role") == "ME" or user.get("role") == "Division":
-        query = query.filter(Lead.division == user["assigned_division"])
-    elif user.get("role") == "RO":
-        query = query.filter(Lead.region == user["assigned_region"])
-        if division_name and division_name != "All Divisions":
-            query = query.filter(Lead.division == division_name)
-    elif user.get("role") == "CO":
-        if division_name and division_name != "All Divisions":
-            query = query.filter(Lead.division == division_name)
-    
+    query = apply_rbac_filter(query, user, division_name)
     all_leads = query.all()
     total_raw = len(all_leads)
     
-    # Filter ONLY genuine, valid lead records if only_valid is True
+    # Filter valid credentials only if specifically requested
     if only_valid:
         valid_leads = [
             lead for lead in all_leads 
@@ -1497,10 +1509,7 @@ def get_pincode_performance(
         ).label("onboarded")
     )
     
-    query = apply_rbac_filter(query, current_user)
-    
-    if division_name and division_name != "All Divisions":
-        query = query.filter(Lead.division == division_name)
+    query = apply_rbac_filter(query, current_user, division_name)
         
     # Group by pincode, filter empty pincodes, and order by total leads descending
     query = query.filter(Lead.pincode != None, Lead.pincode != '', Lead.pincode != '0', Lead.pincode != '000000')

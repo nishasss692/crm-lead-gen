@@ -133,7 +133,17 @@ function SidebarContent() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-white capitalize truncate">{user?.username || 'Officer'}</p>
-            <p className="text-xs text-slate-400 font-medium truncate">{user?.role ? `${user.role} Officer` : 'Authorized Officer'}</p>
+            <p className="text-xs text-slate-400 font-medium truncate">
+              {user?.role 
+                ? (['DIVISION', 'DO', 'DIV'].includes(String(user.role).toUpperCase()) 
+                    ? 'DO Division Officer' 
+                    : String(user.role).toUpperCase() === 'RO' 
+                    ? 'RO Regional Officer' 
+                    : String(user.role).toUpperCase() === 'CO' 
+                    ? 'CO Circle Officer' 
+                    : 'ME Marketing Executive') 
+                : 'Authorized Officer'}
+            </p>
           </div>
         </div>
         

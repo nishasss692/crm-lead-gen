@@ -124,6 +124,17 @@ const SERVICE_PALETTE = [
 ];
 
 export default function MarketingExecutiveDashboard() {
+  // User Authentication & Role State
+  const [user, setUser] = useState<{
+    employee_id?: string;
+    username?: string;
+    role?: string;
+    assigned_division?: string;
+    division?: string;
+    assigned_region?: string;
+    region?: string;
+  } | null>(null);
+
   // Analytics & Data State
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     total_leads: 0,
@@ -152,6 +163,24 @@ export default function MarketingExecutiveDashboard() {
   const [selectedDivision, setSelectedDivision] = useState<string>('All Divisions');
   const [tableSearchQuery, setTableSearchQuery] = useState<string>('');
   const [chartViewMode, setChartViewMode] = useState<'stage' | 'service'>('stage');
+
+  // Load User from LocalStorage
+  useEffect(() => {
+    const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr);
+        setUser(u);
+        const roleClean = String(u.role || '').toUpperCase();
+        if (['DO', 'DIVISION', 'ME', 'DIV'].includes(roleClean)) {
+          const userDiv = u.assigned_division || u.division;
+          if (userDiv) {
+            setSelectedDivision(userDiv);
+          }
+        }
+      } catch (e) {}
+    }
+  }, []);
 
   // 1. Fetch 8 KPI Analytics & Visual Distributions from Backend GET /api/analytics
   const fetchAnalytics = useCallback(async (div = selectedDivision) => {
@@ -269,6 +298,20 @@ export default function MarketingExecutiveDashboard() {
         if (Array.isArray(data)) {
           const uniqueDivs = Array.from(new Set(data.map((d: string) => d.trim()).filter(Boolean)));
           setDivisions(uniqueDivs);
+          
+          const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+          if (userStr) {
+            try {
+              const u = JSON.parse(userStr);
+              const roleClean = String(u.role || '').toUpperCase();
+              if (['DO', 'DIVISION', 'ME', 'DIV'].includes(roleClean)) {
+                const userDiv = u.assigned_division || u.division || uniqueDivs[0];
+                if (userDiv) {
+                  setSelectedDivision(userDiv);
+                }
+              }
+            } catch (e) {}
+          }
         }
       }
     } catch (err) {
@@ -466,6 +509,26 @@ export default function MarketingExecutiveDashboard() {
     }
   ];
 
+  const userRole = String(user?.role || 'CO').toUpperCase();
+  const isDO = ['DO', 'DIVISION', 'DIV'].includes(userRole);
+  const isRO = userRole === 'RO';
+  const isME = userRole === 'ME';
+  const isCO = userRole === 'CO' || (!isDO && !isRO && !isME);
+
+  const roleTitle = isCO 
+    ? 'Central Office (CO) Operations & Commercial Analytics' 
+    : isRO 
+    ? 'Regional Office (RO) Operations & Territory Analytics' 
+    : isDO 
+    ? 'Divisional Office (DO) Commercial Operations' 
+    : 'Marketing Executive (ME) Field Analytics';
+
+  const roleSubtitle = isCO 
+    ? 'Pipeline metrics, territory performance & predictive scoring across Karnataka Circle (All 34 Divisions).' 
+    : isRO 
+    ? `Regional pipeline metrics, territory performance & predictive scoring across ${user?.assigned_region || 'Regional Jurisdiction'}.` 
+    : `Divisional pipeline metrics, territory performance & predictive scoring for ${user?.assigned_division || selectedDivision || 'Assigned'} Division.`;
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 animate-fade-in-up select-none">
       
@@ -479,10 +542,10 @@ export default function MarketingExecutiveDashboard() {
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-bold text-slate-900">
-              Marketing Operations & Commercial Analytics
+              {roleTitle}
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Pipeline metrics, territory performance & predictive scoring across Karnataka Circle.
+              {roleSubtitle}
             </p>
           </div>
         </div>
@@ -496,8 +559,23 @@ export default function MarketingExecutiveDashboard() {
               onChange={(e) => setSelectedDivision(e.target.value)}
               className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer pr-2"
             >
-              <option value="All Divisions">All Divisions (Circle-wide)</option>
-              {divisions.map((div) => (
+              {isRO ? (
+                <option value="All Divisions">All Regional Divisions ({user?.assigned_region || 'Region'})</option>
+              ) : isDO || isME ? (
+                divisions.length <= 1 ? (
+                  <option value={divisions[0] || selectedDivision}>{divisions[0] || selectedDivision} Division (Assigned Territory)</option>
+                ) : (
+                  <option value="All Divisions">All Assigned Divisions</option>
+                )
+              ) : (
+                <option value="All Divisions">All Divisions (Circle-wide)</option>
+              )}
+              {(!isDO && !isME) && divisions.map((div) => (
+                <option key={div} value={div}>
+                  {div} Division
+                </option>
+              ))}
+              {(isDO || isME) && divisions.length > 1 && divisions.map((div) => (
                 <option key={div} value={div}>
                   {div} Division
                 </option>

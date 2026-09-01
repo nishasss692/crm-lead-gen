@@ -39,8 +39,23 @@ export default function Header({
   };
 
   const displayName = user?.employee_id || user?.username || 'CO_ADMIN';
-  const role = user?.role || 'CO';
-  const jurisdiction = user?.assigned_division || user?.division || user?.assigned_region || user?.region || (role === 'CO' ? 'Central Office' : 'Karnataka Circle');
+  const rawRole = user?.role || 'CO';
+  const roleUpper = rawRole.toUpperCase();
+  const roleDisplay = (roleUpper === 'DIVISION' || roleUpper === 'DO' || roleUpper === 'DIV') ? 'DO' : (roleUpper === 'RO' ? 'RO' : (roleUpper === 'ME' ? 'ME' : 'CO'));
+  
+  const roleFullName = roleDisplay === 'CO' 
+    ? 'Central Office (CO)' 
+    : roleDisplay === 'RO' 
+    ? 'Regional Office (RO)' 
+    : roleDisplay === 'DO' 
+    ? 'Divisional Office (DO)' 
+    : 'Marketing Executive (ME)';
+
+  const jurisdiction = user?.assigned_division || user?.division 
+    ? `${user?.assigned_division || user?.division} Division` 
+    : user?.assigned_region || user?.region 
+    ? `${user?.assigned_region || user?.region}` 
+    : (roleDisplay === 'CO' ? 'Central Office • Karnataka Circle' : 'Karnataka Circle');
 
   return (
     <header className="bg-white border-b-[3px] border-[#D1242F] h-18 md:h-20 flex items-center px-4 md:px-8 justify-between shrink-0 shadow-xs relative z-30 select-none">
@@ -91,7 +106,7 @@ export default function Header({
           Karnataka Postal Circle
         </h1>
         <h2 className="text-slate-700 font-bold text-xs sm:text-sm tracking-normal leading-tight mt-1">
-          {role} Operations Dashboard
+          {roleFullName} Operations Dashboard
         </h2>
       </div>
       
@@ -99,7 +114,7 @@ export default function Header({
       <div className="shrink-0 flex items-center justify-end gap-3">
         <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200/90 px-3 py-1.5 rounded-xl shadow-xs">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#D1242F] to-[#9E1B1B] text-white flex items-center justify-center font-black text-xs shadow-xs">
-            {role}
+            {roleDisplay}
           </div>
           <div className="hidden sm:flex flex-col text-left">
             <div className="flex items-center gap-1">

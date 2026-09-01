@@ -24,8 +24,17 @@ function LeadsPageContent() {
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get('status');
 
+  const [user, setUser] = useState<{
+    employee_id?: string;
+    username?: string;
+    role?: string;
+    assigned_division?: string;
+    division?: string;
+    assigned_region?: string;
+    region?: string;
+  } | null>(null);
+
   const [selectedDivision, setSelectedDivision] = useState('');
-  const [onlyValidLeads, setOnlyValidLeads] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +56,15 @@ function LeadsPageContent() {
   const [isDedupLoading, setIsDedupLoading] = useState(false);
   const [dedupSuccessResult, setDedupSuccessResult] = useState<string | null>(null);
 
+  useEffect(() => {
+    const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (userStr) {
+      try {
+        setUser(JSON.parse(userStr));
+      } catch (e) {}
+    }
+  }, []);
+
   const fetchDivisions = async (token: string) => {
     try {
       const res = await fetch('http://localhost:8000/api/divisions', {
@@ -61,14 +79,14 @@ function LeadsPageContent() {
     }
   };
 
-  const fetchLeads = async (token: string, division = selectedDivision, validOnly = onlyValidLeads) => {
+  const fetchLeads = async (token: string, division = selectedDivision) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (division && division !== 'All Divisions') {
+      if (division && division !== 'All Divisions' && division !== 'All Circle Divisions' && division !== 'All Regional Divisions') {
         params.append('division_name', division);
       }
-      params.append('only_valid', validOnly ? 'true' : 'false');
+      params.append('only_valid', 'false');
 
       const res = await fetch(`http://localhost:8000/api/leads?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -113,8 +131,8 @@ function LeadsPageContent() {
       return;
     }
     fetchDivisions(token);
-    fetchLeads(token, selectedDivision, onlyValidLeads);
-  }, [router, selectedDivision, onlyValidLeads]);
+    fetchLeads(token, selectedDivision);
+  }, [router, selectedDivision]);
 
   // Handle File Upload
   const handleFileUpload = async (e: React.FormEvent) => {
@@ -148,7 +166,7 @@ function LeadsPageContent() {
         });
         if (token) {
           fetchDivisions(token);
-          fetchLeads(token, selectedDivision, onlyValidLeads);
+          fetchLeads(token, selectedDivision);
         }
         setTimeout(() => {
           setIsUploadModalOpen(false);
@@ -210,7 +228,7 @@ function LeadsPageContent() {
       const data = await res.json();
       if (res.ok) {
         setDedupSuccessResult(data.message);
-        if (token) fetchLeads(token, selectedDivision, onlyValidLeads);
+        if (token) fetchLeads(token, selectedDivision);
         fetchDuplicateSummary(dedupCriteria);
       } else {
         alert(data.detail || "Failed to remove duplicates");
@@ -300,37 +318,24 @@ function LeadsPageContent() {
             <div className="flex items-center gap-2 mb-1">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
                 <BadgeCheck className="w-3 h-3 text-emerald-600" />
-                Validated Workspace
+                Postal CRM Directory
               </span>
               <span className="text-xs font-bold text-slate-400">•</span>
               <span className="text-[11px] font-black text-[#D1242F] uppercase tracking-wider">
-                Karnataka Postal Circle
+                {user?.assigned_region || (user?.role === 'CO' ? 'Karnataka Circle' : (user?.assigned_division ? `${user.assigned_division} Division` : 'Karnataka Postal Circle'))}
               </span>
             </div>
             <h1 className="text-3xl font-black text-[#1B2A4A] tracking-tight">{getTitle()}</h1>
             <p className="text-sm font-medium text-slate-500 mt-1">
-              {filtered.length.toLocaleString()} verified records matching active circle filters
+              {filtered.length.toLocaleString()} records matching active filters
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Strict Valid Filter Toggle */}
-            <button
-              onClick={() => setOnlyValidLeads(!onlyValidLeads)}
-              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border ${
-                onlyValidLeads 
-                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-xs' 
-                  : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
-              }`}
-            >
-              <ShieldCheck className={`w-3.5 h-3.5 ${onlyValidLeads ? 'text-emerald-600' : 'text-slate-400'}`} />
-              <span>{onlyValidLeads ? 'Verified Valid Only' : 'All Records'}</span>
-            </button>
-
             {/* Deduplicate Clean Button */}
             <button
               onClick={handleOpenDedupModal}
-              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
             >
               <CopyX className="w-3.5 h-3.5 text-amber-700" />
               <span>Clean Duplicates</span>
@@ -339,7 +344,7 @@ function LeadsPageContent() {
             {/* Upload File Button */}
             <button
               onClick={() => setIsUploadModalOpen(true)}
-              className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+              className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5 text-[#FAB52C]" />
               <span>Upload File</span>
@@ -348,7 +353,7 @@ function LeadsPageContent() {
             {/* Export CSV Button */}
             <button 
               onClick={handleExportCSV} 
-              className="flex items-center px-3.5 py-2.5 bg-[#D1242F] hover:bg-[#B01E28] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all gap-1.5"
+              className="flex items-center px-3.5 py-2.5 bg-[#D1242F] hover:bg-[#B01E28] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all gap-1.5 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export CSV</span>
@@ -359,13 +364,23 @@ function LeadsPageContent() {
         {/* Toolbar & Filters */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto flex-1">
-            <div className="relative w-full sm:max-w-[220px]">
+            <div className="relative w-full sm:max-w-[240px]">
               <select
                 value={selectedDivision}
                 onChange={(e) => setSelectedDivision(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#D1242F] focus:ring-2 focus:ring-[#D1242F]/20 shadow-xs cursor-pointer appearance-none"
               >
-                <option value="">🏢 All Circle Divisions</option>
+                {user?.role === 'RO' ? (
+                  <option value="">🏢 All Regional Divisions ({user?.assigned_region || 'Region'})</option>
+                ) : user?.role === 'DO' || user?.role === 'Division' || user?.role === 'ME' ? (
+                  divisions.length <= 1 ? (
+                    <option value={divisions[0] || ''}>🏢 {divisions[0] || user?.assigned_division || 'My'} Division (Assigned)</option>
+                  ) : (
+                    <option value="">🏢 All Assigned Divisions</option>
+                  )
+                ) : (
+                  <option value="">🏢 All Circle Divisions</option>
+                )}
                 {divisions.map((div) => (
                   <option key={div} value={div}>{div} Division</option>
                 ))}
