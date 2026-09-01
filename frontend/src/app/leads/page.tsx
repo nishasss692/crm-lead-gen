@@ -43,6 +43,7 @@ function LeadsPageContent() {
   // Upload Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [clearExisting, setClearExisting] = useState<boolean>(true);
   const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
   const [uploadSummary, setUploadSummary] = useState<{ count?: number; skipped_empty?: number; data_quality_pct?: number; total_rows?: number } | null>(null);
@@ -148,7 +149,8 @@ function LeadsPageContent() {
     formData.append('file', uploadFile);
 
     try {
-      const res = await fetch('http://localhost:8000/api/upload-excel', {
+      const clearParam = clearExisting ? '?clear_existing=true' : '?clear_existing=false';
+      const res = await fetch(`http://localhost:8000/api/upload-excel${clearParam}`, {
         method: 'POST',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
@@ -237,6 +239,25 @@ function LeadsPageContent() {
       alert("Error running deduplication: " + err.message);
     } finally {
       setIsDedupLoading(false);
+    }
+  };
+
+  const handleClearAllLeads = async () => {
+    if (!confirm("Are you sure you want to remove all existing leads? This will leave the database clean for your new upload.")) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('http://localhost:8000/api/leads/clear-all', {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        if (token) {
+          fetchDivisions(token);
+          fetchLeads(token, selectedDivision);
+        }
+      }
+    } catch (err) {
+      console.error("Error clearing leads", err);
     }
   };
 
@@ -341,6 +362,16 @@ function LeadsPageContent() {
               <span>Clean Duplicates</span>
             </button>
 
+            {/* Clear All Data Button */}
+            <button
+              onClick={handleClearAllLeads}
+              title="Remove all leads to start fresh with a clean upload"
+              className="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 px-3 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              <span>Clear All</span>
+            </button>
+
             {/* Upload File Button */}
             <button
               onClick={() => setIsUploadModalOpen(true)}
@@ -408,7 +439,7 @@ function LeadsPageContent() {
              <p className="mt-4 text-slate-500 font-bold animate-pulse">Loading leads directory...</p>
           </div>
         ) : (
-          <div className="animate-fade-in-up">
+          <div>
             <LeadsTable data={filtered} allowEdit={true} />
           </div>
         )}
@@ -513,6 +544,20 @@ function LeadsPageContent() {
                   <span>Download Sample CSV</span>
                 </button>
               </div>
+
+              {/* Replace existing data option */}
+              <label className="flex items-start gap-2.5 p-3 bg-red-50/40 hover:bg-red-50/70 rounded-xl border border-red-100 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={clearExisting}
+                  onChange={(e) => setClearExisting(e.target.checked)}
+                  className="mt-0.5 rounded text-[#D1242F] focus:ring-[#D1242F] cursor-pointer"
+                />
+                <div className="text-xs">
+                  <span className="font-bold text-slate-800 block">Replace existing data with this upload</span>
+                  <span className="text-slate-500 text-[11px]">Wipes previous leads so ONLY your uploaded file's data is visible.</span>
+                </div>
+              </label>
 
               {/* Progress & Status Message */}
               {uploadProgress !== 'idle' && (

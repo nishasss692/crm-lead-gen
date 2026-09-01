@@ -121,17 +121,19 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    if not hashed_password:
+    if not hashed_password or not plain_password:
         return False
     if plain_password == hashed_password:
         return True
     try:
-        return pwd_context.verify(plain_password, hashed_password)
+        clean_pwd = str(plain_password)[:72]
+        return pwd_context.verify(clean_pwd, hashed_password)
     except Exception:
         return plain_password == hashed_password
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    clean_pwd = str(password)[:72]
+    return pwd_context.hash(clean_pwd)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -500,9 +502,59 @@ def is_valid_lead_record(lead_data: dict) -> bool:
     # A genuine record must have at least (valid name OR valid phone) AND not be dummy
     return has_valid_name or has_valid_contact or (has_valid_email_val and has_valid_div)
 
+def normalize_string_key(text: Optional[str]) -> str:
+    if not text:
+        return ""
+    cleaned = str(text).strip().upper()
+    if cleaned in ['NAN', 'NONE', 'NULL', 'N/A', '']:
+        return ""
+    cleaned = re.sub(r'[\(\[\{].*?[\)\]\}]', '', cleaned)
+    cleaned = re.sub(r'[^A-Z0-9\s]', ' ', cleaned)
+    tokens = [w for w in cleaned.split() if w not in ['PVT', 'PRIVATE', 'LTD', 'LIMITED', 'LLP', 'INC', 'CORP', 'CO', 'COMPANY', 'INDIA']]
+    return "".join(tokens) or re.sub(r'[^A-Z0-9]', '', cleaned)
+
+def normalize_phone_key(phone: Optional[str]) -> str:
+    if not phone:
+        return ""
+    digits = re.sub(r'\D', '', str(phone))
+    if len(digits) == 12 and digits.startswith('91'):
+        digits = digits[2:]
+    return digits if len(digits) >= 8 else ""
+
+def generate_lead_dedup_key(lead_data: dict, criteria: str = "composite") -> str:
+    norm_name = normalize_string_key(lead_data.get("exporter_name"))
+    norm_phone = normalize_phone_key(lead_data.get("contact_number"))
+    norm_email = str(lead_data.get("email") or "").strip().lower()
+    norm_pin = re.sub(r'\D', '', str(lead_data.get("pincode") or ""))
+    norm_div = str(lead_data.get("division") or "").strip().upper()
+
+    if criteria == "name":
+        return f"name:{norm_name}" if norm_name else ""
+    elif criteria == "contact":
+        return f"phone:{norm_phone}" if norm_phone else ""
+    elif criteria == "email":
+        return f"email:{norm_email}" if ("@" in norm_email and len(norm_email) > 4) else ""
+    elif criteria == "sl_no":
+        sl = str(lead_data.get("sl_no") or "").strip().upper()
+        return f"sl:{sl}" if sl else ""
+    else:  # Composite matching
+        if norm_name and (norm_pin or norm_div):
+            loc = norm_pin if norm_pin else norm_div
+            return f"name_loc:{norm_name}##{loc}"
+        elif norm_name and norm_phone:
+            return f"name_phone:{norm_name}##{norm_phone}"
+        elif norm_phone:
+            return f"phone:{norm_phone}"
+        elif norm_email and "@" in norm_email:
+            return f"email:{norm_email}"
+        elif norm_name:
+            return f"name:{norm_name}"
+        return ""
+
 @app.post("/api/upload-excel")
 async def upload_excel(
     file: UploadFile = File(...), 
+    clear_existing: bool = False,
     db: Session = Depends(get_db), 
     current_user: dict = Depends(get_current_user)
 ):
@@ -564,10 +616,37 @@ async def upload_excel(
                 status_code=400,
                 detail="Unable to detect required CRM columns. Please ensure columns include 'Name', 'Phone', 'Division', or 'Service'."
             )
+
+        # If clear_existing requested, wipe previous records in user's RBAC scope first
+        if clear_existing:
+            q = db.query(Lead)
+            q = apply_rbac_filter(q, current_user)
+            q.delete(synchronize_session=False)
+            db.commit()
+
+        # Build set of existing keys to prevent duplicates against DB if not replacing
+        existing_keys = set()
+        if not clear_existing:
+            existing_db_leads = apply_rbac_filter(db.query(Lead), current_user).all()
+            for ex_lead in existing_db_leads:
+                ex_dict = {
+                    "exporter_name": ex_lead.exporter_name,
+                    "contact_number": ex_lead.contact_number,
+                    "email": ex_lead.email,
+                    "pincode": ex_lead.pincode,
+                    "division": ex_lead.division,
+                    "sl_no": ex_lead.sl_no
+                }
+                k = generate_lead_dedup_key(ex_dict, "composite")
+                if k:
+                    existing_keys.add(k)
             
         leads_to_insert = []
+        seen_batch_keys = set()
         skipped_invalid = 0
+        skipped_duplicates = 0
         verified_contacts_in_batch = 0
+        model_fields = {c.name for c in Lead.__table__.columns}
         
         for idx, row in df.iterrows():
             lead_data = {}
@@ -589,7 +668,6 @@ async def upload_excel(
             # Clean contact number
             if contact:
                 cleaned_phone = re.sub(r'[^0-9+,\- /]', '', contact).strip()
-                # Clean trailing decimal .0 if present
                 if cleaned_phone.endswith('.0'):
                     cleaned_phone = cleaned_phone[:-2]
                 lead_data["contact_number"] = cleaned_phone
@@ -610,32 +688,38 @@ async def upload_excel(
                 if current_user and current_user.get("assigned_division"):
                     lead_data["division"] = current_user.get("assigned_division")
                 else:
-                    lead_data["division"] = "Karnataka Central"
+                    lead_data["division"] = ""
                     
             if not lead_data.get("region"):
                 if current_user and current_user.get("assigned_region"):
                     lead_data["region"] = current_user.get("assigned_region")
                 else:
-                    lead_data["region"] = "Karnataka Circle"
+                    lead_data["region"] = ""
             
-            # Standardize service if missing
             if not lead_data.get("service_using"):
-                lead_data["service_using"] = "Speed Post B2B"
+                lead_data["service_using"] = ""
+
+            # Auto Deduplication check
+            dedup_key = generate_lead_dedup_key(lead_data, "composite")
+            if dedup_key:
+                if dedup_key in seen_batch_keys or dedup_key in existing_keys:
+                    skipped_duplicates += 1
+                    continue
+                seen_batch_keys.add(dedup_key)
                 
             # Filter only valid Lead model attributes
-            model_fields = {c.name for c in Lead.__table__.columns}
             sanitized_lead = {k: v for k, v in lead_data.items() if k in model_fields}
-            
             leads_to_insert.append(Lead(**sanitized_lead))
         
-        if not leads_to_insert:
+        if not leads_to_insert and skipped_duplicates == 0:
             raise HTTPException(
                 status_code=400, 
                 detail="No valid lead records found in the file. Please ensure records contain at least an Exporter Name or Contact Number."
             )
             
-        db.bulk_save_objects(leads_to_insert)
-        db.commit()
+        if leads_to_insert:
+            db.bulk_save_objects(leads_to_insert)
+            db.commit()
         
         valid_count = len(leads_to_insert)
         total_rows = len(df)
@@ -645,10 +729,11 @@ async def upload_excel(
             "success": True, 
             "count": valid_count, 
             "skipped_empty": skipped_invalid,
+            "skipped_duplicates": skipped_duplicates,
             "total_rows": total_rows,
             "data_quality_pct": data_quality_pct,
             "mapped_columns": list(col_mapping.values()),
-            "message": f"Successfully imported {valid_count} valid lead records from {file.filename}. ({skipped_invalid} invalid/empty rows filtered out, Quality: {data_quality_pct}%)"
+            "message": f"Successfully imported {valid_count} unique lead records from {file.filename}." + (f" ({skipped_duplicates} duplicate records avoided, {skipped_invalid} empty/invalid skipped)" if (skipped_duplicates or skipped_invalid) else "")
         }
         
     except HTTPException:
@@ -657,6 +742,24 @@ async def upload_excel(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error importing file: {str(e)}")
+
+# Clear All Leads Endpoint
+@app.delete("/api/leads/clear-all")
+@app.post("/api/leads/clear-all")
+def clear_all_leads(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    try:
+        query = db.query(Lead)
+        query = apply_rbac_filter(query, current_user)
+        deleted_count = query.delete(synchronize_session=False)
+        db.commit()
+        return {
+            "success": True,
+            "deleted_count": deleted_count,
+            "message": f"Successfully removed all {deleted_count} leads. The system is clean and ready for your new upload."
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to clear leads: {str(e)}")
 
 # Download Template Endpoint
 @app.get("/api/download-template")
@@ -672,132 +775,6 @@ def download_template():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=indiapost_lead_template.csv"}
     )
-
-# Lead Deduplication Endpoints
-def _get_dedup_key(lead: Lead, criteria: str) -> str:
-    name = (lead.exporter_name or "").strip().upper()
-    phone = re.sub(r'\D', '', lead.contact_number or '')
-    email = (lead.email or "").strip().lower()
-    sl = (lead.sl_no or "").strip().upper()
-    pin = (lead.pincode or "").strip()
-    div = (lead.division or "").strip().upper()
-    
-    if criteria == "name":
-        clean_name = re.sub(r'[\(\[\{].*?[\)\]\}]', '', name)
-        clean_name = re.sub(r'[^A-Z0-9\s]', ' ', clean_name)
-        tokens = [w for w in clean_name.split() if w not in ['PVT', 'PRIVATE', 'LTD', 'LIMITED', 'LLP', 'INC', 'CORP', 'CO', 'COMPANY', 'INDIA']]
-        return "".join(tokens) or re.sub(r'[^A-Z0-9]', '', name)
-    elif criteria == "contact":
-        return phone if len(phone) >= 7 else ""
-    elif criteria == "email":
-        return email if "@" in email else ""
-    elif criteria == "sl_no":
-        return sl if sl else ""
-    else:  # name_and_contact (Composite)
-        clean_name = re.sub(r'[\(\[\{].*?[\)\]\}]', '', name)
-        clean_name = re.sub(r'[^A-Z0-9\s]', ' ', clean_name)
-        tokens = [w for w in clean_name.split() if w not in ['PVT', 'PRIVATE', 'LTD', 'LIMITED', 'LLP', 'INC', 'CORP', 'CO', 'COMPANY', 'INDIA']]
-        name_key = "".join(tokens) or re.sub(r'[^A-Z0-9]', '', name)
-        loc_key = pin if pin else div
-        return f"{name_key}##{loc_key}"
-
-@app.get("/api/leads/duplicates-summary")
-def get_duplicates_summary(
-    criteria: str = "name_and_contact",
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user)
-):
-    from collections import defaultdict
-    leads = db.query(Lead).all()
-    total_leads = len(leads)
-    
-    groups = defaultdict(list)
-    for lead in leads:
-        key = _get_dedup_key(lead, criteria)
-        if key:
-            groups[key].append(lead)
-            
-    duplicate_count = sum(len(items) - 1 for items in groups.values() if len(items) > 1)
-    unique_leads_estimate = total_leads - duplicate_count
-    
-    return {
-        "total_leads": total_leads,
-        "duplicate_count": duplicate_count,
-        "unique_leads_estimate": unique_leads_estimate,
-        "criteria": criteria
-    }
-
-class DeduplicateRequest(BaseModel):
-    criteria: Optional[str] = "name_and_contact"
-
-@app.post("/api/leads/deduplicate")
-def execute_deduplication(
-    request: DeduplicateRequest = Body(...),
-    db: Session = Depends(get_db),
-    user: dict = Depends(get_current_user)
-):
-    from collections import defaultdict
-    criteria = request.criteria or "name_and_contact"
-    leads = db.query(Lead).order_by(Lead.id.asc()).all()
-    
-    groups = defaultdict(list)
-    for lead in leads:
-        key = _get_dedup_key(lead, criteria)
-        if key:
-            groups[key].append(lead)
-            
-    to_delete_ids = []
-    updated_records = 0
-    
-    for key, items in groups.items():
-        if len(items) > 1:
-            def score(x):
-                s = 0
-                if x.address: s += len(x.address)
-                if x.pincode: s += 25
-                if x.contact_number: s += 50
-                if x.email: s += 50
-                if x.service_using: s += 30
-                if x.monthly_volume: s += 15
-                if x.meeting_outcome: s += 15
-                return s
-                
-            items.sort(key=score, reverse=True)
-            primary = items[0]
-            
-            for sec in items[1:]:
-                if not primary.address and sec.address: primary.address = sec.address
-                if not primary.pincode and sec.pincode: primary.pincode = sec.pincode
-                if not primary.division and sec.division: primary.division = sec.division
-                if not primary.region and sec.region: primary.region = sec.region
-                if not primary.division_id and sec.division_id: primary.division_id = sec.division_id
-                if not primary.contact_number and sec.contact_number: primary.contact_number = sec.contact_number
-                if not primary.email and sec.email: primary.email = sec.email
-                if not primary.service_using and sec.service_using: primary.service_using = sec.service_using
-                if not primary.monthly_volume and sec.monthly_volume: primary.monthly_volume = sec.monthly_volume
-                if not primary.meeting_outcome and sec.meeting_outcome: primary.meeting_outcome = sec.meeting_outcome
-                if not primary.contract_id and sec.contract_id: primary.contract_id = sec.contract_id
-                if not primary.assigned_agent and sec.assigned_agent: primary.assigned_agent = sec.assigned_agent
-                if not primary.date_of_meeting and sec.date_of_meeting: primary.date_of_meeting = sec.date_of_meeting
-                if not primary.customer_met and sec.customer_met: primary.customer_met = sec.customer_met
-                if not primary.remarks and sec.remarks: primary.remarks = sec.remarks
-                
-                to_delete_ids.append(sec.id)
-            updated_records += 1
-            
-    if to_delete_ids:
-        db.query(Lead).filter(Lead.id.in_(to_delete_ids)).delete(synchronize_session=False)
-        db.commit()
-        
-    final_count = db.query(Lead).count()
-    removed_count = len(to_delete_ids)
-    
-    return {
-        "success": True,
-        "removed_count": removed_count,
-        "preserved_count": final_count,
-        "message": f"Successfully cleaned {removed_count} duplicate leads. Preserved {final_count} unique, accurate records."
-    }
 
 # 4. RBAC Filter
 def get_region_variants(region_str: Optional[str]) -> list[str]:
@@ -1113,7 +1090,7 @@ def get_analytics(
         if not service_name or service_name.lower() in ['nan', 'none', 'null']:
             service_name = "Speed Post B2B"
         
-        # Accurate pipeline volume & valuation computation based on parsed data
+        # Accurate pipeline volume & valuation computation based purely on uploaded data
         vol_str = (lead.monthly_volume or "").strip()
         unit_tariff = SERVICE_UNIT_TARIFF.get(service_name.lower(), 120)
         
@@ -1124,12 +1101,8 @@ def get_analytics(
                 vol_num = int(nums[0])
                 if vol_num > 0:
                     lead_pipeline = vol_num * unit_tariff
-                else:
-                    lead_pipeline = 3500 if has_contract else (2000 if "interested" in outcome else 1000)
-            else:
-                lead_pipeline = 4000 if has_contract else (2500 if "interested" in outcome else 1200)
         except Exception:
-            lead_pipeline = 1500
+            lead_pipeline = 0
             
         monthly_pipeline_est += lead_pipeline
             
@@ -1263,12 +1236,7 @@ def get_analytics(
         time_series = [{"name": str(k), "date": str(k), "current": v, "previous": max(1, int(v * 0.75))} for k, v in meetings_over_time.items()]
         
     if not time_series:
-        time_series = [
-            {"name": "Week 1", "current": int(total * 0.15), "previous": int(total * 0.12)},
-            {"name": "Week 2", "current": int(total * 0.25), "previous": int(total * 0.18)},
-            {"name": "Week 3", "current": int(total * 0.35), "previous": int(total * 0.28)},
-            {"name": "Week 4", "current": int(total * 0.25), "previous": int(total * 0.22)}
-        ]
+        time_series = []
 
     # Format pipeline value in INR Crores / Lakhs
     if monthly_pipeline_est >= 10000000:
@@ -1551,68 +1519,35 @@ def get_pincode_performance(
     return pincode_list
 
 # 7. Deduplication Endpoints
-def normalize_string(text: Optional[str]) -> str:
-    if not text:
-        return ""
-    cleaned = str(text).strip().lower()
-    if cleaned in ['nan', 'none', 'null', 'n/a', '']:
-        return ""
-    return re.sub(r'[^a-z0-9]', '', cleaned)
-
-def normalize_phone(phone: Optional[str]) -> str:
-    if not phone:
-        return ""
-    digits = re.sub(r'\D', '', str(phone))
-    if len(digits) == 12 and digits.startswith('91'):
-        digits = digits[2:]
-    return digits if len(digits) >= 8 else ""
-
 @app.get("/api/leads/duplicates-summary")
 def get_duplicates_summary(criteria: str = "name_and_contact", db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    from collections import defaultdict
     query = db.query(Lead)
     query = apply_rbac_filter(query, current_user)
     leads = query.order_by(Lead.id.asc()).all()
     
-    seen_keys = set()
-    duplicate_lead_ids = set()
-    
+    crit_mode = "composite" if criteria in ["name_and_contact", "composite"] else criteria
+    groups = defaultdict(list)
     for lead in leads:
-        norm_name = normalize_string(lead.exporter_name)
-        norm_phone = normalize_phone(lead.contact_number)
-        norm_email = normalize_string(lead.email)
-        norm_sl = normalize_string(lead.sl_no)
-        
-        key = None
-        if criteria == "name":
-            if norm_name:
-                key = f"name:{norm_name}"
-        elif criteria == "contact":
-            if norm_phone:
-                key = f"phone:{norm_phone}"
-        elif criteria == "email":
-            if norm_email and len(norm_email) > 4:
-                key = f"email:{norm_email}"
-        elif criteria == "sl_no":
-            if norm_sl:
-                key = f"sl:{norm_sl}"
-        else: # default: name_and_contact composite
-            if norm_name:
-                key = f"name:{norm_name}"
-            elif norm_phone:
-                key = f"phone:{norm_phone}"
-            elif norm_email and len(norm_email) > 4:
-                key = f"email:{norm_email}"
-                
+        lead_dict = {
+            "exporter_name": lead.exporter_name,
+            "contact_number": lead.contact_number,
+            "email": lead.email,
+            "pincode": lead.pincode,
+            "division": lead.division,
+            "sl_no": lead.sl_no
+        }
+        key = generate_lead_dedup_key(lead_dict, crit_mode)
         if key:
-            if key in seen_keys:
-                duplicate_lead_ids.add(lead.id)
-            else:
-                seen_keys.add(key)
-
+            groups[key].append(lead)
+            
+    duplicate_count = sum(len(items) - 1 for items in groups.values() if len(items) > 1)
+    unique_leads_estimate = len(leads) - duplicate_count
+    
     return {
         "total_leads": len(leads),
-        "duplicate_count": len(duplicate_lead_ids),
-        "unique_leads_estimate": len(leads) - len(duplicate_lead_ids),
+        "duplicate_count": duplicate_count,
+        "unique_leads_estimate": unique_leads_estimate,
         "criteria": criteria
     }
 
@@ -1621,53 +1556,70 @@ class DeduplicateRequest(BaseModel):
 
 @app.post("/api/leads/deduplicate")
 def deduplicate_leads(req: DeduplicateRequest = Body(default=DeduplicateRequest()), db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    from collections import defaultdict
     query = db.query(Lead)
     query = apply_rbac_filter(query, current_user)
     leads = query.order_by(Lead.id.asc()).all()
     
-    seen_keys = set()
+    criteria = req.criteria or "name_and_contact"
+    crit_mode = "composite" if criteria in ["name_and_contact", "composite"] else criteria
+    
+    groups = defaultdict(list)
+    for lead in leads:
+        lead_dict = {
+            "exporter_name": lead.exporter_name,
+            "contact_number": lead.contact_number,
+            "email": lead.email,
+            "pincode": lead.pincode,
+            "division": lead.division,
+            "sl_no": lead.sl_no
+        }
+        key = generate_lead_dedup_key(lead_dict, crit_mode)
+        if key:
+            groups[key].append(lead)
+            
     to_delete_ids = []
     
-    criteria = req.criteria or "name_and_contact"
-    
-    for lead in leads:
-        norm_name = normalize_string(lead.exporter_name)
-        norm_phone = normalize_phone(lead.contact_number)
-        norm_email = normalize_string(lead.email)
-        norm_sl = normalize_string(lead.sl_no)
-        
-        key = None
-        if criteria == "name":
-            if norm_name:
-                key = f"name:{norm_name}"
-        elif criteria == "contact":
-            if norm_phone:
-                key = f"phone:{norm_phone}"
-        elif criteria == "email":
-            if norm_email and len(norm_email) > 4:
-                key = f"email:{norm_email}"
-        elif criteria == "sl_no":
-            if norm_sl:
-                key = f"sl:{norm_sl}"
-        else:
-            if norm_name:
-                key = f"name:{norm_name}"
-            elif norm_phone:
-                key = f"phone:{norm_phone}"
-            elif norm_email and len(norm_email) > 4:
-                key = f"email:{norm_email}"
-        
-        if key:
-            if key in seen_keys:
-                to_delete_ids.append(lead.id)
-            else:
-                seen_keys.add(key)
+    for key, items in groups.items():
+        if len(items) > 1:
+            def score(x):
+                s = 0
+                if x.address: s += len(str(x.address))
+                if x.pincode: s += 25
+                if x.contact_number: s += 50
+                if x.email: s += 50
+                if x.service_using: s += 30
+                if x.monthly_volume: s += 15
+                if x.meeting_outcome: s += 15
+                return s
+                
+            items.sort(key=score, reverse=True)
+            primary = items[0]
+            
+            for sec in items[1:]:
+                if not primary.address and sec.address: primary.address = sec.address
+                if not primary.pincode and sec.pincode: primary.pincode = sec.pincode
+                if not primary.division and sec.division: primary.division = sec.division
+                if not primary.region and sec.region: primary.region = sec.region
+                if not primary.division_id and sec.division_id: primary.division_id = sec.division_id
+                if not primary.contact_number and sec.contact_number: primary.contact_number = sec.contact_number
+                if not primary.email and sec.email: primary.email = sec.email
+                if not primary.service_using and sec.service_using: primary.service_using = sec.service_using
+                if not primary.monthly_volume and sec.monthly_volume: primary.monthly_volume = sec.monthly_volume
+                if not primary.meeting_outcome and sec.meeting_outcome: primary.meeting_outcome = sec.meeting_outcome
+                if not primary.contract_id and sec.contract_id: primary.contract_id = sec.contract_id
+                if not primary.assigned_agent and sec.assigned_agent: primary.assigned_agent = sec.assigned_agent
+                if not primary.date_of_meeting and sec.date_of_meeting: primary.date_of_meeting = sec.date_of_meeting
+                if not primary.customer_met and sec.customer_met: primary.customer_met = sec.customer_met
+                if not primary.remarks and sec.remarks: primary.remarks = sec.remarks
+                
+                to_delete_ids.append(sec.id)
                 
     if to_delete_ids:
         db.query(Lead).filter(Lead.id.in_(to_delete_ids)).delete(synchronize_session=False)
         db.commit()
         
-    remaining_count = db.query(Lead).count()
+    remaining_count = apply_rbac_filter(db.query(Lead), current_user).count()
     
     return {
         "success": True,
@@ -1692,7 +1644,14 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
         "meetingOutcome": "meeting_outcome",
         "contractId": "contract_id",
         "assignedAgent": "assigned_agent",
-        "remarks": "remarks"
+        "assignedMeName": "assigned_agent",
+        "customerMet": "customer_met",
+        "remarks": "remarks",
+        "address": "address",
+        "pincode": "pincode",
+        "division": "division",
+        "region": "region",
+        "email": "email"
     }
     
     for key, value in data.items():

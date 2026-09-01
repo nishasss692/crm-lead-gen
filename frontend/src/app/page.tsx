@@ -367,6 +367,8 @@ export default function MarketingExecutiveDashboard() {
   // STAGE & SERVICE PIE CHART DATA ENGINE
   // ═══════════════════════════════════════════════════════════════
   const pieStageData = useMemo(() => {
+    if (totalLeadsCount === 0) return [];
+
     if (chartViewMode === 'service') {
       if (analytics.service_distribution && analytics.service_distribution.length > 0) {
         return analytics.service_distribution.map((item, idx) => ({
@@ -377,12 +379,7 @@ export default function MarketingExecutiveDashboard() {
           color: item.color || SERVICE_PALETTE[idx % SERVICE_PALETTE.length]
         }));
       }
-      return [
-        { name: 'Speed Post B2B', value: Math.max(1, Math.round(totalLeadsCount * 0.45)), percentage: 45, color: '#D1242F' },
-        { name: 'Business Parcel', value: Math.max(1, Math.round(totalLeadsCount * 0.30)), percentage: 30, color: '#F7941D' },
-        { name: 'Direct Portal', value: Math.max(1, Math.round(totalLeadsCount * 0.15)), percentage: 15, color: '#1B2A4A' },
-        { name: 'Express Parcel', value: Math.max(1, Math.round(totalLeadsCount * 0.10)), percentage: 10, color: '#0284C7' }
-      ];
+      return [];
     }
 
     // Lead Stages List
@@ -398,7 +395,8 @@ export default function MarketingExecutiveDashboard() {
     ];
 
     const sumVal = stages.reduce((acc, k) => acc + k.count, 0);
-    const denominator = sumVal > 0 ? sumVal : (totalLeadsCount > 0 ? totalLeadsCount : 1);
+    if (sumVal === 0) return [];
+    const denominator = sumVal;
 
     return stages.map(st => ({
       name: st.name,
