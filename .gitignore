@@ -48,3 +48,5 @@ next-env.d.ts
 pgdata/
 *.db
 *.sqlite3
+*.bak
+*.db.bak

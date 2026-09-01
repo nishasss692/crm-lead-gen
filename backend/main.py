@@ -664,6 +664,132 @@ def download_template():
         headers={"Content-Disposition": "attachment; filename=indiapost_lead_template.csv"}
     )
 
+# Lead Deduplication Endpoints
+def _get_dedup_key(lead: Lead, criteria: str) -> str:
+    name = (lead.exporter_name or "").strip().upper()
+    phone = re.sub(r'\D', '', lead.contact_number or '')
+    email = (lead.email or "").strip().lower()
+    sl = (lead.sl_no or "").strip().upper()
+    pin = (lead.pincode or "").strip()
+    div = (lead.division or "").strip().upper()
+    
+    if criteria == "name":
+        clean_name = re.sub(r'[\(\[\{].*?[\)\]\}]', '', name)
+        clean_name = re.sub(r'[^A-Z0-9\s]', ' ', clean_name)
+        tokens = [w for w in clean_name.split() if w not in ['PVT', 'PRIVATE', 'LTD', 'LIMITED', 'LLP', 'INC', 'CORP', 'CO', 'COMPANY', 'INDIA']]
+        return "".join(tokens) or re.sub(r'[^A-Z0-9]', '', name)
+    elif criteria == "contact":
+        return phone if len(phone) >= 7 else ""
+    elif criteria == "email":
+        return email if "@" in email else ""
+    elif criteria == "sl_no":
+        return sl if sl else ""
+    else:  # name_and_contact (Composite)
+        clean_name = re.sub(r'[\(\[\{].*?[\)\]\}]', '', name)
+        clean_name = re.sub(r'[^A-Z0-9\s]', ' ', clean_name)
+        tokens = [w for w in clean_name.split() if w not in ['PVT', 'PRIVATE', 'LTD', 'LIMITED', 'LLP', 'INC', 'CORP', 'CO', 'COMPANY', 'INDIA']]
+        name_key = "".join(tokens) or re.sub(r'[^A-Z0-9]', '', name)
+        loc_key = pin if pin else div
+        return f"{name_key}##{loc_key}"
+
+@app.get("/api/leads/duplicates-summary")
+def get_duplicates_summary(
+    criteria: str = "name_and_contact",
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user)
+):
+    from collections import defaultdict
+    leads = db.query(Lead).all()
+    total_leads = len(leads)
+    
+    groups = defaultdict(list)
+    for lead in leads:
+        key = _get_dedup_key(lead, criteria)
+        if key:
+            groups[key].append(lead)
+            
+    duplicate_count = sum(len(items) - 1 for items in groups.values() if len(items) > 1)
+    unique_leads_estimate = total_leads - duplicate_count
+    
+    return {
+        "total_leads": total_leads,
+        "duplicate_count": duplicate_count,
+        "unique_leads_estimate": unique_leads_estimate,
+        "criteria": criteria
+    }
+
+class DeduplicateRequest(BaseModel):
+    criteria: Optional[str] = "name_and_contact"
+
+@app.post("/api/leads/deduplicate")
+def execute_deduplication(
+    request: DeduplicateRequest = Body(...),
+    db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user)
+):
+    from collections import defaultdict
+    criteria = request.criteria or "name_and_contact"
+    leads = db.query(Lead).order_by(Lead.id.asc()).all()
+    
+    groups = defaultdict(list)
+    for lead in leads:
+        key = _get_dedup_key(lead, criteria)
+        if key:
+            groups[key].append(lead)
+            
+    to_delete_ids = []
+    updated_records = 0
+    
+    for key, items in groups.items():
+        if len(items) > 1:
+            def score(x):
+                s = 0
+                if x.address: s += len(x.address)
+                if x.pincode: s += 25
+                if x.contact_number: s += 50
+                if x.email: s += 50
+                if x.service_using: s += 30
+                if x.monthly_volume: s += 15
+                if x.meeting_outcome: s += 15
+                return s
+                
+            items.sort(key=score, reverse=True)
+            primary = items[0]
+            
+            for sec in items[1:]:
+                if not primary.address and sec.address: primary.address = sec.address
+                if not primary.pincode and sec.pincode: primary.pincode = sec.pincode
+                if not primary.division and sec.division: primary.division = sec.division
+                if not primary.region and sec.region: primary.region = sec.region
+                if not primary.division_id and sec.division_id: primary.division_id = sec.division_id
+                if not primary.contact_number and sec.contact_number: primary.contact_number = sec.contact_number
+                if not primary.email and sec.email: primary.email = sec.email
+                if not primary.service_using and sec.service_using: primary.service_using = sec.service_using
+                if not primary.monthly_volume and sec.monthly_volume: primary.monthly_volume = sec.monthly_volume
+                if not primary.meeting_outcome and sec.meeting_outcome: primary.meeting_outcome = sec.meeting_outcome
+                if not primary.contract_id and sec.contract_id: primary.contract_id = sec.contract_id
+                if not primary.assigned_agent and sec.assigned_agent: primary.assigned_agent = sec.assigned_agent
+                if not primary.date_of_meeting and sec.date_of_meeting: primary.date_of_meeting = sec.date_of_meeting
+                if not primary.customer_met and sec.customer_met: primary.customer_met = sec.customer_met
+                if not primary.remarks and sec.remarks: primary.remarks = sec.remarks
+                
+                to_delete_ids.append(sec.id)
+            updated_records += 1
+            
+    if to_delete_ids:
+        db.query(Lead).filter(Lead.id.in_(to_delete_ids)).delete(synchronize_session=False)
+        db.commit()
+        
+    final_count = db.query(Lead).count()
+    removed_count = len(to_delete_ids)
+    
+    return {
+        "success": True,
+        "removed_count": removed_count,
+        "preserved_count": final_count,
+        "message": f"Successfully cleaned {removed_count} duplicate leads. Preserved {final_count} unique, accurate records."
+    }
+
 # 4. RBAC Filter
 def apply_rbac_filter(query, user: Optional[dict]):
     if not user:

@@ -45,12 +45,17 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
 
   const handleUpdate = async (id: number, updates: Partial<Lead>) => {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const response = await fetch(`http://localhost:8000/api/leads/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(updates),
       });
       if (response.ok) {
+        // Reload to sync complete datasets and analytics
         window.location.reload();
       } else {
         console.error('Failed to update lead');
