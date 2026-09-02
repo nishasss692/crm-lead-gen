@@ -263,14 +263,20 @@ export default function LoginPage() {
 
         {/* 4-Tier Quick Access Accounts */}
         <div className="mt-5 pt-4 border-t border-gray-200">
-          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 text-center">
-            Official Role 1-Click Instant Access:
-          </p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+              1-Click Demo & Field Logins:
+            </p>
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              Default ME Password: <code className="font-mono">Post@123</code>
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('CO_ADMIN', 'password123')}
+              onClick={() => handleQuickAccess('CO_ADMIN', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">CO (Central Office)</div>
@@ -279,7 +285,7 @@ export default function LoginPage() {
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('RO_BG', 'password123')}
+              onClick={() => handleQuickAccess('RO_BG', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (Bengaluru HQ)</div>
@@ -288,7 +294,7 @@ export default function LoginPage() {
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('RO_SK', 'password123')}
+              onClick={() => handleQuickAccess('RO_SK', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (South Karnataka)</div>
@@ -297,7 +303,7 @@ export default function LoginPage() {
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('RO_NK', 'password123')}
+              onClick={() => handleQuickAccess('RO_NK', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (North Karnataka)</div>
@@ -306,7 +312,7 @@ export default function LoginPage() {
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('DIV_MYS', 'password123')}
+              onClick={() => handleQuickAccess('DIV_MYS', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">DO (Mysuru)</div>
@@ -315,20 +321,57 @@ export default function LoginPage() {
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('DIV_BGE', 'password123')}
+              onClick={() => handleQuickAccess('DIV_BGE', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">DO (BG East)</div>
               <div className="text-gray-500 text-[9px]">DIV_BGE (Divisional)</div>
             </button>
-            <button
-              type="button"
-              suppressHydrationWarning
-              onClick={() => handleQuickAccess('ME_MYS_01', 'password123')}
-              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group col-span-2 sm:col-span-3 text-center"
-            >
-              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">ME (Marketing Executive) • ME_MYS_01 (Mysuru)</div>
-            </button>
+          </div>
+
+          {/* Marketing Executives from MEs DATA.xlsx */}
+          <div className="mt-2.5 pt-2 border-t border-slate-100">
+            <p className="text-[10px] font-bold text-slate-600 mb-1.5">
+              Sample Marketing Executives (From MEs DATA.xlsx — Division Restricted):
+            </p>
+            <div className="grid grid-cols-2 gap-1 text-[11px]">
+              <button
+                type="button"
+                suppressHydrationWarning
+                onClick={() => handleQuickAccess('10021758', 'Post@123')}
+                className="p-1.5 rounded border border-slate-200 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[10px]">10021758 • Suresh M E</div>
+                <div className="text-slate-500 text-[9px]">Mysuru Division (SK Region)</div>
+              </button>
+              <button
+                type="button"
+                suppressHydrationWarning
+                onClick={() => handleQuickAccess('10313452', 'Post@123')}
+                className="p-1.5 rounded border border-slate-200 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[10px]">10313452 • Dilip Kumar</div>
+                <div className="text-slate-500 text-[9px]">BG East Division (BG Region)</div>
+              </button>
+              <button
+                type="button"
+                suppressHydrationWarning
+                onClick={() => handleQuickAccess('10044051', 'Post@123')}
+                className="p-1.5 rounded border border-slate-200 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[10px]">10044051 • S P Kulkarni</div>
+                <div className="text-slate-500 text-[9px]">Bagalkote Division (NK Region)</div>
+              </button>
+              <button
+                type="button"
+                suppressHydrationWarning
+                onClick={() => handleQuickAccess('10041386', 'Post@123')}
+                className="p-1.5 rounded border border-slate-200 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all"
+              >
+                <div className="font-bold text-slate-800 text-[10px]">10041386 • Subhash P Salian</div>
+                <div className="text-slate-500 text-[9px]">Mangaluru Division (SK Region)</div>
+              </button>
+            </div>
           </div>
         </div>
 

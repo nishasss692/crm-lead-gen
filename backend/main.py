@@ -3,8 +3,9 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, func, case, or_, and_
+from sqlalchemy import create_engine, Column, Integer, String, func, case, or_, and_, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+import sqlite3
 import pandas as pd
 import io
 import re
@@ -54,6 +55,24 @@ app.add_middleware(
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "crm.db")
+
+# Run direct SQLite migration if old schema exists
+try:
+    if os.path.exists(DB_PATH):
+        raw_conn = sqlite3.connect(DB_PATH)
+        raw_cur = raw_conn.cursor()
+        raw_cur.execute("PRAGMA table_info(users)")
+        existing_cols = [r[1] for r in raw_cur.fetchall()]
+        if existing_cols:
+            if "name" not in existing_cols:
+                raw_cur.execute("ALTER TABLE users ADD COLUMN name VARCHAR")
+            if "mobile_number" not in existing_cols:
+                raw_cur.execute("ALTER TABLE users ADD COLUMN mobile_number VARCHAR")
+        raw_conn.commit()
+        raw_conn.close()
+except Exception as _e:
+    print(f"[DB Setup] Direct migration note: {_e}")
+
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -87,10 +106,12 @@ class User(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     employee_id = Column(String, unique=True, index=True)
+    name = Column(String, nullable=True)
     password = Column(String)
-    role = Column(String)  # 'ME', 'Division', 'RO', 'CO'
+    role = Column(String)  # 'ME', 'DO', 'RO', 'CO'
     assigned_region = Column(String, nullable=True)
     assigned_division = Column(String, nullable=True)
+    mobile_number = Column(String, nullable=True)
 
     @property
     def username(self):
@@ -113,8 +134,6 @@ class User(Base):
         return self.assigned_division
 
 Base.metadata.create_all(bind=engine)
-
-# 2.5 Auth Setup
 SECRET_KEY = "india_post_crm_secret"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 8
@@ -187,10 +206,81 @@ def get_db():
     finally:
         db.close()
 
-# Startup Event: Seed/Update Official Test Accounts
+def seed_mes_from_excel(db: Session):
+    """Parses MEs DATA.xlsx and seeds all Marketing Executives with assigned division and default password Post@123."""
+    file_candidates = [
+        os.path.join(BASE_DIR, "MEs DATA.xlsx"),
+        os.path.join(BASE_DIR, "..", "MEs DATA.xlsx"),
+        "MEs DATA.xlsx",
+        os.path.join(os.getcwd(), "MEs DATA.xlsx")
+    ]
+    me_file = None
+    for p in file_candidates:
+        if os.path.exists(p):
+            me_file = p
+            break
+            
+    if not me_file:
+        print("[User Auth] Note: MEs DATA.xlsx not found on disk, skipping bulk ME seeding.")
+        return
+
+    try:
+        df = pd.read_excel(me_file)
+        default_pwd_hash = get_password_hash("Post@123")
+        count = 0
+        for _, row in df.iterrows():
+            emp_id_raw = row.get("Emp ID")
+            if pd.isna(emp_id_raw):
+                continue
+            emp_id = str(emp_id_raw).strip()
+            if emp_id.endswith(".0"):
+                emp_id = emp_id[:-2]
+            if not emp_id or emp_id.lower() == "nan":
+                continue
+
+            name = str(row.get("Name", "")).strip() if pd.notna(row.get("Name")) else ""
+            div_name = str(row.get("Division Name", "")).strip() if pd.notna(row.get("Division Name")) else ""
+            reg_name = str(row.get("Region Name", "")).strip() if pd.notna(row.get("Region Name")) else ""
+            mobile = str(row.get("Mobile Number", "")).strip() if pd.notna(row.get("Mobile Number")) else ""
+
+            existing = db.query(User).filter(
+                or_(
+                    User.employee_id == emp_id,
+                    func.lower(User.employee_id) == emp_id.lower()
+                )
+            ).first()
+
+            if existing:
+                existing.name = name or existing.name
+                existing.role = "ME"
+                existing.assigned_division = div_name or existing.assigned_division
+                existing.assigned_region = reg_name or existing.assigned_region
+                existing.mobile_number = mobile or existing.mobile_number
+                if not existing.password:
+                    existing.password = default_pwd_hash
+            else:
+                new_me = User(
+                    employee_id=emp_id,
+                    name=name,
+                    password=default_pwd_hash,
+                    role="ME",
+                    assigned_division=div_name,
+                    assigned_region=reg_name,
+                    mobile_number=mobile
+                )
+                db.add(new_me)
+            count += 1
+            
+        db.commit()
+        print(f"[User Auth] Successfully loaded and synced {count} Marketing Executives from {me_file} with default password Post@123")
+    except Exception as e:
+        db.rollback()
+        print(f"[User Auth] Error seeding MEs from Excel: {e}")
+
+# Startup Event: Seed/Update Official Test Accounts & All MEs from Excel
 @app.on_event("startup")
 def seed_test_users():
-    # Automatically migrate users table if old column schema exists
+    # Safely ensure new columns exist if table was already created
     try:
         with engine.connect() as conn:
             res = conn.execute("PRAGMA table_info(users)").fetchall()
@@ -198,6 +288,19 @@ def seed_test_users():
             if "username" in col_names and "employee_id" not in col_names:
                 conn.execute("DROP TABLE users")
                 conn.commit()
+            else:
+                if "name" not in col_names:
+                    try:
+                        conn.execute("ALTER TABLE users ADD COLUMN name VARCHAR")
+                        conn.commit()
+                    except Exception:
+                        pass
+                if "mobile_number" not in col_names:
+                    try:
+                        conn.execute("ALTER TABLE users ADD COLUMN mobile_number VARCHAR")
+                        conn.commit()
+                    except Exception:
+                        pass
     except Exception:
         pass
 
@@ -208,22 +311,22 @@ def seed_test_users():
         default_pwd_hash = get_password_hash("password123")
         test_users = [
             # CO Accounts
-            {"employee_id": "CO_ADMIN", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None},
-            {"employee_id": "co_user", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None},
+            {"employee_id": "CO_ADMIN", "name": "Circle Admin", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None},
+            {"employee_id": "co_user", "name": "CO Operations", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None},
             # RO Accounts (BG, SK, NK)
-            {"employee_id": "RO_BG", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None},
-            {"employee_id": "ro_user", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None},
-            {"employee_id": "RO_SK", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None},
-            {"employee_id": "RO_NK", "password": default_pwd_hash, "role": "RO", "assigned_region": "North Karnataka Region", "assigned_division": None},
+            {"employee_id": "RO_BG", "name": "RO Bengaluru Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None},
+            {"employee_id": "ro_user", "name": "RO User", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None},
+            {"employee_id": "RO_SK", "name": "RO South Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None},
+            {"employee_id": "RO_NK", "name": "RO North Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "North Karnataka Region", "assigned_division": None},
             # DO / Divisional Accounts
-            {"employee_id": "DIV_MYS", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
-            {"employee_id": "div_user", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
-            {"employee_id": "DO_MYS", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
-            {"employee_id": "DIV_BGE", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG East"},
-            {"employee_id": "DIV_BGS", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG South"},
+            {"employee_id": "DIV_MYS", "name": "DO Mysuru Officer", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "div_user", "name": "DO User", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "DO_MYS", "name": "DO Mysuru", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "DIV_BGE", "name": "DO BG East", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG East"},
+            {"employee_id": "DIV_BGS", "name": "DO BG South", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG South"},
             # ME Accounts
-            {"employee_id": "ME_MYS_01", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru"},
-            {"employee_id": "me_user", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "ME_MYS_01", "name": "Suresh M E", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "me_user", "name": "Marketing Executive", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru"},
         ]
 
         for u_data in test_users:
@@ -231,6 +334,7 @@ def seed_test_users():
                 func.lower(User.employee_id) == u_data["employee_id"].lower()
             ).first()
             if existing:
+                existing.name = u_data.get("name") or existing.name
                 existing.password = u_data["password"]
                 existing.role = u_data["role"]
                 existing.assigned_region = u_data["assigned_region"]
@@ -239,7 +343,10 @@ def seed_test_users():
                 db.add(User(**u_data))
 
         db.commit()
-        print(f"[User Auth] Synced {len(test_users)} official test role accounts with active credentials.")
+        
+        # Now seed all 111 Marketing Executives from MEs DATA.xlsx
+        seed_mes_from_excel(db)
+        
     except Exception as e:
         db.rollback()
         print(f"[User Auth] Error seeding users: {e}")
@@ -361,37 +468,75 @@ async def login(
     ).first()
     
     if not user:
-        demo_roles = {
-            "CO_ADMIN": ("CO", None, None),
-            "CO_USER": ("CO", None, None),
-            "RO_BG": ("RO", "Bengaluru HQ Region", None),
-            "RO_USER": ("RO", "Bengaluru HQ Region", None),
-            "RO_SK": ("RO", "South Karnataka Region", None),
-            "RO_NK": ("RO", "North Karnataka Region", None),
-            "DIV_MYS": ("DO", None, "Mysuru"),
-            "DIV_USER": ("DO", None, "Mysuru"),
-            "DO_MYS": ("DO", None, "Mysuru"),
-            "DIV_BGE": ("DO", None, "BG East"),
-            "DIV_BGS": ("DO", None, "BG South"),
-            "ME_MYS_01": ("ME", None, "Mysuru"),
-            "ME_USER": ("ME", None, "Mysuru"),
-        }
-        upper_id = emp_id_str.upper()
-        if upper_id in demo_roles and str(pwd) in ["password123", "Post@123"]:
-            role, region, div = demo_roles[upper_id]
-            user = User(
-                employee_id=upper_id,
-                password=get_password_hash("password123"),
-                role=role,
-                assigned_region=region,
-                assigned_division=div
-            )
+        # 1. Dynamic lookup against MEs DATA.xlsx
+        file_candidates = [
+            os.path.join(BASE_DIR, "MEs DATA.xlsx"),
+            os.path.join(BASE_DIR, "..", "MEs DATA.xlsx"),
+            "MEs DATA.xlsx",
+            os.path.join(os.getcwd(), "MEs DATA.xlsx")
+        ]
+        me_file = next((p for p in file_candidates if os.path.exists(p)), None)
+        if me_file:
             try:
-                db.add(user)
-                db.commit()
-                db.refresh(user)
-            except Exception:
-                db.rollback()
+                df = pd.read_excel(me_file)
+                for _, row in df.iterrows():
+                    row_emp_id = str(row.get("Emp ID", "")).strip()
+                    if row_emp_id.endswith(".0"):
+                        row_emp_id = row_emp_id[:-2]
+                    if row_emp_id.lower() == emp_id_str.lower():
+                        user = User(
+                            employee_id=row_emp_id,
+                            name=str(row.get("Name", "")).strip(),
+                            password=get_password_hash("Post@123"),
+                            role="ME",
+                            assigned_division=str(row.get("Division Name", "")).strip(),
+                            assigned_region=str(row.get("Region Name", "")).strip(),
+                            mobile_number=str(row.get("Mobile Number", "")).strip()
+                        )
+                        try:
+                            db.add(user)
+                            db.commit()
+                            db.refresh(user)
+                        except Exception:
+                            db.rollback()
+                        break
+            except Exception as e:
+                print(f"[User Auth] Dynamic ME lookup note: {e}")
+
+        # 2. Demo roles fallback
+        if not user:
+            demo_roles = {
+                "CO_ADMIN": ("CO", None, None, "Circle Admin"),
+                "CO_USER": ("CO", None, None, "CO Operations"),
+                "RO_BG": ("RO", "Bengaluru HQ Region", None, "RO Bengaluru Officer"),
+                "RO_USER": ("RO", "Bengaluru HQ Region", None, "RO User"),
+                "RO_SK": ("RO", "South Karnataka Region", None, "RO South Karnataka Officer"),
+                "RO_NK": ("RO", "North Karnataka Region", None, "RO North Karnataka Officer"),
+                "DIV_MYS": ("DO", None, "Mysuru", "DO Mysuru Officer"),
+                "DIV_USER": ("DO", None, "Mysuru", "DO User"),
+                "DO_MYS": ("DO", None, "Mysuru", "DO Mysuru"),
+                "DIV_BGE": ("DO", None, "BG East", "DO BG East"),
+                "DIV_BGS": ("DO", None, "BG South", "DO BG South"),
+                "ME_MYS_01": ("ME", None, "Mysuru", "Suresh M E"),
+                "ME_USER": ("ME", None, "Mysuru", "Marketing Executive"),
+            }
+            upper_id = emp_id_str.upper()
+            if upper_id in demo_roles and str(pwd) in ["password123", "Post@123"]:
+                role, region, div, name = demo_roles[upper_id]
+                user = User(
+                    employee_id=upper_id,
+                    name=name,
+                    password=get_password_hash("password123"),
+                    role=role,
+                    assigned_region=region,
+                    assigned_division=div
+                )
+                try:
+                    db.add(user)
+                    db.commit()
+                    db.refresh(user)
+                except Exception:
+                    db.rollback()
 
     if not user or not verify_password(str(pwd), user.password if user else ""):
         raise HTTPException(
@@ -405,6 +550,7 @@ async def login(
         data={
             "sub": user.employee_id,
             "role": user.role,
+            "name": user.name or user.employee_id,
             "assigned_region": user.assigned_region,
             "assigned_division": user.assigned_division
         },
@@ -415,9 +561,11 @@ async def login(
         "access_token": token, 
         "token_type": "bearer", 
         "role": user.role,
+        "name": user.name or user.employee_id,
         "user": {
             "employee_id": user.employee_id,
             "username": user.employee_id,
+            "name": user.name or user.employee_id,
             "role": user.role, 
             "assigned_region": user.assigned_region, 
             "assigned_division": user.assigned_division,

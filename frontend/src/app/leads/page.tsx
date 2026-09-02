@@ -63,7 +63,15 @@ function LeadsPageContent() {
     const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
     if (userStr) {
       try {
-        setUser(JSON.parse(userStr));
+        const u = JSON.parse(userStr);
+        setUser(u);
+        const roleClean = String(u.role || '').toUpperCase();
+        if (['ME', 'DO', 'DIVISION', 'DIV'].includes(roleClean)) {
+          const userDiv = u.assigned_division || u.division;
+          if (userDiv) {
+            setSelectedDivision(userDiv);
+          }
+        }
       } catch (e) {}
     }
   }, []);
@@ -77,6 +85,9 @@ function LeadsPageContent() {
         const data = await safeJson(res);
         if (Array.isArray(data)) {
           setDivisions(data);
+          if (data.length === 1) {
+            setSelectedDivision(data[0]);
+          }
         }
       }
     } catch (err) {
