@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   BadgeCheck
 } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 function LeadsPageContent() {
   const router = useRouter();
@@ -68,7 +69,7 @@ function LeadsPageContent() {
 
   const fetchDivisions = async (token: string) => {
     try {
-      const res = await fetch('http://localhost:8000/api/divisions', {
+      const res = await fetch(`${API_BASE_URL}/api/divisions`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -89,7 +90,7 @@ function LeadsPageContent() {
       }
       params.append('only_valid', 'false');
 
-      const res = await fetch(`http://localhost:8000/api/leads?${params.toString()}`, {
+      const res = await fetch(`${API_BASE_URL}/api/leads?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -150,7 +151,7 @@ function LeadsPageContent() {
 
     try {
       const clearParam = clearExisting ? '?clear_existing=true' : '?clear_existing=false';
-      const res = await fetch(`http://localhost:8000/api/upload-excel${clearParam}`, {
+      const res = await fetch(`${API_BASE_URL}/api/upload-excel${clearParam}`, {
         method: 'POST',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
@@ -187,7 +188,7 @@ function LeadsPageContent() {
   };
 
   const handleDownloadTemplate = () => {
-    window.open('http://localhost:8000/api/download-template', '_blank');
+    window.open(`${API_BASE_URL}/api/download-template`, '_blank');
   };
 
   // Fetch Duplicate Summary
@@ -195,7 +196,7 @@ function LeadsPageContent() {
     const token = localStorage.getItem('token');
     setIsDedupLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/leads/duplicates-summary?criteria=${encodeURIComponent(criteria)}`, {
+      const res = await fetch(`${API_BASE_URL}/api/leads/duplicates-summary?criteria=${encodeURIComponent(criteria)}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
@@ -219,7 +220,7 @@ function LeadsPageContent() {
     const token = localStorage.getItem('token');
     setIsDedupLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/leads/deduplicate', {
+      const res = await fetch(`${API_BASE_URL}/api/leads/deduplicate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -246,7 +247,7 @@ function LeadsPageContent() {
     if (!confirm("Are you sure you want to remove all existing leads? This will leave the database clean for your new upload.")) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:8000/api/leads/clear-all', {
+      const res = await fetch(`${API_BASE_URL}/api/leads/clear-all`, {
         method: 'POST',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });

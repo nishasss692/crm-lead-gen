@@ -2,6 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import UpdateLeadModal from './UpdateLeadModal';
 import { Edit, Trash2, MapPin, ChevronLeft, ChevronRight, CheckCircle2, Clock, XCircle, Award, PhoneCall, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 export interface Lead {
   id: number;
@@ -46,7 +47,7 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
   const handleUpdate = async (id: number, updates: Partial<Lead>) => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-      const response = await fetch(`http://localhost:8000/api/leads/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/leads/${id}`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',

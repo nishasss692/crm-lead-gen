@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Lock, User, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 export default function LoginPage() {
   const [employeeId, setEmployeeId] = useState('');
@@ -17,7 +18,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:8000/api/login', {
+      const res = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

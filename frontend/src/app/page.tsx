@@ -20,6 +20,7 @@ import {
   Percent,
   Layers
 } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 import {
   ResponsiveContainer,
   BarChart,
@@ -188,7 +189,7 @@ export default function MarketingExecutiveDashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
       const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&` : '';
-      const res = await fetch(`http://localhost:8000/api/analytics?${queryParam}only_valid=false`, {
+      const res = await fetch(`${API_BASE_URL}/api/analytics?${queryParam}only_valid=false`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
@@ -225,7 +226,7 @@ export default function MarketingExecutiveDashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
       const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}` : '';
-      const res = await fetch(`http://localhost:8000/api/analytics/pincodes?${queryParam}`, {
+      const res = await fetch(`${API_BASE_URL}/api/analytics/pincodes?${queryParam}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
@@ -257,7 +258,7 @@ export default function MarketingExecutiveDashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
       const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&limit=10` : 'limit=10';
-      const res = await fetch(`http://localhost:8000/api/leads/priority?${queryParam}`, {
+      const res = await fetch(`${API_BASE_URL}/api/leads/priority?${queryParam}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
@@ -290,7 +291,7 @@ export default function MarketingExecutiveDashboard() {
   const fetchDivisions = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const res = await fetch('http://localhost:8000/api/divisions', {
+      const res = await fetch(`${API_BASE_URL}/api/divisions`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
