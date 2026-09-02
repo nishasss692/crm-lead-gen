@@ -11,6 +11,8 @@ import re
 import os
 import jwt
 import joblib
+import bcrypt
+import hashlib
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
@@ -125,15 +127,44 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
     if plain_password == hashed_password:
         return True
+    
+    # 1. Direct native bcrypt verify
+    try:
+        if hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$") or hashed_password.startswith("$2y$"):
+            plain_bytes = plain_password.encode("utf-8")[:72]
+            hash_bytes = hashed_password.encode("utf-8")
+            if bcrypt.checkpw(plain_bytes, hash_bytes):
+                return True
+    except Exception:
+        pass
+
+    # 2. Passlib verify
     try:
         clean_pwd = str(plain_password)[:72]
-        return pwd_context.verify(clean_pwd, hashed_password)
+        if pwd_context.verify(clean_pwd, hashed_password):
+            return True
     except Exception:
-        return plain_password == hashed_password
+        pass
+
+    # 3. Plaintext or sha256 fallback
+    try:
+        if hashlib.sha256(plain_password.encode("utf-8")).hexdigest() == hashed_password:
+            return True
+    except Exception:
+        pass
+
+    return plain_password == hashed_password
 
 def get_password_hash(password: str) -> str:
-    clean_pwd = str(password)[:72]
-    return pwd_context.hash(clean_pwd)
+    try:
+        pwd_bytes = password.encode("utf-8")[:72]
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
+    except Exception:
+        try:
+            return pwd_context.hash(str(password)[:72])
+        except Exception:
+            return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -152,7 +183,7 @@ def get_db():
     finally:
         db.close()
 
-# Startup Event: Seed 4 Test Accounts
+# Startup Event: Seed/Update Official Test Accounts
 @app.on_event("startup")
 def seed_test_users():
     # Automatically migrate users table if old column schema exists
@@ -170,31 +201,41 @@ def seed_test_users():
     
     db = SessionLocal()
     try:
-        existing_emp_ids = {u.employee_id for u in db.query(User.employee_id).all() if u.employee_id}
+        default_pwd_hash = get_password_hash("password123")
         test_users = [
             # CO Accounts
-            User(employee_id="CO_ADMIN", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
-            User(employee_id="co_user", password=get_password_hash("password123"), role="CO", assigned_region=None, assigned_division=None),
+            {"employee_id": "CO_ADMIN", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None},
+            {"employee_id": "co_user", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None},
             # RO Accounts (BG, SK, NK)
-            User(employee_id="RO_BG", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
-            User(employee_id="ro_user", password=get_password_hash("password123"), role="RO", assigned_region="Bengaluru HQ Region", assigned_division=None),
-            User(employee_id="RO_SK", password=get_password_hash("password123"), role="RO", assigned_region="South Karnataka Region", assigned_division=None),
-            User(employee_id="RO_NK", password=get_password_hash("password123"), role="RO", assigned_region="North Karnataka Region", assigned_division=None),
+            {"employee_id": "RO_BG", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None},
+            {"employee_id": "ro_user", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None},
+            {"employee_id": "RO_SK", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None},
+            {"employee_id": "RO_NK", "password": default_pwd_hash, "role": "RO", "assigned_region": "North Karnataka Region", "assigned_division": None},
             # DO / Divisional Accounts
-            User(employee_id="DIV_MYS", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="Mysuru"),
-            User(employee_id="div_user", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="Mysuru"),
-            User(employee_id="DO_MYS", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="Mysuru"),
-            User(employee_id="DIV_BGE", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="BG East"),
-            User(employee_id="DIV_BGS", password=get_password_hash("password123"), role="DO", assigned_region=None, assigned_division="BG South"),
+            {"employee_id": "DIV_MYS", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "div_user", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "DO_MYS", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "DIV_BGE", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG East"},
+            {"employee_id": "DIV_BGS", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG South"},
             # ME Accounts
-            User(employee_id="ME_MYS_01", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
-            User(employee_id="me_user", password=get_password_hash("password123"), role="ME", assigned_region=None, assigned_division="Mysuru"),
+            {"employee_id": "ME_MYS_01", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "me_user", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru"},
         ]
-        to_add = [u for u in test_users if u.employee_id not in existing_emp_ids]
-        if to_add:
-            db.bulk_save_objects(to_add)
-            db.commit()
-            print(f"[User Auth] Seeded {len(to_add)} missing test role accounts.")
+
+        for u_data in test_users:
+            existing = db.query(User).filter(
+                func.lower(User.employee_id) == u_data["employee_id"].lower()
+            ).first()
+            if existing:
+                existing.password = u_data["password"]
+                existing.role = u_data["role"]
+                existing.assigned_region = u_data["assigned_region"]
+                existing.assigned_division = u_data["assigned_division"]
+            else:
+                db.add(User(**u_data))
+
+        db.commit()
+        print(f"[User Auth] Synced {len(test_users)} official test role accounts with active credentials.")
     except Exception as e:
         db.rollback()
         print(f"[User Auth] Error seeding users: {e}")
