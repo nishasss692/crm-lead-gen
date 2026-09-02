@@ -40,7 +40,8 @@ export default function LoginPage() {
         }
         router.push('/');
       } else {
-        setError('Invalid Employee ID or Password.');
+        const errData = await res.json().catch(() => null);
+        setError(errData?.detail || 'Invalid Employee ID or Password.');
       }
     } catch (err) {
       setError('Unable to connect to server. Please check your backend connection.');
