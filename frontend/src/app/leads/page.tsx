@@ -16,9 +16,10 @@ import {
   FileCheck, 
   AlertTriangle,
   ShieldCheck,
-  BadgeCheck
+  BadgeCheck,
+  Server
 } from 'lucide-react';
-import { API_BASE_URL } from '@/lib/api';
+import { apiFetch, safeJson, getApiBaseUrl } from '@/lib/api';
 
 function LeadsPageContent() {
   const router = useRouter();
@@ -69,12 +70,14 @@ function LeadsPageContent() {
 
   const fetchDivisions = async (token: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/divisions`, {
+      const res = await apiFetch('/api/divisions', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        const data = await res.json();
-        setDivisions(data);
+        const data = await safeJson(res);
+        if (Array.isArray(data)) {
+          setDivisions(data);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch divisions", err);
@@ -90,34 +93,36 @@ function LeadsPageContent() {
       }
       params.append('only_valid', 'false');
 
-      const res = await fetch(`${API_BASE_URL}/api/leads?${params.toString()}`, {
+      const res = await apiFetch(`/api/leads?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        const data = await res.json();
-        const formattedData = data.map((item: any) => ({
-          id: item.id, 
-          slNo: item.sl_no, 
-          exporterName: item.exporter_name, 
-          address: item.address,
-          pincode: item.pincode, 
-          divisionId: item.division_id, 
-          division: item.division,
-          region: item.region, 
-          assignedMeName: item.assigned_agent, 
-          dateOfMeeting: item.date_of_meeting,
-          customerMet: item.customer_met, 
-          contactNumber: item.contact_number, 
-          email: item.email,
-          serviceUsing: item.service_using, 
-          monthlyVolume: item.monthly_volume, 
-          meetingOutcome: item.meeting_outcome,
-          contractId: item.contract_id, 
-          remarks: item.remarks,
-          win_probability: item.win_probability ?? 0,
-          winProbability: item.win_probability ?? 0
-        }));
-        setLeads(formattedData);
+        const data = await safeJson(res);
+        if (Array.isArray(data)) {
+          const formattedData = data.map((item: any) => ({
+            id: item.id, 
+            slNo: item.sl_no, 
+            exporterName: item.exporter_name, 
+            address: item.address,
+            pincode: item.pincode, 
+            divisionId: item.division_id, 
+            division: item.division,
+            region: item.region, 
+            assignedMeName: item.assigned_agent, 
+            dateOfMeeting: item.date_of_meeting,
+            customerMet: item.customer_met, 
+            contactNumber: item.contact_number, 
+            email: item.email,
+            serviceUsing: item.service_using, 
+            monthlyVolume: item.monthly_volume, 
+            meetingOutcome: item.meeting_outcome,
+            contractId: item.contract_id, 
+            remarks: item.remarks,
+            win_probability: item.win_probability ?? 0,
+            winProbability: item.win_probability ?? 0
+          }));
+          setLeads(formattedData);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch leads", error);
@@ -142,7 +147,7 @@ function LeadsPageContent() {
     if (!uploadFile) return;
 
     setUploadProgress('uploading');
-    setUploadMessage('Processing records...');
+    setUploadMessage('Processing records on backend...');
     setUploadSummary(null);
 
     const token = localStorage.getItem('token');
@@ -151,14 +156,14 @@ function LeadsPageContent() {
 
     try {
       const clearParam = clearExisting ? '?clear_existing=true' : '?clear_existing=false';
-      const res = await fetch(`${API_BASE_URL}/api/upload-excel${clearParam}`, {
+      const res = await apiFetch(`/api/upload-excel${clearParam}`, {
         method: 'POST',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: formData,
       });
 
-      const data = await res.json();
-      if (res.ok) {
+      const data = await safeJson(res);
+      if (res.ok && data && !data.error) {
         setUploadProgress('success');
         setUploadMessage(data.message || `Successfully imported ${data.count || ''} records!`);
         setUploadSummary({
@@ -179,16 +184,17 @@ function LeadsPageContent() {
         }, 2000);
       } else {
         setUploadProgress('error');
-        setUploadMessage(data.detail || 'Failed to process file.');
+        setUploadMessage(data?.detail || 'Failed to process file on backend.');
       }
     } catch (error: any) {
       setUploadProgress('error');
-      setUploadMessage(error.message || 'Network error occurred while uploading.');
+      setUploadMessage(error.message || 'Network error occurred while uploading. Please ensure backend is reachable.');
     }
   };
 
   const handleDownloadTemplate = () => {
-    window.open(`${API_BASE_URL}/api/download-template`, '_blank');
+    const base = getApiBaseUrl();
+    window.open(base ? `${base}/api/download-template` : '/api/download-template', '_blank');
   };
 
   // Fetch Duplicate Summary
@@ -196,11 +202,11 @@ function LeadsPageContent() {
     const token = localStorage.getItem('token');
     setIsDedupLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/leads/duplicates-summary?criteria=${encodeURIComponent(criteria)}`, {
+      const res = await apiFetch(`/api/leads/duplicates-summary?criteria=${encodeURIComponent(criteria)}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await safeJson(res);
         setDedupSummary(data);
       }
     } catch (err) {
@@ -220,7 +226,7 @@ function LeadsPageContent() {
     const token = localStorage.getItem('token');
     setIsDedupLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/leads/deduplicate`, {
+      const res = await apiFetch('/api/leads/deduplicate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -228,13 +234,13 @@ function LeadsPageContent() {
         },
         body: JSON.stringify({ criteria: dedupCriteria })
       });
-      const data = await res.json();
+      const data = await safeJson(res);
       if (res.ok) {
-        setDedupSuccessResult(data.message);
+        setDedupSuccessResult(data.message || 'Deduplication completed');
         if (token) fetchLeads(token, selectedDivision);
         fetchDuplicateSummary(dedupCriteria);
       } else {
-        alert(data.detail || "Failed to remove duplicates");
+        alert(data?.detail || "Failed to remove duplicates");
       }
     } catch (err: any) {
       alert("Error running deduplication: " + err.message);
@@ -247,7 +253,7 @@ function LeadsPageContent() {
     if (!confirm("Are you sure you want to remove all existing leads? This will leave the database clean for your new upload.")) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/leads/clear-all`, {
+      const res = await apiFetch('/api/leads/clear-all', {
         method: 'POST',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
@@ -570,12 +576,17 @@ function LeadsPageContent() {
                   {uploadProgress === 'uploading' && <RefreshCw className="w-4 h-4 animate-spin text-blue-600 shrink-0 mt-0.5" />}
                   {uploadProgress === 'success' && <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />}
                   {uploadProgress === 'error' && <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />}
-                  <div className="text-xs">
+                  <div className="text-xs flex-1">
                     <p className="font-bold">{uploadMessage}</p>
                     {uploadSummary && (
                       <p className="text-[11px] opacity-90 mt-1">
                         Total Rows: {uploadSummary.total_rows} • Valid Imported: {uploadSummary.count} • Skipped: {uploadSummary.skipped_empty}
                       </p>
+                    )}
+                    {uploadProgress === 'error' && (
+                      <div className="mt-2 pt-1.5 border-t border-rose-200 text-[11px] text-rose-700">
+                        Backend URL in use: <code className="bg-rose-100 px-1.5 py-0.5 rounded font-mono font-bold">{getApiBaseUrl() || 'Not set (defaults to localhost:8000)'}</code>
+                      </div>
                     )}
                   </div>
                 </div>

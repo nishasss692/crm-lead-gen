@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE_URL } from '@/lib/api';
+import { apiFetch, safeJson } from '@/lib/api';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -34,7 +34,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/change-password`, {
+      const res = await apiFetch('/api/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +43,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
         body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
       if (res.ok) {
         setSuccess('Password updated successfully!');
         setOldPassword('');

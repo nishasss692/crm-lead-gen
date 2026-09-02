@@ -20,7 +20,7 @@ import {
   Percent,
   Layers
 } from 'lucide-react';
-import { API_BASE_URL } from '@/lib/api';
+import { apiFetch, safeJson } from '@/lib/api';
 import {
   ResponsiveContainer,
   BarChart,
@@ -189,29 +189,31 @@ export default function MarketingExecutiveDashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
       const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&` : '';
-      const res = await fetch(`${API_BASE_URL}/api/analytics?${queryParam}only_valid=false`, {
+      const res = await apiFetch(`/api/analytics?${queryParam}only_valid=false`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
-        const data = await res.json();
-        setAnalytics({
-          total_leads: data.total_leads ?? 0,
-          contact_pending: data.contact_pending ?? 0,
-          contacted: data.contacted ?? 0,
-          interested: data.interested ?? 0,
-          not_interested: data.not_interested ?? 0,
-          willing_to_onboard: data.willing_to_onboard ?? 0,
-          onboarded: data.onboarded ?? 0,
-          onboard_pending: data.onboard_pending ?? 0,
-          follow_up: data.follow_up ?? 0,
-          pipeline_value: data.pipeline_value ?? '₹ 0',
-          pipeline_raw: data.pipeline_raw ?? 0,
-          contacted_rate: data.contacted_rate ?? 0,
-          onboarding_rate: data.onboarding_rate ?? 0,
-          data_health: data.data_health ?? {},
-          service_distribution: data.service_distribution ?? [],
-          outcome_breakdown: data.outcome_breakdown ?? []
-        });
+        const data = await safeJson(res);
+        if (data && !data.detail) {
+          setAnalytics({
+            total_leads: data.total_leads ?? 0,
+            contact_pending: data.contact_pending ?? 0,
+            contacted: data.contacted ?? 0,
+            interested: data.interested ?? 0,
+            not_interested: data.not_interested ?? 0,
+            willing_to_onboard: data.willing_to_onboard ?? 0,
+            onboarded: data.onboarded ?? 0,
+            onboard_pending: data.onboard_pending ?? 0,
+            follow_up: data.follow_up ?? 0,
+            pipeline_value: data.pipeline_value ?? '₹ 0',
+            pipeline_raw: data.pipeline_raw ?? 0,
+            contacted_rate: data.contacted_rate ?? 0,
+            onboarding_rate: data.onboarding_rate ?? 0,
+            data_health: data.data_health ?? {},
+            service_distribution: data.service_distribution ?? [],
+            outcome_breakdown: data.outcome_breakdown ?? []
+          });
+        }
       }
     } catch (err) {
       console.warn('Backend analytics fetch fallback:', err);
@@ -226,11 +228,11 @@ export default function MarketingExecutiveDashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
       const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}` : '';
-      const res = await fetch(`${API_BASE_URL}/api/analytics/pincodes?${queryParam}`, {
+      const res = await apiFetch(`/api/analytics/pincodes?${queryParam}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await safeJson(res);
         if (Array.isArray(data)) {
           // Remove duplicate pincode entries if any exist
           const seen = new Set<string>();
@@ -258,11 +260,11 @@ export default function MarketingExecutiveDashboard() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
       const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&limit=10` : 'limit=10';
-      const res = await fetch(`${API_BASE_URL}/api/leads/priority?${queryParam}`, {
+      const res = await apiFetch(`/api/leads/priority?${queryParam}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await safeJson(res);
         if (Array.isArray(data)) {
           // Filter unique entities to eliminate any duplicate prospect rows
           const seenNames = new Set<string>();
@@ -291,11 +293,11 @@ export default function MarketingExecutiveDashboard() {
   const fetchDivisions = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/divisions`, {
+      const res = await apiFetch('/api/divisions', {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await safeJson(res);
         if (Array.isArray(data)) {
           const uniqueDivs = Array.from(new Set(data.map((d: string) => d.trim()).filter(Boolean)));
           setDivisions(uniqueDivs);
