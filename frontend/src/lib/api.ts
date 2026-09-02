@@ -1,8 +1,21 @@
+function normalizeUrl(url: string): string {
+  let cleaned = url.trim().replace(/\/+$/, '').replace(/\/api$/, '');
+  if (!cleaned) return '';
+  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
+    if (cleaned.startsWith('localhost') || cleaned.startsWith('127.0.0.1')) {
+      cleaned = `http://${cleaned}`;
+    } else {
+      cleaned = `https://${cleaned}`;
+    }
+  }
+  return cleaned;
+}
+
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     const custom = localStorage.getItem('custom_backend_url');
     if (custom && custom.trim()) {
-      return custom.trim().replace(/\/+$/, '').replace(/\/api$/, '');
+      return normalizeUrl(custom);
     }
   }
   let rawUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
@@ -12,12 +25,10 @@ export function getApiBaseUrl(): string {
     }
     return '';
   }
-  return rawUrl.replace(/\/+$/, '').replace(/\/api$/, '');
+  return normalizeUrl(rawUrl);
 }
 
-export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-).trim().replace(/\/+$/, '').replace(/\/api$/, '');
+export const API_BASE_URL = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
   const baseUrl = getApiBaseUrl();
