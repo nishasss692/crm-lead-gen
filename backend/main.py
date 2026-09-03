@@ -56,30 +56,66 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "crm.db")
 
-# Run direct SQLite migration if old schema exists
-try:
-    if os.path.exists(DB_PATH):
-        raw_conn = sqlite3.connect(DB_PATH)
-        raw_cur = raw_conn.cursor()
-        raw_cur.execute("PRAGMA table_info(users)")
-        existing_cols = [r[1] for r in raw_cur.fetchall()]
-        if existing_cols:
-            if "name" not in existing_cols:
-                raw_cur.execute("ALTER TABLE users ADD COLUMN name VARCHAR")
-            if "mobile_number" not in existing_cols:
-                raw_cur.execute("ALTER TABLE users ADD COLUMN mobile_number VARCHAR")
-        raw_cur.execute("PRAGMA table_info(leads)")
-        existing_lead_cols = [r[1] for r in raw_cur.fetchall()]
-        if existing_lead_cols:
-            if "po_name" not in existing_lead_cols:
-                raw_cur.execute("ALTER TABLE leads ADD COLUMN po_name VARCHAR")
-        raw_conn.commit()
-        raw_conn.close()
-except Exception as _e:
-    print(f"[DB Setup] Direct migration note: {_e}")
+raw_db_url = os.getenv("DATABASE_URL", "").strip()
+if not raw_db_url:
+    for env_path in [os.path.join(BASE_DIR, "..", ".env"), os.path.join(BASE_DIR, ".env"), ".env"]:
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("DATABASE_URL="):
+                            raw_db_url = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            break
+            except Exception:
+                pass
+        if raw_db_url:
+            break
 
-DATABASE_URL = f"sqlite:///{DB_PATH}"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+if raw_db_url.startswith("postgres://"):
+    raw_db_url = raw_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+elif raw_db_url.startswith("postgresql://") and not raw_db_url.startswith("postgresql+"):
+    raw_db_url = raw_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+if raw_db_url and raw_db_url.startswith("postgresql"):
+    DATABASE_URL = raw_db_url
+    is_sqlite = False
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20
+    )
+    print(f"[Database] Connected to PostgreSQL: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'configured'}")
+else:
+    DATABASE_URL = f"sqlite:///{DB_PATH}"
+    is_sqlite = True
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    print(f"[Database] Using local SQLite: {DB_PATH}")
+
+# Run direct SQLite migration only if running on SQLite
+if is_sqlite:
+    try:
+        if os.path.exists(DB_PATH):
+            raw_conn = sqlite3.connect(DB_PATH)
+            raw_cur = raw_conn.cursor()
+            raw_cur.execute("PRAGMA table_info(users)")
+            existing_cols = [r[1] for r in raw_cur.fetchall()]
+            if existing_cols:
+                if "name" not in existing_cols:
+                    raw_cur.execute("ALTER TABLE users ADD COLUMN name VARCHAR")
+                if "mobile_number" not in existing_cols:
+                    raw_cur.execute("ALTER TABLE users ADD COLUMN mobile_number VARCHAR")
+            raw_cur.execute("PRAGMA table_info(leads)")
+            existing_lead_cols = [r[1] for r in raw_cur.fetchall()]
+            if existing_lead_cols:
+                if "po_name" not in existing_lead_cols:
+                    raw_cur.execute("ALTER TABLE leads ADD COLUMN po_name VARCHAR")
+            raw_conn.commit()
+            raw_conn.close()
+    except Exception as _e:
+        print(f"[DB Setup] SQLite migration note: {_e}")
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -286,29 +322,30 @@ def seed_mes_from_excel(db: Session):
 # Startup Event: Seed/Update Official Test Accounts & All MEs from Excel
 @app.on_event("startup")
 def seed_test_users():
-    # Safely ensure new columns exist if table was already created
-    try:
-        with engine.connect() as conn:
-            res = conn.execute("PRAGMA table_info(users)").fetchall()
-            col_names = [r[1] for r in res] if res else []
-            if "username" in col_names and "employee_id" not in col_names:
-                conn.execute("DROP TABLE users")
-                conn.commit()
-            else:
-                if "name" not in col_names:
-                    try:
-                        conn.execute("ALTER TABLE users ADD COLUMN name VARCHAR")
-                        conn.commit()
-                    except Exception:
-                        pass
-                if "mobile_number" not in col_names:
-                    try:
-                        conn.execute("ALTER TABLE users ADD COLUMN mobile_number VARCHAR")
-                        conn.commit()
-                    except Exception:
-                        pass
-    except Exception:
-        pass
+    # Safely ensure new columns exist if table was already created (SQLite specific)
+    if is_sqlite:
+        try:
+            with engine.connect() as conn:
+                res = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+                col_names = [r[1] for r in res] if res else []
+                if "username" in col_names and "employee_id" not in col_names:
+                    conn.execute(text("DROP TABLE users"))
+                    conn.commit()
+                else:
+                    if "name" not in col_names:
+                        try:
+                            conn.execute(text("ALTER TABLE users ADD COLUMN name VARCHAR"))
+                            conn.commit()
+                        except Exception:
+                            pass
+                    if "mobile_number" not in col_names:
+                        try:
+                            conn.execute(text("ALTER TABLE users ADD COLUMN mobile_number VARCHAR"))
+                            conn.commit()
+                        except Exception:
+                            pass
+        except Exception:
+            pass
 
     Base.metadata.create_all(bind=engine)
     
@@ -317,22 +354,22 @@ def seed_test_users():
         default_pwd_hash = get_password_hash("password123")
         test_users = [
             # CO Accounts
-            {"employee_id": "CO_ADMIN", "name": "Circle Admin", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None},
-            {"employee_id": "co_user", "name": "CO Operations", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None},
+            {"employee_id": "CO_ADMIN", "name": "Circle Admin", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999999"},
+            {"employee_id": "co_user", "name": "CO Operations", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999998"},
             # RO Accounts (BG, SK, NK)
-            {"employee_id": "RO_BG", "name": "RO Bengaluru Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None},
-            {"employee_id": "ro_user", "name": "RO User", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None},
-            {"employee_id": "RO_SK", "name": "RO South Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None},
-            {"employee_id": "RO_NK", "name": "RO North Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "North Karnataka Region", "assigned_division": None},
+            {"employee_id": "RO_BG", "name": "RO Bengaluru Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888888"},
+            {"employee_id": "ro_user", "name": "RO User", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888889"},
+            {"employee_id": "RO_SK", "name": "RO South Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None, "mobile_number": "9888888887"},
+            {"employee_id": "RO_NK", "name": "RO North Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "North Karnataka Region", "assigned_division": None, "mobile_number": "9888888886"},
             # DO / Divisional Accounts
-            {"employee_id": "DIV_MYS", "name": "DO Mysuru Officer", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
-            {"employee_id": "div_user", "name": "DO User", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
-            {"employee_id": "DO_MYS", "name": "DO Mysuru", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru"},
-            {"employee_id": "DIV_BGE", "name": "DO BG East", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG East"},
-            {"employee_id": "DIV_BGS", "name": "DO BG South", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG South"},
+            {"employee_id": "DIV_MYS", "name": "DO Mysuru Officer", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru", "mobile_number": "9777777777"},
+            {"employee_id": "div_user", "name": "DO User", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru", "mobile_number": "9777777778"},
+            {"employee_id": "DO_MYS", "name": "DO Mysuru", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "Mysuru", "mobile_number": "9777777779"},
+            {"employee_id": "DIV_BGE", "name": "DO BG East", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG East", "mobile_number": "9777777771"},
+            {"employee_id": "DIV_BGS", "name": "DO BG South", "password": default_pwd_hash, "role": "DO", "assigned_region": None, "assigned_division": "BG South", "mobile_number": "9777777772"},
             # ME Accounts
-            {"employee_id": "ME_MYS_01", "name": "Suresh M E", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru"},
-            {"employee_id": "me_user", "name": "Marketing Executive", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru"},
+            {"employee_id": "ME_MYS_01", "name": "Suresh M E", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru", "mobile_number": "9000000001"},
+            {"employee_id": "me_user", "name": "Marketing Executive", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru", "mobile_number": "9000000002"},
         ]
 
         for u_data in test_users:
@@ -345,6 +382,8 @@ def seed_test_users():
                 existing.role = u_data["role"]
                 existing.assigned_region = u_data["assigned_region"]
                 existing.assigned_division = u_data["assigned_division"]
+                if u_data.get("mobile_number"):
+                    existing.mobile_number = u_data["mobile_number"]
             else:
                 db.add(User(**u_data))
 

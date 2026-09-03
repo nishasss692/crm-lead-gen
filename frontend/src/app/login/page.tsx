@@ -1,7 +1,14 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, AlertCircle, ArrowRight, ShieldCheck, Server, CheckCircle2 } from 'lucide-react';
+import { 
+  Lock, 
+  User, 
+  AlertCircle, 
+  ArrowRight, 
+  ShieldCheck, 
+  Server
+} from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
 const DEMO_ACCOUNTS: Record<string, { role: string; assigned_region: string | null; assigned_division: string | null }> = {
@@ -21,13 +28,17 @@ const DEMO_ACCOUNTS: Record<string, { role: string; assigned_region: string | nu
 };
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  // Credentials State
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
+
+  // Form State
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [backendUrl, setBackendUrl] = useState(API_BASE_URL);
   const [showConfig, setShowConfig] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -48,6 +59,10 @@ export default function LoginPage() {
     }
   };
 
+  const getActiveBackend = () => {
+    return (typeof window !== 'undefined' && localStorage.getItem('custom_backend_url')) || backendUrl || API_BASE_URL;
+  };
+
   const handleLogin = async (e?: React.FormEvent, directId?: string, directPass?: string) => {
     if (e) e.preventDefault();
     setLoading(true);
@@ -59,7 +74,7 @@ export default function LoginPage() {
     const isDemo = targetIdUpper in DEMO_ACCOUNTS;
     const isDemoPass = ['password123', 'Post@123'].includes(targetPass) || !targetPass;
 
-    const activeApiUrl = (typeof window !== 'undefined' && localStorage.getItem('custom_backend_url')) || backendUrl || API_BASE_URL;
+    const activeApiUrl = getActiveBackend();
 
     try {
       const res = await fetch(`${activeApiUrl}/api/login`, {
@@ -85,7 +100,7 @@ export default function LoginPage() {
         router.push('/');
         return;
       } else {
-        // If server returns error, check if this is an official demo account
+        // Demo accounts fallback
         if (isDemo && (isDemoPass || targetPass === 'password123')) {
           const info = DEMO_ACCOUNTS[targetIdUpper];
           const demoUser = {
@@ -109,7 +124,6 @@ export default function LoginPage() {
         setError(errData?.detail || 'Invalid Employee ID or Password.');
       }
     } catch (err) {
-      // Network failure / Offline fallback for demo accounts
       if (isDemo && (isDemoPass || targetPass === 'password123')) {
         const info = DEMO_ACCOUNTS[targetIdUpper];
         const demoUser = {
@@ -129,7 +143,7 @@ export default function LoginPage() {
         router.push('/');
         return;
       }
-      setError('Unable to connect to backend server. Please verify your Railway URL.');
+      setError('Unable to connect to backend server. Please verify your server URL.');
     } finally {
       setLoading(false);
     }
@@ -151,7 +165,7 @@ export default function LoginPage() {
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#D1242F] via-[#A31D1D] to-[#114b79]" />
 
         {/* Official Header Branding */}
-        <div className="text-center mb-7 pt-1">
+        <div className="text-center mb-6 pt-1">
           <div className="flex justify-center items-center gap-3 mb-3">
             <div className="relative w-12 h-12 shrink-0">
               <img 
@@ -176,17 +190,17 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-gray-100">
+          <div className="mt-3 pt-2.5 border-t border-gray-100">
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               Karnataka Postal Circle CRM
             </h1>
-            <p className="text-xs text-gray-500 font-medium mt-1">
-              Commercial Operations & Lead Management System
+            <p className="text-xs text-gray-500 font-medium mt-0.5">
+              Commercial Operations & Field Executive Portal
             </p>
           </div>
         </div>
 
-        {/* Login Form */}
+        {/* Employee ID & Password Form */}
         <form onSubmit={(e) => handleLogin(e)} className="space-y-4" suppressHydrationWarning>
           <div>
             <label 
@@ -261,14 +275,14 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* 4-Tier Quick Access Accounts */}
+        {/* 1-Click Official Logins */}
         <div className="mt-5 pt-4 border-t border-gray-200">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-              1-Click Demo & Field Logins:
+              1-Click Official Logins:
             </p>
             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              Default ME Password: <code className="font-mono">Post@123</code>
+              Password: <code className="font-mono">Post@123</code>
             </span>
           </div>
 
@@ -279,8 +293,8 @@ export default function LoginPage() {
               onClick={() => handleQuickAccess('CO_ADMIN', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
-              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">CO (Central Office)</div>
-              <div className="text-gray-500 text-[9px]">CO_ADMIN (Circle-wide)</div>
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">CO (Circle Admin)</div>
+              <div className="text-gray-500 text-[9px]">Circle-wide Access</div>
             </button>
             <button
               type="button"
@@ -289,25 +303,7 @@ export default function LoginPage() {
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (Bengaluru HQ)</div>
-              <div className="text-gray-500 text-[9px]">RO_BG (7 Divs)</div>
-            </button>
-            <button
-              type="button"
-              suppressHydrationWarning
-              onClick={() => handleQuickAccess('RO_SK', 'Post@123')}
-              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
-            >
-              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (South Karnataka)</div>
-              <div className="text-gray-500 text-[9px]">RO_SK (14 Divs)</div>
-            </button>
-            <button
-              type="button"
-              suppressHydrationWarning
-              onClick={() => handleQuickAccess('RO_NK', 'Post@123')}
-              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
-            >
-              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (North Karnataka)</div>
-              <div className="text-gray-500 text-[9px]">RO_NK (15 Divs)</div>
+              <div className="text-gray-500 text-[9px]">7 Divisions</div>
             </button>
             <button
               type="button"
@@ -316,67 +312,40 @@ export default function LoginPage() {
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">DO (Mysuru)</div>
-              <div className="text-gray-500 text-[9px]">DIV_MYS (Divisional)</div>
+              <div className="text-gray-500 text-[9px]">Mysuru Division</div>
             </button>
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('DIV_BGE', 'Post@123')}
+              onClick={() => handleQuickAccess('10044051', 'Post@123')}
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#D1242F] bg-gray-50 hover:bg-red-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#D1242F]">ME S P Kulkarni</div>
+              <div className="text-gray-500 text-[9px]">Emp: 10044051</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickAccess('ME_MYS_01', 'Post@123')}
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#D1242F] bg-gray-50 hover:bg-red-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#D1242F]">ME Suresh M E</div>
+              <div className="text-gray-500 text-[9px]">Mysuru ME</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickAccess('RO_SK', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
-              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">DO (BG East)</div>
-              <div className="text-gray-500 text-[9px]">DIV_BGE (Divisional)</div>
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (South Karnataka)</div>
+              <div className="text-gray-500 text-[9px]">14 Divisions</div>
             </button>
-          </div>
-
-          {/* Marketing Executives from MEs DATA.xlsx */}
-          <div className="mt-2.5 pt-2 border-t border-slate-100">
-            <p className="text-[10px] font-bold text-slate-600 mb-1.5">
-              Sample Marketing Executives (From MEs DATA.xlsx — Division Restricted):
-            </p>
-            <div className="grid grid-cols-2 gap-1 text-[11px]">
-              <button
-                type="button"
-                suppressHydrationWarning
-                onClick={() => handleQuickAccess('10021758', 'Post@123')}
-                className="p-1.5 rounded border border-slate-200 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all"
-              >
-                <div className="font-bold text-slate-800 text-[10px]">10021758 • Suresh M E</div>
-                <div className="text-slate-500 text-[9px]">Mysuru Division (SK Region)</div>
-              </button>
-              <button
-                type="button"
-                suppressHydrationWarning
-                onClick={() => handleQuickAccess('10313452', 'Post@123')}
-                className="p-1.5 rounded border border-slate-200 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all"
-              >
-                <div className="font-bold text-slate-800 text-[10px]">10313452 • Dilip Kumar</div>
-                <div className="text-slate-500 text-[9px]">BG East Division (BG Region)</div>
-              </button>
-              <button
-                type="button"
-                suppressHydrationWarning
-                onClick={() => handleQuickAccess('10044051', 'Post@123')}
-                className="p-1.5 rounded border border-slate-200 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all"
-              >
-                <div className="font-bold text-slate-800 text-[10px]">10044051 • S P Kulkarni</div>
-                <div className="text-slate-500 text-[9px]">Bagalkote Division (NK Region)</div>
-              </button>
-              <button
-                type="button"
-                suppressHydrationWarning
-                onClick={() => handleQuickAccess('10041386', 'Post@123')}
-                className="p-1.5 rounded border border-slate-200 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all"
-              >
-                <div className="font-bold text-slate-800 text-[10px]">10041386 • Subhash P Salian</div>
-                <div className="text-slate-500 text-[9px]">Mangaluru Division (SK Region)</div>
-              </button>
-            </div>
           </div>
         </div>
 
         {/* Backend Endpoint Config Section */}
-        <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+        <div className="mt-5 pt-3 border-t border-gray-100 text-center">
           <button
             type="button"
             onClick={() => setShowConfig(!showConfig)}
@@ -387,13 +356,13 @@ export default function LoginPage() {
           </button>
           {showConfig && (
             <div className="mt-2 p-2 bg-slate-50 border border-slate-200 rounded text-left">
-              <label className="block text-[10px] font-bold text-gray-600 mb-1">Railway Backend URL:</label>
+              <label className="block text-[10px] font-bold text-gray-600 mb-1">Backend URL:</label>
               <div className="flex gap-1">
                 <input
                   type="text"
                   value={backendUrl}
                   onChange={(e) => setBackendUrl(e.target.value)}
-                  placeholder="https://your-app.up.railway.app"
+                  placeholder="http://localhost:8000"
                   className="flex-1 px-2 py-1 text-xs border rounded bg-white"
                 />
                 <button
