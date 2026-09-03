@@ -68,6 +68,11 @@ try:
                 raw_cur.execute("ALTER TABLE users ADD COLUMN name VARCHAR")
             if "mobile_number" not in existing_cols:
                 raw_cur.execute("ALTER TABLE users ADD COLUMN mobile_number VARCHAR")
+        raw_cur.execute("PRAGMA table_info(leads)")
+        existing_lead_cols = [r[1] for r in raw_cur.fetchall()]
+        if existing_lead_cols:
+            if "po_name" not in existing_lead_cols:
+                raw_cur.execute("ALTER TABLE leads ADD COLUMN po_name VARCHAR")
         raw_conn.commit()
         raw_conn.close()
 except Exception as _e:
@@ -87,6 +92,7 @@ class Lead(Base):
     exporter_name = Column(String, nullable=True, index=True)
     address = Column(String, nullable=True)
     pincode = Column(String, nullable=True)
+    po_name = Column(String, nullable=True)
     division_id = Column(String, nullable=True)
     division = Column(String, nullable=True, index=True)
     region = Column(String, nullable=True, index=True)
@@ -1913,6 +1919,8 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
         "remarks": "remarks",
         "address": "address",
         "pincode": "pincode",
+        "poName": "po_name",
+        "po_name": "po_name",
         "division": "division",
         "region": "region",
         "email": "email"
@@ -1925,3 +1933,62 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
             
     db.commit()
     return {"success": True, "message": "Lead updated successfully"}
+
+# 9. Pincode Post Offices Helper Endpoint
+@app.get("/api/pincode-offices/{pincode}")
+def get_pincode_offices(pincode: str):
+    clean_pin = re.sub(r'\D', '', str(pincode).strip())
+    if not clean_pin or len(clean_pin) != 6:
+        return {"pincode": pincode, "offices": []}
+
+    # First check pre-mapped office names
+    offices = []
+    if clean_pin in PINCODE_OFFICE_MAP:
+        mapped = PINCODE_OFFICE_MAP[clean_pin]
+        # split combined labels like "Bengaluru GPO / Raj Bhavan"
+        for part in mapped.split("/"):
+            p = part.strip()
+            if p and p not in offices:
+                offices.append(f"{p} SO" if not p.endswith(("SO", "BO", "HO", "GPO")) else p)
+
+    # If external request is possible, fetch from India Post API with timeout
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            f"https://api.postalpincode.in/pincode/{clean_pin}",
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        with urllib.request.urlopen(req, timeout=2.5) as resp:
+            data = json.loads(resp.read().decode())
+            if isinstance(data, list) and len(data) > 0 and data[0].get("Status") == "Success":
+                po_list = data[0].get("PostOffice", [])
+                api_offices = [
+                    f"{po.get('Name')} {'SO' if po.get('BranchType') == 'Sub Post Office' else 'BO' if po.get('BranchType') == 'Branch Post Office' else 'HO' if po.get('BranchType') == 'Head Post Office' else ''}".strip()
+                    for po in po_list if po.get("Name")
+                ]
+                if api_offices:
+                    return {"pincode": clean_pin, "offices": api_offices}
+    except Exception:
+        pass
+
+    if not offices:
+        offices = [f"Post Office - {clean_pin}"]
+
+    return {"pincode": clean_pin, "offices": offices}
+
+# 10. List Marketing Executives Endpoint
+@app.get("/api/mes")
+def get_marketing_executives(db: Session = Depends(get_db)):
+    me_users = db.query(User).filter(
+        or_(func.upper(User.role) == "ME", User.role == None)
+    ).all()
+    results = []
+    for u in me_users:
+        results.append({
+            "employee_id": u.employee_id,
+            "name": u.name or u.employee_id,
+            "mobile_number": u.mobile_number,
+            "division": u.assigned_division,
+            "region": u.assigned_region
+        })
+    return results

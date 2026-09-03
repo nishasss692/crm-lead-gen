@@ -1,8 +1,9 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Lead } from './LeadsTable';
-import { X, Check } from 'lucide-react';
+import { X, Check, ChevronDown } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 interface UpdateLeadModalProps {
   lead: Lead;
@@ -10,42 +11,116 @@ interface UpdateLeadModalProps {
   onSave: (id: number, updates: Partial<Lead>) => Promise<void>;
 }
 
-// Post Office mapping for quick selection based on pincode
+// Comprehensive Post Office mapping for quick selection based on pincode
 const PINCODE_OFFICES: Record<string, string[]> = {
   "560092": ["Sahakarnagar SO", "Hebbal Agricultural Farm SO", "Kodigehalli BO", "Byatarayanapura SO"],
   "560001": ["Bengaluru GPO", "Raj Bhavan SO", "Vidhana Soudha SO"],
-  "560002": ["Bengaluru City SO", "Dharmaram College SO"],
-  "560004": ["Basavanagudi SO", "Pampa Mahakavi Road SO"],
-  "560010": ["Rajajinagar SO", "Industrial Estate SO"],
-  "560025": ["Museum Road SO", "Ashoknagar SO"],
-  "560034": ["Koramangala SO", "St. Johns Medical College SO"],
-  "560038": ["Indiranagar SO", "HAL II Stage SO"],
-  "560066": ["Whitefield SO", "Kadugodi SO"],
+  "560002": ["Bengaluru City SO", "Dharmaram College SO", "Town Hall SO"],
+  "560003": ["Malleswaram SO", "Vyalikaval SO"],
+  "560004": ["Basavanagudi SO", "Pampa Mahakavi Road SO", "N R Colony SO"],
+  "560005": ["Frazer Town SO", "Cox Town SO"],
+  "560008": ["HAL II Stage SO", "Indiranagar SO", "Domlur SO"],
+  "560009": ["K.G. Road SO", "Majestic SO"],
+  "560010": ["Rajajinagar SO", "Industrial Estate SO", "Prakash Nagar SO"],
+  "560011": ["Jayanagar SO", "Tilaknagar SO"],
+  "560017": ["HAL Old Airport Road SO", "Vimanapura SO"],
+  "560020": ["Seshadripuram SO", "Palace Guttahalli SO"],
+  "560022": ["Yeshwanthpur Industrial Suburb SO", "Yeshwantpur SO"],
+  "560025": ["Museum Road SO", "Ashoknagar SO", "Richmond Town SO"],
+  "560027": ["Lalbagh West SO", "Sudhamanagar SO"],
+  "560029": ["Dharmaram College SO", "Taverekere SO"],
+  "560033": ["Maruthi Seva Nagar SO", "Cooke Town SO"],
+  "560034": ["Koramangala SO", "St. Johns Medical College SO", "Agara SO"],
+  "560038": ["Indiranagar SO", "Defence Colony SO"],
+  "560043": ["Banaswadi SO", "Kalyan Nagar SO"],
+  "560058": ["Peenya 1st Stage SO", "Peenya Small Industries SO"],
+  "560059": ["RV Vidyaniketan SO", "Kengeri SO"],
+  "560066": ["Whitefield SO", "Kadugodi SO", "Immadihalli BO"],
   "560068": ["Madivala SO", "Bommanahalli SO"],
-  "570001": ["Mysuru Head Post Office", "Mysuru Fort SO"],
-  "575001": ["Mangaluru Head Post Office", "Hampankatta SO"],
-  "580001": ["Dharwad Head Post Office"],
-  "590001": ["Belagavi Head Post Office", "Camp Belagavi SO"],
+  "560070": ["Banashankari II Stage SO", "Padmanabhanagar SO"],
+  "560071": ["Domlur SO", "Airport Road SO"],
+  "560076": ["BTM 2nd Stage SO", "Bannerghatta Road SO"],
+  "560077": ["Kothanur SO", "Hennur SO"],
+  "560078": ["JP Nagar SO", "Sarakki SO"],
+  "560085": ["Banashankari 3rd Stage SO", "Kathriguppe SO"],
+  "560086": ["Mahalakshmi Layout SO", "West of Chord Road SO"],
+  "560094": ["RMV Extension II Stage SO", "Sanjaynagar SO"],
+  "560099": ["Bommasandra Industrial Estate SO", "Hebbagodi BO"],
+  "560100": ["Electronic City SO", "Konappana Agrahara SO"],
+  "560105": ["Austin Town SO", "Viveknagar SO"],
+  "561203": ["Doddaballapur SO", "KIADB SO"],
+  "562107": ["Nelamangala SO", "Arishinakunte BO"],
+  "570001": ["Mysuru Head Post Office", "Mysuru Fort SO", "K R Circle SO"],
+  "570002": ["Mysuru Fort SO", "Agrahara SO"],
+  "570004": ["Nazarbad SO", "Ittigegud SO"],
+  "570008": ["Chamundipuram SO", "Vidyaranyapuram SO"],
+  "570016": ["Belagola Industrial Area SO", "Metagalli SO"],
+  "570018": ["Hootagalli Industrial Area SO", "Koorgalli BO"],
+  "570020": ["Kuvempunagar SO", "Saraswathipuram SO"],
+  "570023": ["Saraswathipuram SO", "Tonachikoppal SO"],
+  "570027": ["Hebbal Industrial Area SO", "Kumbarakoppal SO"],
+  "571301": ["Nanjangud SO", "Industrial Estate SO"],
+  "571313": ["Chamarajanagar SO", "Ramasamudra SO"],
+  "572101": ["Tumakuru Head Post Office", "Ashoka Road SO"],
+  "572106": ["Antharasanahalli SO", "Batwadi SO"],
+  "573201": ["Hassan Head Post Office", "Hassan City SO"],
+  "574118": ["Manipal SO", "Endpoint BO"],
+  "575001": ["Mangaluru Head Post Office", "Hampankatta SO", "Bunder SO"],
+  "575003": ["Kodialbail SO", "Ashoknagar Mangaluru SO"],
+  "576101": ["Udupi Head Post Office", "Court Road SO"],
+  "577001": ["Davanagere Head Post Office", "Mandipet SO"],
+  "577002": ["Davanagere City SO", "PB Road SO"],
+  "577201": ["Shivamogga Head Post Office", "Durgigudi SO"],
+  "580001": ["Dharwad Head Post Office", "Station Road SO"],
+  "580020": ["Hubballi Main SO", "Durgad Bail SO"],
+  "580030": ["Vidyanagar Hubballi SO", "Shirur Park SO"],
+  "581110": ["Haveri SO", "Ashwini Nagar SO"],
+  "583101": ["Ballari Head Post Office", "Brucepet SO"],
+  "585101": ["Kalaburagi Head Post Office", "Main Road SO"],
+  "586101": ["Vijayapura Head Post Office", "Gandhi Chowk SO"],
+  "587101": ["Bagalkote Head Post Office", "Station Road SO"],
+  "590001": ["Belagavi Head Post Office", "Camp Belagavi SO", "Khade Bazar SO"],
+  "590014": ["Machhe Industrial Area SO", "Vadgaon SO"],
+  "591304": ["Gokak Falls SO", "Konnur SO"],
 };
 
 export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadModalProps) {
+  const initialPin = lead.pincode || '560092';
+  const initialOffices = PINCODE_OFFICES[initialPin] || [`Post Office - ${initialPin}`];
+
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [meOptions, setMeOptions] = useState<string[]>(['ME1', 'ME2', 'ME3', 'ME_MYS_01', 'me_user', 'Testing1']);
+  const [meDropdownOpen, setMeDropdownOpen] = useState(false);
+  const meDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [meMobileMap, setMeMobileMap] = useState<Record<string, string>>({
+    'ME1': '9000000001',
+    'ME2': '9000000002',
+    'ME3': '9000000003',
+    'ME_MYS_01': '9880704082',
+    'me_user': '9000000001',
+    'Testing1': '9000000001'
+  });
+
+  const [availableOffices, setAvailableOffices] = useState<string[]>(initialOffices);
+
   const [formData, setFormData] = useState({
-    assignedMeName: lead.assignedMeName || 'Testing1',
+    assignedMeName: lead.assignedMeName || 'ME1',
     meMobile: '9000000001',
     dateOfMeeting: lead.dateOfMeeting || new Date().toISOString().split('T')[0],
     exporterName: lead.exporterName || '',
     address: lead.address || '',
-    pincode: lead.pincode || '560092',
-    poName: '',
+    pincode: initialPin,
+    poName: lead.poName || initialOffices[0] || '',
     customerMet: lead.customerMet || '',
     contactNumber: lead.contactNumber || '',
     alternativeNumber: '',
     email: lead.email || '',
     productType: '',
-    serviceUsing: lead.serviceUsing || '',
+    serviceUsing: lead.serviceUsing || 'DHL',
     monthlyVolume: lead.monthlyVolume || '',
-    meetingOutcome: lead.meetingOutcome || '',
-    willingToOnboard: '',
+    meetingOutcome: lead.meetingOutcome || 'Interested',
+    willingToOnboard: 'Yes',
     contractId: lead.contractId || '',
     remarks: lead.remarks || '',
     division: lead.division || '',
@@ -59,6 +134,117 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Close ME combobox dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (meDropdownRef.current && !meDropdownRef.current.contains(e.target as Node)) {
+        setMeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Sync logged in user details and MEs list
+  useEffect(() => {
+    try {
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        setCurrentUser(u);
+        const name = u.name || u.username || u.employee_id;
+        const mobile = u.mobile_number || u.mobile || '9000000001';
+
+        if (name) {
+          setFormData(prev => ({
+            ...prev,
+            assignedMeName: (!lead.assignedMeName || lead.assignedMeName === 'Testing1') ? name : lead.assignedMeName,
+            meMobile: mobile || prev.meMobile
+          }));
+
+          setMeOptions(prev => Array.from(new Set([name, ...prev])));
+          setMeMobileMap(prev => ({ ...prev, [name]: mobile }));
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading user info:', e);
+    }
+
+    // Fetch MEs list from backend
+    apiFetch('/api/mes')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const names = data.map((m: any) => m.name || m.employee_id).filter(Boolean);
+          const mobiles: Record<string, string> = {};
+          data.forEach((m: any) => {
+            const n = m.name || m.employee_id;
+            if (n && m.mobile_number) mobiles[n] = m.mobile_number;
+          });
+          setMeOptions(prev => Array.from(new Set([...prev, ...names])));
+          setMeMobileMap(prev => ({ ...prev, ...mobiles }));
+        }
+      })
+      .catch(() => {});
+  }, [lead.assignedMeName]);
+
+  // Fetch or lookup post offices when pincode changes
+  useEffect(() => {
+    const cleanPin = (formData.pincode || '').trim().replace(/\D/g, '');
+    if (!cleanPin) {
+      setAvailableOffices([]);
+      return;
+    }
+
+    // 1. Initial lookup from pre-defined map
+    let currentOffices = PINCODE_OFFICES[cleanPin] || [`Post Office - ${cleanPin}`];
+    setAvailableOffices(currentOffices);
+    
+    // Auto-select first office if poName is empty or not in new offices
+    setFormData(prev => ({
+      ...prev,
+      poName: currentOffices.includes(prev.poName) ? prev.poName : (currentOffices[0] || '')
+    }));
+
+    // 2. Dynamic fetch if 6 digits
+    if (cleanPin.length === 6) {
+      const controller = new AbortController();
+      
+      apiFetch(`/api/pincode-offices/${cleanPin}`, { signal: controller.signal })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && Array.isArray(data.offices) && data.offices.length > 0) {
+            setAvailableOffices(data.offices);
+            setFormData(prev => ({
+              ...prev,
+              poName: data.offices.includes(prev.poName) ? prev.poName : (data.offices[0] || '')
+            }));
+          }
+        })
+        .catch(() => {
+          fetch(`https://api.postalpincode.in/pincode/${cleanPin}`, { signal: controller.signal })
+            .then(r => r.json())
+            .then(res => {
+              if (Array.isArray(res) && res[0]?.Status === 'Success' && Array.isArray(res[0]?.PostOffice)) {
+                const fetched = res[0].PostOffice.map((p: any) => 
+                  `${p.Name} ${p.BranchType === 'Sub Post Office' ? 'SO' : p.BranchType === 'Branch Post Office' ? 'BO' : p.BranchType === 'Head Post Office' ? 'HO' : ''}`.trim()
+                );
+                if (fetched.length > 0) {
+                  setAvailableOffices(fetched);
+                  setFormData(prev => ({
+                    ...prev,
+                    poName: fetched.includes(prev.poName) ? prev.poName : (fetched[0] || '')
+                  }));
+                }
+              }
+            })
+            .catch(() => {});
+        });
+
+      return () => controller.abort();
+    }
+  }, [formData.pincode]);
 
   // Prevent background body scrolling when modal is active
   useEffect(() => {
@@ -84,15 +270,24 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleMeChange = (selectedMe: string) => {
+    const mobile = meMobileMap[selectedMe] || formData.meMobile;
+    setFormData(prev => ({
+      ...prev,
+      assignedMeName: selectedMe,
+      meMobile: mobile
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Map form fields to backend Lead schema
       const updates: Partial<Lead> = {
         exporterName: formData.exporterName,
         address: formData.address,
         pincode: formData.pincode,
+        poName: formData.poName,
         division: formData.division,
         region: formData.region,
         assignedMeName: formData.assignedMeName,
@@ -101,7 +296,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
         email: formData.email,
         serviceUsing: formData.serviceUsing,
         monthlyVolume: formData.monthlyVolume,
-        meetingOutcome: formData.meetingOutcome || (formData.willingToOnboard === 'Yes' ? 'Willing to onboard' : ''),
+        meetingOutcome: formData.meetingOutcome || 'Interested',
         contractId: formData.contractId,
         remarks: formData.remarks,
         dateOfMeeting: formData.dateOfMeeting,
@@ -119,10 +314,12 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
     }
   };
 
-  // Get PO names for selected or typed pincode
-  const availableOffices = PINCODE_OFFICES[formData.pincode] || [
-    `Post Office - ${formData.pincode || 'Select'}`
-  ];
+  // Filtered MEs for typing suggestions
+  const filterText = (formData.assignedMeName || '').trim().toLowerCase();
+  const filteredMeOptions = filterText
+    ? meOptions.filter(opt => opt.toLowerCase().includes(filterText))
+    : meOptions;
+  const displayMeOptions = filteredMeOptions.length > 0 ? filteredMeOptions : meOptions;
 
   if (!mounted) return null;
 
@@ -167,22 +364,56 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
         <div className="overflow-y-auto flex-1 px-6 py-4 custom-scrollbar">
           <form id="update-lead-form" onSubmit={handleSubmit} className="space-y-3.5">
             
-            {/* ROW 1: Assigned ME, ME mobile, Contacted date, Exporter name */}
+            {/* ROW 1: Assigned ME (Input + Dropdown Combobox), ME mobile, Contacted date, Exporter name */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div>
+              <div ref={meDropdownRef} className="relative">
                 <label className="block text-xs font-bold text-slate-800 mb-1">Assigned ME</label>
-                <select 
-                  value={formData.assignedMeName} 
-                  onChange={e => handleChange('assignedMeName', e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
-                >
-                  <option value="Testing1">Testing1</option>
-                  <option value="ME_MYS_01">ME_MYS_01</option>
-                  <option value="me_user">me_user</option>
-                  <option value="ME1">ME1</option>
-                  <option value="ME2">ME2</option>
-                  <option value="ME3">ME3</option>
-                </select>
+                <div className="relative flex items-center">
+                  <input 
+                    type="text" 
+                    value={formData.assignedMeName} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      const mobile = meMobileMap[val] || formData.meMobile;
+                      setFormData(prev => ({ ...prev, assignedMeName: val, meMobile: mobile }));
+                      setMeDropdownOpen(true);
+                    }}
+                    onFocus={() => setMeDropdownOpen(true)}
+                    placeholder="Type or select ME"
+                    className="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMeDropdownOpen(prev => !prev)}
+                    className="absolute right-2 text-slate-400 hover:text-slate-700 p-1 cursor-pointer transition-colors"
+                    title="Toggle ME options"
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${meDropdownOpen ? 'rotate-180 text-[#1e3a8a]' : ''}`} />
+                  </button>
+                </div>
+
+                {/* Combobox Dropdown Menu */}
+                {meDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto custom-scrollbar py-1">
+                    {displayMeOptions.map((opt, i) => (
+                      <div
+                        key={i}
+                        onClick={() => {
+                          handleMeChange(opt);
+                          setMeDropdownOpen(false);
+                        }}
+                        className={`px-3 py-2 text-xs cursor-pointer font-medium transition-colors flex items-center justify-between ${
+                          formData.assignedMeName === opt 
+                            ? 'bg-red-50 text-[#b91c1c] font-bold' 
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span>{opt}</span>
+                        {formData.assignedMeName === opt && <Check className="w-3.5 h-3.5 text-[#b91c1c]" />}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -249,13 +480,12 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
                   onChange={e => handleChange('poName', e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                 >
-                  <option value="">Select PO Name</option>
                   {availableOffices.map((office, i) => (
                     <option key={i} value={office}>{office}</option>
                   ))}
                 </select>
                 <span className="text-[10px] text-slate-400 font-medium block mt-1 leading-tight">
-                  Multiple post offices use this pincode. Select the correct PO Name.
+                  Multiple post offices use this pincode. Choose the correct PO Name.
                 </span>
               </div>
 
@@ -324,14 +554,14 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
                   onChange={e => handleChange('serviceUsing', e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                 >
-                  <option value="">Select Provider</option>
                   <option value="DHL">DHL</option>
                   <option value="FedEx">FedEx</option>
                   <option value="UPS">UPS</option>
                   <option value="Aramex">Aramex</option>
-                  <option value="Speed Post B2B">Speed Post B2B</option>
-                  <option value="Business Parcel">Business Parcel</option>
                   <option value="Others">Others</option>
+                  {formData.serviceUsing && !['DHL', 'FedEx', 'UPS', 'Aramex', 'Others'].includes(formData.serviceUsing) && (
+                    <option value={formData.serviceUsing}>{formData.serviceUsing}</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -356,14 +586,12 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
                   onChange={e => handleChange('meetingOutcome', e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                 >
-                  <option value="">Select Outcome</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Contacted">Contacted</option>
-                  <option value="Positive">Positive</option>
-                  <option value="Followup">Follow-up</option>
-                  <option value="Willing to onboard">Willing to onboard</option>
-                  <option value="Onboarded">Onboarded</option>
-                  <option value="Not interested">Not interested</option>
+                  <option value="Interested">Interested</option>
+                  <option value="Not Interested">Not Interested</option>
+                  <option value="Follow-up Required">Follow-up Required</option>
+                  {formData.meetingOutcome && !['Interested', 'Not Interested', 'Follow-up Required'].includes(formData.meetingOutcome) && (
+                    <option value={formData.meetingOutcome}>{formData.meetingOutcome}</option>
+                  )}
                 </select>
               </div>
 
@@ -375,16 +603,13 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
                     const val = e.target.value;
                     handleChange('willingToOnboard', val);
                     if (val === 'Yes' && !formData.meetingOutcome) {
-                      handleChange('meetingOutcome', 'Willing to onboard');
+                      handleChange('meetingOutcome', 'Interested');
                     }
                   }}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                 >
-                  <option value="">Select Option</option>
                   <option value="Yes">Yes</option>
                   <option value="No">No</option>
-                  <option value="Under Consideration">Under Consideration</option>
-                  <option value="Pending Decision">Pending Decision</option>
                 </select>
               </div>
 

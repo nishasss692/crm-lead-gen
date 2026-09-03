@@ -10,6 +10,7 @@ export interface Lead {
   exporterName: string;
   address: string;
   pincode: string;
+  poName?: string;
   divisionId?: string;
   division: string;
   region?: string;
@@ -85,7 +86,7 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
     const out = (outcome || '').trim().toLowerCase();
     const contract = !!(hasContract || '').trim();
     
-    if (contract) {
+    if (contract || out === 'onboarded') {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold shadow-xs">
           <Award className="w-3 h-3" />
@@ -93,11 +94,11 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
         </span>
       );
     }
-    if (out === 'positive') {
+    if (out === 'interested' || out === 'positive') {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold shadow-xs">
           <CheckCircle2 className="w-3 h-3" />
-          <span>Positive</span>
+          <span>Interested</span>
         </span>
       );
     }
@@ -109,11 +110,19 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
         </span>
       );
     }
-    if (out === 'followup') {
+    if (out.includes('follow')) {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold shadow-xs">
           <Clock className="w-3 h-3" />
           <span>Follow-up</span>
+        </span>
+      );
+    }
+    if (out.includes('willing')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-bold shadow-xs">
+          <CheckCircle2 className="w-3 h-3" />
+          <span>Willing</span>
         </span>
       );
     }

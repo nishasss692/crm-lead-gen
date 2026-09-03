@@ -116,6 +116,7 @@ function LeadsPageContent() {
             exporterName: item.exporter_name, 
             address: item.address,
             pincode: item.pincode, 
+            poName: item.po_name || item.poName || '',
             divisionId: item.division_id, 
             division: item.division,
             region: item.region, 
