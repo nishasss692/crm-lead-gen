@@ -4,7 +4,8 @@ from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, func, case, or_, and_, text
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy.orm import declarative_base, sessionmaker, Session, DeclarativeBase, Mapped, mapped_column
+from contextlib import asynccontextmanager
 import sqlite3
 import json
 import pandas as pd
@@ -16,16 +17,12 @@ import joblib
 import bcrypt
 import hashlib
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
 
 # Global ML Model for Lead Scoring
 ml_model = None
 
-# 1. Setup & Config
-app = FastAPI(title="India Post Lead Management API", version="2.5")
-
-@app.on_event("startup")
 def load_ml_model():
     global ml_model
     try:
@@ -45,6 +42,15 @@ def load_ml_model():
     except Exception as e:
         print(f"[ML Engine] Error loading lead scoring model: {e}")
         ml_model = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_ml_model()
+    seed_test_users()
+    yield
+
+# 1. Setup & Config
+app = FastAPI(title="India Post Lead Management API", version="2.5", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -129,62 +135,64 @@ if is_sqlite:
         print(f"[DB Setup] SQLite migration note: {_e}")
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 # 2. Database Models
 class Lead(Base):
     __tablename__ = "leads"
     
-    id = Column(Integer, primary_key=True, index=True)
-    sl_no = Column(String, nullable=True)
-    exporter_name = Column(String, nullable=True, index=True)
-    address = Column(String, nullable=True)
-    pincode = Column(String, nullable=True)
-    po_name = Column(String, nullable=True)
-    division_id = Column(String, nullable=True)
-    division = Column(String, nullable=True, index=True)
-    region = Column(String, nullable=True, index=True)
-    assigned_agent = Column(String, nullable=True)
-    date_of_meeting = Column(String, nullable=True)
-    customer_met = Column(String, nullable=True)
-    contact_number = Column(String, nullable=True, index=True)
-    email = Column(String, nullable=True, index=True)
-    service_using = Column(String, nullable=True)
-    monthly_volume = Column(String, nullable=True)
-    meeting_outcome = Column(String, nullable=True)
-    contract_id = Column(String, nullable=True)
-    remarks = Column(String, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    sl_no: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    exporter_name: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    address: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    pincode: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    po_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    division_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    division: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    region: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    assigned_agent: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    date_of_meeting: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    customer_met: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    contact_number: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    email: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    service_using: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    monthly_volume: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    meeting_outcome: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    contract_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    remarks: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
 class User(Base):
     __tablename__ = "users"
     
-    id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(String, unique=True, index=True)
-    name = Column(String, nullable=True)
-    password = Column(String)
-    role = Column(String)  # 'ME', 'DO', 'RO', 'CO'
-    assigned_region = Column(String, nullable=True)
-    assigned_division = Column(String, nullable=True)
-    mobile_number = Column(String, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    employee_id: Mapped[str] = mapped_column(String, unique=True, index=True)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    password: Mapped[str] = mapped_column(String)
+    role: Mapped[str] = mapped_column(String)  # 'ME', 'DO', 'RO', 'CO'
+    assigned_region: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    assigned_division: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    mobile_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     @property
-    def username(self):
+    def username(self) -> str:
         return self.employee_id
         
     @property
-    def password_hash(self):
+    def password_hash(self) -> str:
         return self.password
 
     @password_hash.setter
-    def password_hash(self, value):
+    def password_hash(self, value: str):
         self.password = value
         
     @property
-    def region(self):
+    def region(self) -> Optional[str]:
         return self.assigned_region
         
     @property
-    def division(self):
+    def division(self) -> Optional[str]:
         return self.assigned_division
 
 Base.metadata.create_all(bind=engine)
@@ -198,7 +206,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     if not plain_password:
         return False
-    if str(plain_password) in ["password123", "Post@123"]:
+    if plain_password in ["password123", "Post@123"]:
         return True
     if not hashed_password:
         return False
@@ -217,7 +225,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
     # 2. Passlib verify
     try:
-        clean_pwd = str(plain_password)[:72]
+        clean_pwd = plain_password[:72]
         if pwd_context.verify(clean_pwd, hashed_password):
             return True
     except Exception:
@@ -239,16 +247,17 @@ def get_password_hash(password: str) -> str:
         return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
     except Exception:
         try:
-            return pwd_context.hash(str(password)[:72])
+            return pwd_context.hash(password[:72])
         except Exception:
             return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
+    now_utc = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now_utc + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+        expire = now_utc + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -284,7 +293,7 @@ def seed_mes_from_excel(db: Session):
         count = 0
         for _, row in df.iterrows():
             emp_id_raw = row.get("Emp ID")
-            if pd.isna(emp_id_raw):
+            if bool(pd.isna(emp_id_raw)):
                 continue
             emp_id = str(emp_id_raw).strip()
             if emp_id.endswith(".0"):
@@ -292,10 +301,14 @@ def seed_mes_from_excel(db: Session):
             if not emp_id or emp_id.lower() == "nan":
                 continue
 
-            name = str(row.get("Name", "")).strip() if pd.notna(row.get("Name")) else ""
-            div_name = str(row.get("Division Name", "")).strip() if pd.notna(row.get("Division Name")) else ""
-            reg_name = str(row.get("Region Name", "")).strip() if pd.notna(row.get("Region Name")) else ""
-            mobile = str(row.get("Mobile Number", "")).strip() if pd.notna(row.get("Mobile Number")) else ""
+            name_val = row.get("Name")
+            name = str(name_val).strip() if bool(pd.notna(name_val)) else ""
+            div_val = row.get("Division Name")
+            div_name = str(div_val).strip() if bool(pd.notna(div_val)) else ""
+            reg_val = row.get("Region Name")
+            reg_name = str(reg_val).strip() if bool(pd.notna(reg_val)) else ""
+            mob_val = row.get("Mobile Number")
+            mobile = str(mob_val).strip() if bool(pd.notna(mob_val)) else ""
 
             existing = db.query(User).filter(
                 or_(
@@ -332,7 +345,6 @@ def seed_mes_from_excel(db: Session):
         print(f"[User Auth] Error seeding MEs from Excel: {e}")
 
 # Startup Event: Seed/Update Official Test Accounts & All MEs from Excel
-@app.on_event("startup")
 def seed_test_users():
     # Safely ensure new columns exist if table was already created (SQLite specific)
     if is_sqlite:
@@ -385,17 +397,20 @@ def seed_test_users():
         ]
 
         for u_data in test_users:
+            emp_id = str(u_data.get("employee_id") or "")
             existing = db.query(User).filter(
-                func.lower(User.employee_id) == u_data["employee_id"].lower()
+                func.lower(User.employee_id) == emp_id.lower()
             ).first()
             if existing:
-                existing.name = u_data.get("name") or existing.name
-                existing.password = u_data["password"]
-                existing.role = u_data["role"]
-                existing.assigned_region = u_data["assigned_region"]
-                existing.assigned_division = u_data["assigned_division"]
+                u_name = u_data.get("name")
+                if u_name:
+                    existing.name = str(u_name)
+                existing.password = str(u_data.get("password") or "")
+                existing.role = str(u_data.get("role") or "")
+                existing.assigned_region = u_data.get("assigned_region")
+                existing.assigned_division = u_data.get("assigned_division")
                 if u_data.get("mobile_number"):
-                    existing.mobile_number = u_data["mobile_number"]
+                    existing.mobile_number = str(u_data["mobile_number"])
             else:
                 db.add(User(**u_data))
 
@@ -595,7 +610,8 @@ async def login(
                 except Exception:
                     db.rollback()
 
-    if not user or not verify_password(str(pwd), user.password if user else ""):
+    user_password = user.password if user and user.password else ""
+    if not user or not verify_password(str(pwd), user_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect employee ID or password",
@@ -638,7 +654,7 @@ class PasswordChangeRequest(BaseModel):
 @app.post("/api/change-password")
 def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_rec = db.query(User).filter(User.employee_id == current_user.get("employee_id")).first()
-    if not user_rec or not verify_password(request.old_password, user_rec.password):
+    if not user_rec or not verify_password(request.old_password, user_rec.password or ""):
         raise HTTPException(status_code=400, detail="Incorrect old password")
     
     user_rec.password = get_password_hash(request.new_password)
@@ -731,7 +747,7 @@ def clean_cell_value(val) -> str:
 
 def normalize_col_name(name: str) -> str:
     """Normalize raw column headers to clean snake_case strings"""
-    s = str(name).strip().lower()
+    s = name.strip().lower()
     s = re.sub(r'[\r\n\t]+', ' ', s)
     s = re.sub(r'[^a-z0-9]+', '_', s)
     return s.strip('_')
@@ -826,7 +842,7 @@ def is_valid_lead_record(lead_data: dict) -> bool:
 def normalize_string_key(text: Optional[str]) -> str:
     if not text:
         return ""
-    cleaned = str(text).strip().upper()
+    cleaned = text.strip().upper()
     if cleaned in ['NAN', 'NONE', 'NULL', 'N/A', '']:
         return ""
     cleaned = re.sub(r'[\(\[\{].*?[\)\]\}]', '', cleaned)
@@ -837,7 +853,7 @@ def normalize_string_key(text: Optional[str]) -> str:
 def normalize_phone_key(phone: Optional[str]) -> str:
     if not phone:
         return ""
-    digits = re.sub(r'\D', '', str(phone))
+    digits = re.sub(r'\D', '', phone)
     if len(digits) == 12 and digits.startswith('91'):
         digits = digits[2:]
     return digits if len(digits) >= 8 else ""
@@ -1006,7 +1022,7 @@ async def upload_excel(
         
         # Strip completely empty rows & clean column headers
         df = df.dropna(how='all')
-        df.columns = [str(c).strip() for c in df.columns]
+        df.columns = [c.strip() if isinstance(c, str) else str(c).strip() for c in df.columns]
         
         # Identify column mapping
         col_mapping = map_dataframe_columns(df)
@@ -1046,7 +1062,7 @@ async def upload_excel(
         verified_contacts_in_batch = 0
         model_fields = {c.name for c in Lead.__table__.columns}
         
-        for idx, row in df.iterrows():
+        for row_idx, (_, row) in enumerate(df.iterrows(), start=1):
             lead_data = {}
             for orig_col, target_field in col_mapping.items():
                 if orig_col in row:
@@ -1079,7 +1095,7 @@ async def upload_excel(
                 
             # Standardize fallback name if missing
             if not name:
-                lead_data["exporter_name"] = f"Commercial Lead ({contact or email or f'Row #{idx+1}'})"
+                lead_data["exporter_name"] = f"Commercial Lead ({contact or email or f'Row #{row_idx}'})"
                 
             # Smart territory resolution (infer from pincode or fallbacks)
             inferred_div, inferred_reg = infer_territory_from_lead(lead_data, current_user)
@@ -1211,7 +1227,7 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
             variants = get_region_variants(assigned_region)
             if variants:
                 query = query.filter(Lead.region.in_(variants))
-        div_filter = str(division_name or "").strip()
+        div_filter = (division_name or "").strip()
         if div_filter and div_filter.lower() not in ["all", "all divisions", "all circle divisions", "all regional divisions", ""]:
             clean_div = div_filter.replace(" Division", "").strip()
             query = query.filter(or_(
@@ -1222,7 +1238,7 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
         return query
 
     # 3. CO (Circle Officers / Admins): Circle-wide visibility, filtered only if a specific division is requested
-    div_filter = str(division_name or "").strip()
+    div_filter = (division_name or "").strip()
     is_all_divs = not div_filter or div_filter.lower() in [
         "all", "all divisions", "all circle divisions", "all regional divisions", 
         "all assigned divisions", "assigned territory", "my division", ""
@@ -2085,7 +2101,7 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
     
     for key, value in data.items():
         db_key = field_map.get(key, key)
-        if hasattr(lead, db_key):
+        if db_key and hasattr(lead, db_key):
             setattr(lead, db_key, str(value) if value is not None else "")
             
     db.commit()
@@ -2094,7 +2110,7 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
 # 9. Pincode Post Offices Helper Endpoint
 @app.get("/api/pincode-offices/{pincode}")
 def get_pincode_offices(pincode: str):
-    clean_pin = re.sub(r'\D', '', str(pincode).strip())
+    clean_pin = re.sub(r'\D', '', pincode.strip())
     if not clean_pin or len(clean_pin) != 6:
         return {"pincode": pincode, "offices": []}
 
