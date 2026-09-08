@@ -65,12 +65,10 @@ function LeadsPageContent() {
       try {
         const u = JSON.parse(userStr);
         setUser(u);
-        const roleClean = String(u.role || '').toUpperCase();
-        if (['ME', 'DO', 'DIVISION', 'DIV'].includes(roleClean)) {
-          const userDiv = u.assigned_division || u.division;
-          if (userDiv) {
-            setSelectedDivision(userDiv);
-          }
+        const role = (u.role || '').toUpperCase();
+        const assignedDiv = u.assigned_division || u.division;
+        if ((role === 'ME' || role === 'MARKETING EXECUTIVE' || role === 'DO' || role === 'EXECUTIVE') && assignedDiv) {
+          setSelectedDivision(assignedDiv);
         }
       } catch (e) {}
     }
@@ -85,9 +83,6 @@ function LeadsPageContent() {
         const data = await safeJson(res);
         if (Array.isArray(data)) {
           setDivisions(data);
-          if (data.length === 1) {
-            setSelectedDivision(data[0]);
-          }
         }
       }
     } catch (err) {
@@ -99,7 +94,7 @@ function LeadsPageContent() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (division && division !== 'All Divisions' && division !== 'All Circle Divisions' && division !== 'All Regional Divisions') {
+      if (division && !division.toLowerCase().startsWith('all')) {
         params.append('division_name', division);
       }
       params.append('only_valid', 'false');
@@ -414,28 +409,32 @@ function LeadsPageContent() {
         {/* Toolbar & Filters */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto flex-1">
-            <div className="relative w-full sm:max-w-[240px]">
-              <select
-                value={selectedDivision}
-                onChange={(e) => setSelectedDivision(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#D1242F] focus:ring-2 focus:ring-[#D1242F]/20 shadow-xs cursor-pointer appearance-none"
-              >
-                {user?.role === 'RO' ? (
-                  <option value="">🏢 All Regional Divisions ({user?.assigned_region || 'Region'})</option>
-                ) : user?.role === 'DO' || user?.role === 'Division' || user?.role === 'ME' ? (
-                  divisions.length <= 1 ? (
-                    <option value={divisions[0] || ''}>🏢 {divisions[0] || user?.assigned_division || 'My'} Division (Assigned)</option>
-                  ) : (
-                    <option value="">🏢 All Assigned Divisions</option>
-                  )
-                ) : (
-                  <option value="">🏢 All Circle Divisions</option>
-                )}
-                {divisions.map((div) => (
-                  <option key={div} value={div}>{div} Division</option>
-                ))}
-              </select>
-              <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="relative w-full sm:max-w-[260px]">
+              {(user?.role?.toUpperCase() === 'ME' || user?.role?.toUpperCase() === 'MARKETING EXECUTIVE' || user?.role?.toUpperCase() === 'DO' || user?.role?.toUpperCase() === 'EXECUTIVE') ? (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-xs font-bold text-red-900 shadow-xs">
+                  <span className="shrink-0 text-sm">📍</span>
+                  <span className="truncate">{user?.assigned_division || user?.division || selectedDivision || 'Mysuru'} Division (My Territory)</span>
+                </div>
+              ) : (
+                <>
+                  <select
+                    value={selectedDivision}
+                    onChange={(e) => setSelectedDivision(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#D1242F] focus:ring-2 focus:ring-[#D1242F]/20 shadow-xs cursor-pointer appearance-none pr-9"
+                  >
+                    <option value="">🏢 All Divisions (Circle-wide)</option>
+                    {divisions.map((div) => {
+                      const isAssigned = div === (user?.assigned_division || user?.division);
+                      return (
+                        <option key={div} value={div}>
+                          {div} Division {isAssigned ? '(Assigned)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <Filter className="w-3.5 h-3.5 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </>
+              )}
             </div>
             
             <div className="relative w-full sm:flex-1 max-w-xl">

@@ -11,84 +11,224 @@ interface UpdateLeadModalProps {
   onSave: (id: number, updates: Partial<Lead>) => Promise<void>;
 }
 
-// Comprehensive Post Office mapping for quick selection based on pincode
-const PINCODE_OFFICES: Record<string, string[]> = {
-  "560092": ["Sahakarnagar SO", "Hebbal Agricultural Farm SO", "Kodigehalli BO", "Byatarayanapura SO"],
-  "560001": ["Bengaluru GPO", "Raj Bhavan SO", "Vidhana Soudha SO"],
-  "560002": ["Bengaluru City SO", "Dharmaram College SO", "Town Hall SO"],
-  "560003": ["Malleswaram SO", "Vyalikaval SO"],
-  "560004": ["Basavanagudi SO", "Pampa Mahakavi Road SO", "N R Colony SO"],
-  "560005": ["Frazer Town SO", "Cox Town SO"],
-  "560008": ["HAL II Stage SO", "Indiranagar SO", "Domlur SO"],
-  "560009": ["K.G. Road SO", "Majestic SO"],
-  "560010": ["Rajajinagar SO", "Industrial Estate SO", "Prakash Nagar SO"],
-  "560011": ["Jayanagar SO", "Tilaknagar SO"],
-  "560017": ["HAL Old Airport Road SO", "Vimanapura SO"],
-  "560020": ["Seshadripuram SO", "Palace Guttahalli SO"],
-  "560022": ["Yeshwanthpur Industrial Suburb SO", "Yeshwantpur SO"],
-  "560025": ["Museum Road SO", "Ashoknagar SO", "Richmond Town SO"],
-  "560027": ["Lalbagh West SO", "Sudhamanagar SO"],
-  "560029": ["Dharmaram College SO", "Taverekere SO"],
-  "560033": ["Maruthi Seva Nagar SO", "Cooke Town SO"],
-  "560034": ["Koramangala SO", "St. Johns Medical College SO", "Agara SO"],
-  "560038": ["Indiranagar SO", "Defence Colony SO"],
-  "560043": ["Banaswadi SO", "Kalyan Nagar SO"],
-  "560058": ["Peenya 1st Stage SO", "Peenya Small Industries SO"],
-  "560059": ["RV Vidyaniketan SO", "Kengeri SO"],
-  "560066": ["Whitefield SO", "Kadugodi SO", "Immadihalli BO"],
-  "560068": ["Madivala SO", "Bommanahalli SO"],
-  "560070": ["Banashankari II Stage SO", "Padmanabhanagar SO"],
-  "560071": ["Domlur SO", "Airport Road SO"],
-  "560076": ["BTM 2nd Stage SO", "Bannerghatta Road SO"],
-  "560077": ["Kothanur SO", "Hennur SO"],
-  "560078": ["JP Nagar SO", "Sarakki SO"],
-  "560085": ["Banashankari 3rd Stage SO", "Kathriguppe SO"],
-  "560086": ["Mahalakshmi Layout SO", "West of Chord Road SO"],
-  "560094": ["RMV Extension II Stage SO", "Sanjaynagar SO"],
-  "560099": ["Bommasandra Industrial Estate SO", "Hebbagodi BO"],
-  "560100": ["Electronic City SO", "Konappana Agrahara SO"],
-  "560105": ["Austin Town SO", "Viveknagar SO"],
-  "561203": ["Doddaballapur SO", "KIADB SO"],
-  "562107": ["Nelamangala SO", "Arishinakunte BO"],
-  "570001": ["Mysuru Head Post Office", "Mysuru Fort SO", "K R Circle SO"],
-  "570002": ["Mysuru Fort SO", "Agrahara SO"],
-  "570004": ["Nazarbad SO", "Ittigegud SO"],
-  "570008": ["Chamundipuram SO", "Vidyaranyapuram SO"],
-  "570016": ["Belagola Industrial Area SO", "Metagalli SO"],
-  "570018": ["Hootagalli Industrial Area SO", "Koorgalli BO"],
-  "570020": ["Kuvempunagar SO", "Saraswathipuram SO"],
-  "570023": ["Saraswathipuram SO", "Tonachikoppal SO"],
-  "570027": ["Hebbal Industrial Area SO", "Kumbarakoppal SO"],
-  "571301": ["Nanjangud SO", "Industrial Estate SO"],
-  "571313": ["Chamarajanagar SO", "Ramasamudra SO"],
-  "572101": ["Tumakuru Head Post Office", "Ashoka Road SO"],
-  "572106": ["Antharasanahalli SO", "Batwadi SO"],
-  "573201": ["Hassan Head Post Office", "Hassan City SO"],
-  "574118": ["Manipal SO", "Endpoint BO"],
-  "575001": ["Mangaluru Head Post Office", "Hampankatta SO", "Bunder SO"],
-  "575003": ["Kodialbail SO", "Ashoknagar Mangaluru SO"],
-  "576101": ["Udupi Head Post Office", "Court Road SO"],
-  "577001": ["Davanagere Head Post Office", "Mandipet SO"],
-  "577002": ["Davanagere City SO", "PB Road SO"],
-  "577201": ["Shivamogga Head Post Office", "Durgigudi SO"],
-  "580001": ["Dharwad Head Post Office", "Station Road SO"],
-  "580020": ["Hubballi Main SO", "Durgad Bail SO"],
-  "580030": ["Vidyanagar Hubballi SO", "Shirur Park SO"],
-  "581110": ["Haveri SO", "Ashwini Nagar SO"],
-  "583101": ["Ballari Head Post Office", "Brucepet SO"],
-  "585101": ["Kalaburagi Head Post Office", "Main Road SO"],
-  "586101": ["Vijayapura Head Post Office", "Gandhi Chowk SO"],
-  "587101": ["Bagalkote Head Post Office", "Station Road SO"],
-  "590001": ["Belagavi Head Post Office", "Camp Belagavi SO", "Khade Bazar SO"],
-  "590014": ["Machhe Industrial Area SO", "Vadgaon SO"],
-  "591304": ["Gokak Falls SO", "Konnur SO"],
+// Division-scoped Post Office and Pincode Mapping for Karnataka Postal Circle
+export const DIVISION_PINCODES_MAP: Record<string, Record<string, string[]>> = {
+  "Mysuru": {
+    "570001": ["Mysuru Head Post Office", "Mysuru Fort SO", "K R Circle SO", "Lakshmipuram SO"],
+    "570002": ["Mysuru Fort SO", "Agrahara SO", "Vani Vilas Market SO"],
+    "570004": ["Nazarbad SO", "Ittigegud SO", "Mysuru Palace SO"],
+    "570008": ["Chamundipuram SO", "Vidyaranyapuram SO", "Jayanagar Mysuru SO"],
+    "570009": ["Tilaknagar SO", "Mandi Mohalla SO"],
+    "570016": ["Belagola Industrial Area SO", "Metagalli SO", "Hebbal SO"],
+    "570017": ["Bannimantap SO", "Bamboo Bazar SO"],
+    "570018": ["Hootagalli Industrial Area SO", "Koorgalli BO", "Belavadi SO"],
+    "570019": ["Vijayanagar SO", "Gokulam SO"],
+    "570020": ["Kuvempunagar SO", "Vivekanandanagar SO"],
+    "570022": ["Ramakrishnanagar SO", "Bogadi SO"],
+    "570023": ["Saraswathipuram SO", "Tonachikoppal SO", "Jayalakshmipuram SO"],
+    "570025": ["Srirampura SO", "JP Nagar Mysuru SO"],
+    "570026": ["Dattagalli SO", "Roopa Nagar SO"],
+    "570027": ["Hebbal Industrial Area SO", "Kumbarakoppal SO"],
+    "570028": ["Siddartha Nagar SO", "Alanahalli SO"],
+    "571114": ["Kadakola SO", "Thandavapura SO"],
+    "571301": ["Nanjangud SO", "Industrial Estate Nanjangud SO"],
+    "571311": ["T Narasipura SO", "Bannur SO"],
+    "571313": ["Chamarajanagar SO", "Ramasamudra SO"]
+  },
+  "Bengaluru East": {
+    "560001": ["Bengaluru GPO", "Raj Bhavan SO", "Vidhana Soudha SO"],
+    "560005": ["Frazer Town SO", "Cox Town SO"],
+    "560008": ["HAL II Stage SO", "Indiranagar SO", "Domlur SO"],
+    "560016": ["Doorvaninagar SO", "Ramamurthy Nagar SO"],
+    "560017": ["HAL Old Airport Road SO", "Vimanapura SO"],
+    "560024": ["Hebbal SO", "Anandnagar SO"],
+    "560025": ["Museum Road SO", "Ashoknagar SO", "Richmond Town SO"],
+    "560032": ["RT Nagar SO", "Ganganagar SO"],
+    "560033": ["Maruthi Seva Nagar SO", "Cooke Town SO"],
+    "560038": ["Indiranagar SO", "Defence Colony SO"],
+    "560042": ["St. Thomas Town SO", "Lingarajapuram SO"],
+    "560043": ["Banaswadi SO", "Kalyan Nagar SO"],
+    "560045": ["Manyata Tech Park SO", "Nagawara SO"],
+    "560048": ["Hoodi SO", "Mahadevapura SO"],
+    "560064": ["Yelahanka Satellite Town SO", "Attur BO"],
+    "560066": ["Whitefield SO", "Kadugodi SO", "Immadihalli BO"],
+    "560071": ["Domlur SO", "Airport Road SO"],
+    "560075": ["HAL III Stage SO", "New Thippasandra SO"],
+    "560077": ["Kothanur SO", "Hennur SO"],
+    "560080": ["Sadashivanagar SO", "Palace Guttahalli SO"],
+    "560092": ["Sahakarnagar SO", "Hebbal Agricultural Farm SO", "Kodigehalli BO", "Byatarayanapura SO"],
+    "560094": ["RMV Extension II Stage SO", "Sanjaynagar SO"]
+  },
+  "Bengaluru South": {
+    "560002": ["Bengaluru City SO", "Dharmaram College SO", "Town Hall SO"],
+    "560004": ["Basavanagudi SO", "Pampa Mahakavi Road SO", "N R Colony SO"],
+    "560009": ["K.G. Road SO", "Majestic SO"],
+    "560011": ["Jayanagar SO", "Tilaknagar SO"],
+    "560026": ["Mysore Road SO", "Kasturba Nagar SO"],
+    "560027": ["Lalbagh West SO", "Sudhamanagar SO"],
+    "560029": ["Dharmaram College SO", "Taverekere SO"],
+    "560034": ["Koramangala SO", "St. Johns Medical College SO", "Agara SO"],
+    "560053": ["Chickpet SO", "City Market SO"],
+    "560068": ["Madivala SO", "Bommanahalli SO"],
+    "560070": ["Banashankari II Stage SO", "Padmanabhanagar SO"],
+    "560076": ["BTM 2nd Stage SO", "Bannerghatta Road SO"],
+    "560078": ["JP Nagar SO", "Sarakki SO"],
+    "560082": ["Jayanagar East SO", "Yediyur SO"],
+    "560085": ["Banashankari 3rd Stage SO", "Kathriguppe SO"],
+    "560095": ["Koramangala 4th Block SO", "ST Bed SO"],
+    "560099": ["Bommasandra Industrial Estate SO", "Hebbagodi BO"],
+    "560100": ["Electronic City SO", "Konappana Agrahara SO"],
+    "560105": ["Austin Town SO", "Viveknagar SO"]
+  },
+  "Bengaluru West": {
+    "560003": ["Malleswaram SO", "Vyalikaval SO"],
+    "560010": ["Rajajinagar SO", "Industrial Estate SO", "Prakash Nagar SO"],
+    "560013": ["Jalahalli SO", "MS Ramaiah SO"],
+    "560020": ["Seshadripuram SO", "Palace Guttahalli SO"],
+    "560021": ["Srirampuram SO", "Dayananda Nagar SO"],
+    "560022": ["Yeshwanthpur Industrial Suburb SO", "Yeshwantpur SO"],
+    "560023": ["Magadi Road SO", "Binnypet SO"],
+    "560040": ["Vijayanagar Bengaluru SO", "RPC Layout SO"],
+    "560054": ["Mathikere SO", "Gokula SO"],
+    "560057": ["Peenya Dasarahalli SO", "Jalahalli West SO"],
+    "560058": ["Peenya 1st Stage SO", "Peenya Small Industries SO"],
+    "560079": ["Basaveshwaranagar SO", "Kamakshipalya SO"],
+    "560086": ["Mahalakshmi Layout SO", "West of Chord Road SO"],
+    "560091": ["Viswaneedam SO", "Magadi Main Road SO"],
+    "560097": ["Vidyaranyapura SO", "Tindlu BO"],
+    "561203": ["Doddaballapur SO", "KIADB SO"],
+    "562107": ["Nelamangala SO", "Arishinakunte BO"]
+  },
+  "Belagavi": {
+    "590001": ["Belagavi Head Post Office", "Camp Belagavi SO", "Khade Bazar SO"],
+    "590005": ["Shahapur SO", "Vadgaon SO"],
+    "590006": ["Tilakwadi SO", "Angol SO"],
+    "590008": ["Belagavi City SO", "Khasbag SO"],
+    "590010": ["Hindwadi SO", "Congress Road SO"],
+    "590011": ["Auto Nagar SO", "Kanakadasa Nagar SO"],
+    "590014": ["Machhe Industrial Area SO", "Vadgaon SO"],
+    "590015": ["Angol SO", "Bhagyanagar SO"],
+    "590016": ["Udyambag SO", "KIADB Belagavi SO"],
+    "591304": ["Gokak Falls SO", "Konnur SO"]
+  },
+  "Dharwad": {
+    "580001": ["Dharwad Head Post Office", "Station Road SO"],
+    "580008": ["Sattur SO", "SDM Medical SO"],
+    "580011": ["Navanagar SO", "APMC SO"],
+    "580020": ["Hubballi Main SO", "Durgad Bail SO"],
+    "580023": ["Railway Colony SO", "Deshpande Nagar SO"],
+    "580024": ["Keshwapur SO", "Kusugal Road SO"],
+    "580025": ["Old Hubballi SO", "Anand Nagar SO"],
+    "580026": ["Gokul Road Industrial Estate SO", "Tarihal SO"],
+    "580030": ["Vidyanagar Hubballi SO", "Shirur Park SO"],
+    "580031": ["Bhairidevarakoppa SO", "Unkal SO"],
+    "581110": ["Haveri SO", "Ashwini Nagar SO"]
+  },
+  "Mangaluru": {
+    "575001": ["Mangaluru Head Post Office", "Hampankatta SO", "Bunder SO"],
+    "575002": ["Kankanady SO", "Falnir SO"],
+    "575003": ["Kodialbail SO", "Ashoknagar Mangaluru SO"],
+    "575005": ["Kankanady SO", "Valencia SO"],
+    "575008": ["Kadri SO", "Mallikatte SO"],
+    "575011": ["Baikampady Industrial Estate SO", "Panambur SO"],
+    "575018": ["Surathkal SO", "NITK SO"],
+    "574118": ["Manipal SO", "Endpoint BO"],
+    "576101": ["Udupi Head Post Office", "Court Road SO"]
+  },
+  "Kalaburagi": {
+    "585101": ["Kalaburagi Head Post Office", "Main Road SO"],
+    "585102": ["Super Market SO", "Station Road SO"],
+    "585103": ["MSK Mill SO", "Brahampur SO"],
+    "585104": ["Sedam Road SO", "Gulbarga University SO"],
+    "585105": ["Kapnoor Industrial Area SO", "Humnabad Base SO"],
+    "585310": ["Humnabad Road SO", "Farhatabad SO"]
+  },
+  "Ballari": {
+    "583101": ["Ballari Head Post Office", "Brucepet SO"],
+    "583102": ["Cowlbazar SO", "Cantonment SO"],
+    "583103": ["Cantonment SO", "Millerpet SO"],
+    "583104": ["Gandhi Nagar Ballari SO", "Satyanarayanapet SO"],
+    "583118": ["Kudithini SO", "Jindal Steel BO"],
+    "583121": ["Siruguppa SO", "Tekkalakote SO"],
+    "583126": ["Toranagallu SO", "JSW Steel Complex SO"],
+    "583201": ["Hospet Head Post Office", "Station Road SO"]
+  },
+  "Tumakuru": {
+    "572101": ["Tumakuru Head Post Office", "Ashoka Road SO"],
+    "572102": ["Siddaganga Mutt SO", "Kyathsandra SO"],
+    "572103": ["B H Road SO", "Mandipet SO"],
+    "572104": ["SSIT SO", "Maralur SO"],
+    "572106": ["Antharasanahalli Industrial Area SO", "Batwadi SO"],
+    "572126": ["Kunigal SO", "Huliyurdurga SO"],
+    "572128": ["Tiptur SO", "B H Road Tiptur SO"]
+  },
+  "Udupi": {
+    "576101": ["Udupi Head Post Office", "Court Road SO"],
+    "576102": ["Kunjibettu SO", "Manipal Road SO"],
+    "576104": ["Malpe SO", "Fisheries Wharf SO"],
+    "574118": ["Manipal SO", "Endpoint BO"],
+    "576201": ["Kundapura SO", "Chikkatoto SO"],
+    "576213": ["Byndoor SO", "Shiroor SO"],
+    "576219": ["Brahmavara SO", "Saligrama SO"]
+  },
+  "Shivamogga": {
+    "577201": ["Shivamogga Head Post Office", "Durgigudi SO"],
+    "577202": ["Vinobha Nagar SO", "Gopala SO"],
+    "577204": ["Kallahalli SO", "Industrial Estate Shivamogga SO"],
+    "577222": ["Bhadravathi Old Town SO", "VISL SO"],
+    "577301": ["Bhadravathi SO", "Paper Town SO"],
+    "577401": ["Sagar SO", "Subhash Nagar SO"]
+  }
 };
 
-export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadModalProps) {
-  const initialPin = lead.pincode || '560092';
-  const initialOffices = PINCODE_OFFICES[initialPin] || [`Post Office - ${initialPin}`];
+// Aliases
+DIVISION_PINCODES_MAP["BG East"] = DIVISION_PINCODES_MAP["Bengaluru East"];
+DIVISION_PINCODES_MAP["BG EAST"] = DIVISION_PINCODES_MAP["Bengaluru East"];
+DIVISION_PINCODES_MAP["BG South"] = DIVISION_PINCODES_MAP["Bengaluru South"];
+DIVISION_PINCODES_MAP["BG SOUTH"] = DIVISION_PINCODES_MAP["Bengaluru South"];
+DIVISION_PINCODES_MAP["BG West"] = DIVISION_PINCODES_MAP["Bengaluru West"];
+DIVISION_PINCODES_MAP["BG WEST"] = DIVISION_PINCODES_MAP["Bengaluru West"];
+DIVISION_PINCODES_MAP["Tumkur"] = DIVISION_PINCODES_MAP["Tumakuru"];
+DIVISION_PINCODES_MAP["Shimoga"] = DIVISION_PINCODES_MAP["Shivamogga"];
+DIVISION_PINCODES_MAP["Hubballi"] = DIVISION_PINCODES_MAP["Dharwad"];
 
-  const [currentUser, setCurrentUser] = useState<any>(null);
+// Flattened fallback lookup
+const ALL_PINCODE_OFFICES: Record<string, string[]> = {};
+Object.values(DIVISION_PINCODES_MAP).forEach(divPins => {
+  Object.entries(divPins).forEach(([pin, offices]) => {
+    if (!ALL_PINCODE_OFFICES[pin]) ALL_PINCODE_OFFICES[pin] = offices;
+  });
+});
+
+export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadModalProps) {
+  // Read current user
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const u = localStorage.getItem('user');
+        return u ? JSON.parse(u) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  // Determine active territory / division for this ME
+  const activeDivision = lead.division || currentUser?.assigned_division || currentUser?.division || 'Mysuru';
+  const cleanActiveDiv = activeDivision.replace(" Division", "").trim();
+
+  // Find pre-configured division pincodes
+  const initialDivMap = DIVISION_PINCODES_MAP[cleanActiveDiv] || DIVISION_PINCODES_MAP[activeDivision] || DIVISION_PINCODES_MAP["Mysuru"] || {};
+  const [divisionPinsMap, setDivisionPinsMap] = useState<Record<string, string[]>>(initialDivMap);
+  const [divisionPincodes, setDivisionPincodes] = useState<string[]>(Object.keys(initialDivMap));
+  const [isCustomPin, setIsCustomPin] = useState<boolean>(false);
+
+  // Initial Pin: use lead.pincode if valid, else first pincode of ME's division (e.g. 570001 for Mysuru)
+  const defaultDivPin = Object.keys(initialDivMap)[0] || '570001';
+  const initialPin = (lead.pincode && lead.pincode.trim().length === 6) ? lead.pincode.trim() : defaultDivPin;
+  const initialOffices = initialDivMap[initialPin] || ALL_PINCODE_OFFICES[initialPin] || [`Post Office - ${initialPin}`];
+
   const [meOptions, setMeOptions] = useState<string[]>(['ME1', 'ME2', 'ME3', 'ME_MYS_01', 'me_user', 'Testing1']);
   const [meDropdownOpen, setMeDropdownOpen] = useState(false);
   const meDropdownRef = useRef<HTMLDivElement>(null);
@@ -123,7 +263,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
     willingToOnboard: 'Yes',
     contractId: lead.contractId || '',
     remarks: lead.remarks || '',
-    division: lead.division || '',
+    division: cleanActiveDiv,
     region: lead.region || '',
   });
 
@@ -134,6 +274,41 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch dynamic division-scoped pincodes and offices from backend
+  useEffect(() => {
+    if (!cleanActiveDiv) return;
+    const controller = new AbortController();
+
+    apiFetch(`/api/division-pincodes/${encodeURIComponent(cleanActiveDiv)}`, { signal: controller.signal })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && Array.isArray(data.pincodes) && data.pincodes.length > 0) {
+          const map: Record<string, string[]> = {};
+          const pins: string[] = [];
+          data.pincodes.forEach((item: any) => {
+            if (item.pincode) {
+              map[item.pincode] = item.offices || [];
+              pins.push(item.pincode);
+            }
+          });
+          setDivisionPinsMap(prev => ({ ...prev, ...map }));
+          setDivisionPincodes(pins);
+
+          // If current pin is not in the division, select the primary division pin
+          if (!pins.includes(formData.pincode) && !lead.pincode && pins[0]) {
+            setFormData(p => ({
+              ...p,
+              pincode: pins[0],
+              poName: map[pins[0]]?.[0] || p.poName
+            }));
+          }
+        }
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [cleanActiveDiv]);
 
   // Close ME combobox dropdown on outside click
   useEffect(() => {
@@ -189,6 +364,18 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
       .catch(() => {});
   }, [lead.assignedMeName]);
 
+  // Handle selection of a pincode
+  const handlePincodeSelect = (newPin: string) => {
+    const cleanPin = newPin.trim().replace(/\D/g, '');
+    const offices = divisionPinsMap[cleanPin] || ALL_PINCODE_OFFICES[cleanPin] || [`Post Office - ${cleanPin}`];
+    setAvailableOffices(offices);
+    setFormData(prev => ({
+      ...prev,
+      pincode: cleanPin,
+      poName: offices[0] || ''
+    }));
+  };
+
   // Fetch or lookup post offices when pincode changes
   useEffect(() => {
     const cleanPin = (formData.pincode || '').trim().replace(/\D/g, '');
@@ -197,8 +384,8 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
       return;
     }
 
-    // 1. Initial lookup from pre-defined map
-    let currentOffices = PINCODE_OFFICES[cleanPin] || [`Post Office - ${cleanPin}`];
+    // 1. Initial lookup from division map or pre-defined map
+    let currentOffices = divisionPinsMap[cleanPin] || ALL_PINCODE_OFFICES[cleanPin] || [`Post Office - ${cleanPin}`];
     setAvailableOffices(currentOffices);
     
     // Auto-select first office if poName is empty or not in new offices
@@ -244,7 +431,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
 
       return () => controller.abort();
     }
-  }, [formData.pincode]);
+  }, [formData.pincode, divisionPinsMap]);
 
   // Prevent background body scrolling when modal is active
   useEffect(() => {
@@ -340,9 +527,14 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
         {/* Header Section */}
         <div className="px-6 pt-4 pb-3 flex items-start justify-between bg-white shrink-0">
           <div>
-            <span className="text-[11px] font-black tracking-wider uppercase text-[#b91c1c] block leading-none">
-              CONTACT OUTCOME
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black tracking-wider uppercase text-[#b91c1c] block leading-none">
+                CONTACT OUTCOME
+              </span>
+              <span className="inline-flex items-center gap-1 bg-red-50 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">
+                📍 {cleanActiveDiv} Division Territory
+              </span>
+            </div>
             <h2 className="text-2xl font-bold font-serif text-[#1e3a8a] tracking-tight mt-1 leading-none">
               Update lead
             </h2>
@@ -463,29 +655,77 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
             {/* ROW 3: Pincode, PO Name, Contact person, Contact number */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Pincode</label>
-                <input 
-                  type="text" 
-                  value={formData.pincode} 
-                  onChange={e => handleChange('pincode', e.target.value)}
-                  placeholder="6-digit PIN"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Pincode
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomPin(prev => !prev)}
+                    className="text-[10px] text-[#1e3a8a] hover:underline font-semibold cursor-pointer"
+                  >
+                    {isCustomPin ? "Select from list" : "Enter other"}
+                  </button>
+                </div>
+                {isCustomPin ? (
+                  <input 
+                    type="text" 
+                    value={formData.pincode} 
+                    onChange={e => handleChange('pincode', e.target.value)}
+                    placeholder="6-digit PIN"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
+                  />
+                ) : (
+                  <div className="relative">
+                    <select
+                      value={formData.pincode}
+                      onChange={e => handlePincodeSelect(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-2 text-xs font-bold text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer appearance-none"
+                    >
+                      {divisionPincodes.map((pin) => {
+                        const sampleOffice = divisionPinsMap[pin]?.[0] || '';
+                        const shortOffice = sampleOffice.replace(/ (SO|BO|HO|GPO)$/, '');
+                        return (
+                          <option key={pin} value={pin}>
+                            {pin} {shortOffice ? `— ${shortOffice}` : ''}
+                          </option>
+                        );
+                      })}
+                      {!divisionPincodes.includes(formData.pincode) && formData.pincode && (
+                        <option value={formData.pincode}>{formData.pincode} (Custom)</option>
+                      )}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                )}
+                <span className="text-[10px] text-slate-500 font-medium block mt-1 leading-tight">
+                  Pincodes for {cleanActiveDiv} Division
+                </span>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">PO Name</label>
-                <select 
-                  value={formData.poName} 
-                  onChange={e => handleChange('poName', e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
-                >
-                  {availableOffices.map((office, i) => (
-                    <option key={i} value={office}>{office}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-800">
+                    PO Name
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {availableOffices.length} office{availableOffices.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+                <div className="relative">
+                  <select 
+                    value={formData.poName} 
+                    onChange={e => handleChange('poName', e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer appearance-none"
+                  >
+                    {availableOffices.map((office, i) => (
+                      <option key={i} value={office}>{office}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
                 <span className="text-[10px] text-slate-400 font-medium block mt-1 leading-tight">
-                  Multiple post offices use this pincode. Choose the correct PO Name.
+                  Offices in {cleanActiveDiv} for PIN {formData.pincode}
                 </span>
               </div>
 

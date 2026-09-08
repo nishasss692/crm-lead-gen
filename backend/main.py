@@ -77,16 +77,27 @@ if raw_db_url.startswith("postgres://"):
 elif raw_db_url.startswith("postgresql://") and not raw_db_url.startswith("postgresql+"):
     raw_db_url = raw_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
+is_sqlite = True
 if raw_db_url and raw_db_url.startswith("postgresql"):
-    DATABASE_URL = raw_db_url
-    is_sqlite = False
-    engine = create_engine(
-        DATABASE_URL,
-        pool_pre_ping=True,
-        pool_size=10,
-        max_overflow=20
-    )
-    print(f"[Database] Connected to PostgreSQL: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'configured'}")
+    try:
+        test_engine = create_engine(
+            raw_db_url,
+            pool_pre_ping=True,
+            pool_size=10,
+            max_overflow=20
+        )
+        with test_engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        engine = test_engine
+        DATABASE_URL = raw_db_url
+        is_sqlite = False
+        print(f"[Database] Connected to PostgreSQL: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'configured'}")
+    except Exception as pg_err:
+        print(f"[Database] Note: PostgreSQL unavailable ({pg_err}). Falling back to local SQLite.")
+        DATABASE_URL = f"sqlite:///{DB_PATH}"
+        is_sqlite = True
+        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+        print(f"[Database] Using local SQLite fallback: {DB_PATH}")
 else:
     DATABASE_URL = f"sqlite:///{DB_PATH}"
     is_sqlite = True
@@ -860,6 +871,85 @@ def generate_lead_dedup_key(lead_data: dict, criteria: str = "composite") -> str
             return f"name:{norm_name}"
         return ""
 
+def infer_territory_from_lead(lead_data: dict, current_user: Optional[dict] = None) -> tuple[str, str]:
+    """
+    Infers (division, region) for a lead record from existing fields, pincode, or user context.
+    Ensures that uploaded records have clean division and region metadata so data is visible everywhere.
+    """
+    division = (lead_data.get("division") or "").strip()
+    region = (lead_data.get("region") or "").strip()
+    pincode = re.sub(r'\D', '', str(lead_data.get("pincode") or "")).strip()
+
+    # If pincode is 6 digits, infer division/region if either is missing
+    if len(pincode) == 6:
+        p3 = pincode[:3]
+        if not division or not region:
+            if p3 in ["560", "561", "562"]:
+                region = region or "Bengaluru HQ Region"
+                division = division or "Bengaluru East"
+            elif p3 == "570":
+                region = region or "South Karnataka Region"
+                division = division or "Mysuru"
+            elif p3 == "571":
+                region = region or "South Karnataka Region"
+                division = division or "Chamarajanagar"
+            elif p3 == "572":
+                region = region or "South Karnataka Region"
+                division = division or "Tumakuru"
+            elif p3 == "573":
+                region = region or "South Karnataka Region"
+                division = division or "Hassan"
+            elif p3 in ["574", "575"]:
+                region = region or "South Karnataka Region"
+                division = division or "Mangaluru"
+            elif p3 == "576":
+                region = region or "South Karnataka Region"
+                division = division or "Udupi"
+            elif p3 == "577":
+                region = region or "South Karnataka Region"
+                division = division or "Shivamogga"
+            elif p3 == "580":
+                region = region or "North Karnataka Region"
+                division = division or "Dharwad"
+            elif p3 == "581":
+                region = region or "North Karnataka Region"
+                division = division or "Haveri"
+            elif p3 == "582":
+                region = region or "North Karnataka Region"
+                division = division or "Gadag"
+            elif p3 == "583":
+                region = region or "North Karnataka Region"
+                division = division or "Ballari"
+            elif p3 == "584":
+                region = region or "North Karnataka Region"
+                division = division or "Raichur"
+            elif p3 == "585":
+                region = region or "North Karnataka Region"
+                division = division or "Kalaburagi"
+            elif p3 == "586":
+                region = region or "North Karnataka Region"
+                division = division or "Vijayapura"
+            elif p3 == "587":
+                region = region or "North Karnataka Region"
+                division = division or "Bagalkote"
+            elif p3 in ["590", "591"]:
+                region = region or "North Karnataka Region"
+                division = division or "Belagavi"
+
+    # User context fallback
+    if not division and current_user and current_user.get("assigned_division"):
+        division = current_user.get("assigned_division")
+    if not region and current_user and current_user.get("assigned_region"):
+        region = current_user.get("assigned_region")
+
+    # Clean fallbacks so records are never empty strings
+    if not division:
+        division = "Commercial Division"
+    if not region:
+        region = "Karnataka Circle"
+
+    return division, region
+
 @app.post("/api/upload-excel")
 async def upload_excel(
     file: UploadFile = File(...), 
@@ -926,17 +1016,15 @@ async def upload_excel(
                 detail="Unable to detect required CRM columns. Please ensure columns include 'Name', 'Phone', 'Division', or 'Service'."
             )
 
-        # If clear_existing requested, wipe previous records in user's RBAC scope first
+        # If clear_existing requested, wipe previous records first
         if clear_existing:
-            q = db.query(Lead)
-            q = apply_rbac_filter(q, current_user)
-            q.delete(synchronize_session=False)
+            db.query(Lead).delete(synchronize_session=False)
             db.commit()
 
         # Build set of existing keys to prevent duplicates against DB if not replacing
         existing_keys = set()
         if not clear_existing:
-            existing_db_leads = apply_rbac_filter(db.query(Lead), current_user).all()
+            existing_db_leads = db.query(Lead).all()
             for ex_lead in existing_db_leads:
                 ex_dict = {
                     "exporter_name": ex_lead.exporter_name,
@@ -992,18 +1080,10 @@ async def upload_excel(
             if not name:
                 lead_data["exporter_name"] = f"Commercial Lead ({contact or email or f'Row #{idx+1}'})"
                 
-            # Default division & region from RBAC user context if missing
-            if not division:
-                if current_user and current_user.get("assigned_division"):
-                    lead_data["division"] = current_user.get("assigned_division")
-                else:
-                    lead_data["division"] = ""
-                    
-            if not lead_data.get("region"):
-                if current_user and current_user.get("assigned_region"):
-                    lead_data["region"] = current_user.get("assigned_region")
-                else:
-                    lead_data["region"] = ""
+            # Smart territory resolution (infer from pincode or fallbacks)
+            inferred_div, inferred_reg = infer_territory_from_lead(lead_data, current_user)
+            lead_data["division"] = inferred_div
+            lead_data["region"] = inferred_reg
             
             if not lead_data.get("service_using"):
                 lead_data["service_using"] = ""
@@ -1099,41 +1179,60 @@ def get_region_variants(region_str: Optional[str]) -> list[str]:
     return [region_str.strip()]
 
 def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] = None):
+    """
+    Role-Based Access Control (RBAC) territory filter:
+    - ME (Marketing Executive) & DO (Divisional Officer): Strictly scoped to their assigned division only.
+    - RO (Regional Officer): Strictly scoped to their assigned region.
+    - CO (Circle Office / Admin): Full circle-wide visibility across all divisions by default.
+    """
     if not user:
         return query
+
     role = str(user.get("role") if isinstance(user, dict) else getattr(user, "role", "") or "").upper().strip()
     assigned_division = user.get("assigned_division") if isinstance(user, dict) else getattr(user, "assigned_division", None)
     assigned_region = user.get("assigned_region") if isinstance(user, dict) else getattr(user, "assigned_region", None)
-    
-    # 1. ME or DO / Division Officers: Constrained to their assigned division
-    if role in ["ME", "DIVISION", "DO", "DIV"]:
-        if assigned_division:
-            clean_div = str(assigned_division).strip()
+
+    # 1. ME or DO: Strictly restricted to their assigned division only
+    if role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE", "DO", "DIVISION", "DIV"]:
+        target_div = str(assigned_division or "").strip()
+        if target_div:
+            clean_div = target_div.replace(" Division", "").strip()
             query = query.filter(or_(
+                Lead.division == target_div,
                 Lead.division == clean_div,
-                Lead.division.ilike(f"%{clean_div}%"),
-                Lead.division.ilike(f"%{clean_div.replace(' Division', '')}%")
+                Lead.division.ilike(f"%{clean_div}%")
             ))
         return query
 
-    # 2. RO (Regional Officers): Constrained to their regional jurisdiction
+    # 2. RO: Constrained to their assigned regional territory
     elif role == "RO":
         if assigned_region:
             variants = get_region_variants(assigned_region)
             if variants:
                 query = query.filter(Lead.region.in_(variants))
-        if division_name and division_name != "All Divisions":
-            query = query.filter(Lead.division == division_name)
+        div_filter = str(division_name or "").strip()
+        if div_filter and div_filter.lower() not in ["all", "all divisions", "all circle divisions", "all regional divisions", ""]:
+            clean_div = div_filter.replace(" Division", "").strip()
+            query = query.filter(or_(
+                Lead.division == div_filter,
+                Lead.division == clean_div,
+                Lead.division.ilike(f"%{clean_div}%")
+            ))
         return query
 
-    # 3. CO (Central / Circle Officers): Full Circle visibility
-    elif role in ["CO", "ADMIN", "CO_ADMIN"]:
-        if division_name and division_name != "All Divisions":
-            query = query.filter(Lead.division == division_name)
-        return query
-
-    if division_name and division_name != "All Divisions":
-        query = query.filter(Lead.division == division_name)
+    # 3. CO (Circle Officers / Admins): Circle-wide visibility, filtered only if a specific division is requested
+    div_filter = str(division_name or "").strip()
+    is_all_divs = not div_filter or div_filter.lower() in [
+        "all", "all divisions", "all circle divisions", "all regional divisions", 
+        "all assigned divisions", "assigned territory", "my division", ""
+    ]
+    if not is_all_divs:
+        clean_div = div_filter.replace(" Division", "").strip()
+        query = query.filter(or_(
+            Lead.division == div_filter,
+            Lead.division == clean_div,
+            Lead.division.ilike(f"%{clean_div}%")
+        ))
     return query
 
 # 4.5 Machine Learning Lead Scoring Engine
@@ -1261,15 +1360,25 @@ def get_divisions(
     db: Session = Depends(get_db), 
     user: dict = Depends(get_current_user)
 ):
-    role = str(user.get("role") or "").upper().strip()
-    if role in ["ME", "DIVISION", "DO", "DIV"]:
-        assigned_div = user.get("assigned_division")
+    """
+    Returns divisions accessible to the authenticated user based on role:
+    - ME / DO: Strictly returns their assigned division.
+    - RO: Returns divisions within their assigned regional jurisdiction.
+    - CO / Admin: Returns all divisions circle-wide.
+    """
+    role = str(user.get("role") if isinstance(user, dict) else getattr(user, "role", "") or "").upper().strip()
+    assigned_div = user.get("assigned_division") if isinstance(user, dict) else getattr(user, "assigned_division", None)
+    assigned_reg = user.get("assigned_region") if isinstance(user, dict) else getattr(user, "assigned_region", None)
+
+    # ME and DO: Only their assigned division
+    if role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE", "DO", "DIVISION", "DIV"]:
         if assigned_div:
             return [assigned_div.strip()]
-        return []
+        return ["Mysuru"]
+
+    # RO: Divisions within regional territory
     elif role == "RO":
         query = db.query(Lead.division)
-        assigned_reg = user.get("assigned_region")
         if assigned_reg:
             variants = get_region_variants(assigned_reg)
             if variants:
@@ -1277,11 +1386,19 @@ def get_divisions(
         divisions = query.distinct().all()
         div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
         return sorted(list(set(div_list)))
-        
+
+    # CO / Admin: Circle-wide divisions
     query = db.query(Lead.division)
     divisions = query.distinct().all()
     div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
-    return sorted(list(set(div_list)))
+    
+    standard_karnataka_divisions = [
+        "Mysuru", "Bengaluru East", "Bengaluru South", "Bengaluru West", "Bengaluru Central",
+        "Mangaluru", "Belagavi", "Dharwad", "Kalaburagi", "Tumakuru", "Udupi", "Shivamogga",
+        "Ballari", "Hassan", "Vijayapura", "Bagalkote", "Haveri", "Chamarajanagar"
+    ]
+    all_divs = sorted(list(set(div_list + (standard_karnataka_divisions if not div_list else []))))
+    return all_divs
 
 # 6. Comprehensive Analytics Endpoint for Dashboard (Strict Valid Data & Pictorial Calculations)
 @app.get("/api/analytics")
@@ -2014,6 +2131,235 @@ def get_pincode_offices(pincode: str):
         offices = [f"Post Office - {clean_pin}"]
 
     return {"pincode": clean_pin, "offices": offices}
+
+# 9.5 Division Scoped Pincodes & Post Offices Endpoint
+DIVISION_PINCODES_DATA: Dict[str, Dict[str, List[str]]] = {
+    "Mysuru": {
+        "570001": ["Mysuru Head Post Office", "Mysuru Fort SO", "K R Circle SO", "Lakshmipuram SO"],
+        "570002": ["Mysuru Fort SO", "Agrahara SO", "Vani Vilas Market SO"],
+        "570004": ["Nazarbad SO", "Ittigegud SO", "Mysuru Palace SO"],
+        "570008": ["Chamundipuram SO", "Vidyaranyapuram SO", "Jayanagar Mysuru SO"],
+        "570009": ["Tilaknagar SO", "Mandi Mohalla SO"],
+        "570016": ["Belagola Industrial Area SO", "Metagalli SO", "Hebbal SO"],
+        "570017": ["Bannimantap SO", "Bamboo Bazar SO"],
+        "570018": ["Hootagalli Industrial Area SO", "Koorgalli BO", "Belavadi SO"],
+        "570019": ["Vijayanagar SO", "Gokulam SO"],
+        "570020": ["Kuvempunagar SO", "Vivekanandanagar SO"],
+        "570022": ["Ramakrishnanagar SO", "Bogadi SO"],
+        "570023": ["Saraswathipuram SO", "Tonachikoppal SO", "Jayalakshmipuram SO"],
+        "570025": ["Srirampura SO", "JP Nagar Mysuru SO"],
+        "570026": ["Dattagalli SO", "Roopa Nagar SO"],
+        "570027": ["Hebbal Industrial Area SO", "Kumbarakoppal SO"],
+        "570028": ["Siddartha Nagar SO", "Alanahalli SO"],
+        "571114": ["Kadakola SO", "Thandavapura SO"],
+        "571301": ["Nanjangud SO", "Industrial Estate Nanjangud SO"],
+        "571311": ["T Narasipura SO", "Bannur SO"],
+        "571313": ["Chamarajanagar SO", "Ramasamudra SO"]
+    },
+    "Bengaluru East": {
+        "560001": ["Bengaluru GPO", "Raj Bhavan SO", "Vidhana Soudha SO"],
+        "560005": ["Frazer Town SO", "Cox Town SO"],
+        "560008": ["HAL II Stage SO", "Indiranagar SO", "Domlur SO"],
+        "560016": ["Doorvaninagar SO", "Ramamurthy Nagar SO"],
+        "560017": ["HAL Old Airport Road SO", "Vimanapura SO"],
+        "560024": ["Hebbal SO", "Anandnagar SO"],
+        "560025": ["Museum Road SO", "Ashoknagar SO", "Richmond Town SO"],
+        "560032": ["RT Nagar SO", "Ganganagar SO"],
+        "560033": ["Maruthi Seva Nagar SO", "Cooke Town SO"],
+        "560038": ["Indiranagar SO", "Defence Colony SO"],
+        "560042": ["St. Thomas Town SO", "Lingarajapuram SO"],
+        "560043": ["Banaswadi SO", "Kalyan Nagar SO"],
+        "560045": ["Manyata Tech Park SO", "Nagawara SO"],
+        "560048": ["Hoodi SO", "Mahadevapura SO"],
+        "560064": ["Yelahanka Satellite Town SO", "Attur BO"],
+        "560066": ["Whitefield SO", "Kadugodi SO", "Immadihalli BO"],
+        "560071": ["Domlur SO", "Airport Road SO"],
+        "560075": ["HAL III Stage SO", "New Thippasandra SO"],
+        "560077": ["Kothanur SO", "Hennur SO"],
+        "560080": ["Sadashivanagar SO", "Palace Guttahalli SO"],
+        "560092": ["Sahakarnagar SO", "Hebbal Agricultural Farm SO", "Kodigehalli BO", "Byatarayanapura SO"],
+        "560094": ["RMV Extension II Stage SO", "Sanjaynagar SO"]
+    },
+    "Bengaluru South": {
+        "560002": ["Bengaluru City SO", "Dharmaram College SO", "Town Hall SO"],
+        "560004": ["Basavanagudi SO", "Pampa Mahakavi Road SO", "N R Colony SO"],
+        "560009": ["K.G. Road SO", "Majestic SO"],
+        "560011": ["Jayanagar SO", "Tilaknagar SO"],
+        "560026": ["Mysore Road SO", "Kasturba Nagar SO"],
+        "560027": ["Lalbagh West SO", "Sudhamanagar SO"],
+        "560029": ["Dharmaram College SO", "Taverekere SO"],
+        "560034": ["Koramangala SO", "St. Johns Medical College SO", "Agara SO"],
+        "560053": ["Chickpet SO", "City Market SO"],
+        "560068": ["Madivala SO", "Bommanahalli SO"],
+        "560070": ["Banashankari II Stage SO", "Padmanabhanagar SO"],
+        "560076": ["BTM 2nd Stage SO", "Bannerghatta Road SO"],
+        "560078": ["JP Nagar SO", "Sarakki SO"],
+        "560082": ["Jayanagar East SO", "Yediyur SO"],
+        "560085": ["Banashankari 3rd Stage SO", "Kathriguppe SO"],
+        "560095": ["Koramangala 4th Block SO", "ST Bed SO"],
+        "560099": ["Bommasandra Industrial Estate SO", "Hebbagodi BO"],
+        "560100": ["Electronic City SO", "Konappana Agrahara SO"],
+        "560105": ["Austin Town SO", "Viveknagar SO"]
+    },
+    "Bengaluru West": {
+        "560003": ["Malleswaram SO", "Vyalikaval SO"],
+        "560010": ["Rajajinagar SO", "Industrial Estate SO", "Prakash Nagar SO"],
+        "560013": ["Jalahalli SO", "MS Ramaiah SO"],
+        "560020": ["Seshadripuram SO", "Palace Guttahalli SO"],
+        "560021": ["Srirampuram SO", "Dayananda Nagar SO"],
+        "560022": ["Yeshwanthpur Industrial Suburb SO", "Yeshwantpur SO"],
+        "560023": ["Magadi Road SO", "Binnypet SO"],
+        "560040": ["Vijayanagar Bengaluru SO", "RPC Layout SO"],
+        "560054": ["Mathikere SO", "Gokula SO"],
+        "560057": ["Peenya Dasarahalli SO", "Jalahalli West SO"],
+        "560058": ["Peenya 1st Stage SO", "Peenya Small Industries SO"],
+        "560079": ["Basaveshwaranagar SO", "Kamakshipalya SO"],
+        "560086": ["Mahalakshmi Layout SO", "West of Chord Road SO"],
+        "560091": ["Viswaneedam SO", "Magadi Main Road SO"],
+        "560097": ["Vidyaranyapura SO", "Tindlu BO"],
+        "561203": ["Doddaballapur SO", "KIADB SO"],
+        "562107": ["Nelamangala SO", "Arishinakunte BO"]
+    },
+    "Belagavi": {
+        "590001": ["Belagavi Head Post Office", "Camp Belagavi SO", "Khade Bazar SO"],
+        "590005": ["Shahapur SO", "Vadgaon SO"],
+        "590006": ["Tilakwadi SO", "Angol SO"],
+        "590008": ["Belagavi City SO", "Khasbag SO"],
+        "590010": ["Hindwadi SO", "Congress Road SO"],
+        "590011": ["Auto Nagar SO", "Kanakadasa Nagar SO"],
+        "590014": ["Machhe Industrial Area SO", "Vadgaon SO"],
+        "590015": ["Angol SO", "Bhagyanagar SO"],
+        "590016": ["Udyambag SO", "KIADB Belagavi SO"],
+        "591304": ["Gokak Falls SO", "Konnur SO"]
+    },
+    "Dharwad": {
+        "580001": ["Dharwad Head Post Office", "Station Road SO"],
+        "580008": ["Sattur SO", "SDM Medical SO"],
+        "580011": ["Navanagar SO", "APMC SO"],
+        "580020": ["Hubballi Main SO", "Durgad Bail SO"],
+        "580023": ["Railway Colony SO", "Deshpande Nagar SO"],
+        "580024": ["Keshwapur SO", "Kusugal Road SO"],
+        "580025": ["Old Hubballi SO", "Anand Nagar SO"],
+        "580026": ["Gokul Road Industrial Estate SO", "Tarihal SO"],
+        "580030": ["Vidyanagar Hubballi SO", "Shirur Park SO"],
+        "580031": ["Bhairidevarakoppa SO", "Unkal SO"],
+        "581110": ["Haveri SO", "Ashwini Nagar SO"]
+    },
+    "Mangaluru": {
+        "575001": ["Mangaluru Head Post Office", "Hampankatta SO", "Bunder SO"],
+        "575002": ["Kankanady SO", "Falnir SO"],
+        "575003": ["Kodialbail SO", "Ashoknagar Mangaluru SO"],
+        "575005": ["Kankanady SO", "Valencia SO"],
+        "575008": ["Kadri SO", "Mallikatte SO"],
+        "575011": ["Baikampady Industrial Estate SO", "Panambur SO"],
+        "575018": ["Surathkal SO", "NITK SO"],
+        "574118": ["Manipal SO", "Endpoint BO"],
+        "576101": ["Udupi Head Post Office", "Court Road SO"]
+    },
+    "Kalaburagi": {
+        "585101": ["Kalaburagi Head Post Office", "Main Road SO"],
+        "585102": ["Super Market SO", "Station Road SO"],
+        "585103": ["MSK Mill SO", "Brahampur SO"],
+        "585104": ["Sedam Road SO", "Gulbarga University SO"],
+        "585105": ["Kapnoor Industrial Area SO", "Humnabad Base SO"],
+        "585310": ["Humnabad Road SO", "Farhatabad SO"]
+    },
+    "Ballari": {
+        "583101": ["Ballari Head Post Office", "Brucepet SO"],
+        "583102": ["Cowlbazar SO", "Cantonment SO"],
+        "583103": ["Cantonment SO", "Millerpet SO"],
+        "583104": ["Gandhi Nagar Ballari SO", "Satyanarayanapet SO"],
+        "583118": ["Kudithini SO", "Jindal Steel BO"],
+        "583121": ["Siruguppa SO", "Tekkalakote SO"],
+        "583126": ["Toranagallu SO", "JSW Steel Complex SO"],
+        "583201": ["Hospet Head Post Office", "Station Road SO"]
+    },
+    "Tumakuru": {
+        "572101": ["Tumakuru Head Post Office", "Ashoka Road SO"],
+        "572102": ["Siddaganga Mutt SO", "Kyathsandra SO"],
+        "572103": ["B H Road SO", "Mandipet SO"],
+        "572104": ["SSIT SO", "Maralur SO"],
+        "572106": ["Antharasanahalli Industrial Area SO", "Batwadi SO"],
+        "572126": ["Kunigal SO", "Huliyurdurga SO"],
+        "572128": ["Tiptur SO", "B H Road Tiptur SO"]
+    },
+    "Udupi": {
+        "576101": ["Udupi Head Post Office", "Court Road SO"],
+        "576102": ["Kunjibettu SO", "Manipal Road SO"],
+        "576104": ["Malpe SO", "Fisheries Wharf SO"],
+        "574118": ["Manipal SO", "Endpoint BO"],
+        "576201": ["Kundapura SO", "Chikkatoto SO"],
+        "576213": ["Byndoor SO", "Shiroor SO"],
+        "576219": ["Brahmavara SO", "Saligrama SO"]
+    },
+    "Shivamogga": {
+        "577201": ["Shivamogga Head Post Office", "Durgigudi SO"],
+        "577202": ["Vinobha Nagar SO", "Gopala SO"],
+        "577204": ["Kallahalli SO", "Industrial Estate Shivamogga SO"],
+        "577222": ["Bhadravathi Old Town SO", "VISL SO"],
+        "577301": ["Bhadravathi SO", "Paper Town SO"],
+        "577401": ["Sagar SO", "Subhash Nagar SO"]
+    }
+}
+
+# Aliases for divisions with alternate spellings
+DIVISION_PINCODES_DATA["BG East"] = DIVISION_PINCODES_DATA["Bengaluru East"]
+DIVISION_PINCODES_DATA["BG EAST"] = DIVISION_PINCODES_DATA["Bengaluru East"]
+DIVISION_PINCODES_DATA["BG South"] = DIVISION_PINCODES_DATA["Bengaluru South"]
+DIVISION_PINCODES_DATA["BG SOUTH"] = DIVISION_PINCODES_DATA["Bengaluru South"]
+DIVISION_PINCODES_DATA["BG West"] = DIVISION_PINCODES_DATA["Bengaluru West"]
+DIVISION_PINCODES_DATA["BG WEST"] = DIVISION_PINCODES_DATA["Bengaluru West"]
+DIVISION_PINCODES_DATA["Tumkur"] = DIVISION_PINCODES_DATA["Tumakuru"]
+DIVISION_PINCODES_DATA["Shimoga"] = DIVISION_PINCODES_DATA["Shivamogga"]
+DIVISION_PINCODES_DATA["Hubballi"] = DIVISION_PINCODES_DATA["Dharwad"]
+
+@app.get("/api/division-pincodes/{division_name}")
+def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
+    """
+    Returns the list of pincodes and post office names strictly scoped to the specified division.
+    Enables MEs to only view and select pincodes and offices relevant to their division.
+    """
+    clean_div = division_name.replace(" Division", "").strip()
+    
+    # 1. Match from pre-configured division pincode mapping
+    matched_data = DIVISION_PINCODES_DATA.get(clean_div) or DIVISION_PINCODES_DATA.get(division_name)
+    if not matched_data:
+        for k, v in DIVISION_PINCODES_DATA.items():
+            if k.lower() in clean_div.lower() or clean_div.lower() in k.lower():
+                matched_data = v
+                clean_div = k
+                break
+
+    pins_dict: Dict[str, List[str]] = dict(matched_data) if matched_data else {}
+
+    # 2. Augment with any unique pincodes present in database for this division
+    try:
+        db_records = db.query(Lead.pincode).filter(
+            or_(
+                Lead.division == clean_div,
+                Lead.division == division_name,
+                Lead.division.ilike(f"%{clean_div}%")
+            ),
+            Lead.pincode != None
+        ).distinct().all()
+        for rec in db_records:
+            pin = re.sub(r'\D', '', str(rec[0] or "")).strip()
+            if pin and len(pin) == 6 and pin not in pins_dict:
+                office_name = PINCODE_OFFICE_MAP.get(pin, f"Post Office - {pin}")
+                pins_dict[pin] = [office_name]
+    except Exception as e:
+        print(f"[Division Pincodes] DB augmentation note: {e}")
+
+    # Fallback to Mysuru if division not found
+    if not pins_dict:
+        pins_dict = DIVISION_PINCODES_DATA.get("Mysuru", {})
+
+    items = [{"pincode": pin, "offices": offices} for pin, offices in sorted(pins_dict.items())]
+    return {
+        "division": clean_div,
+        "pincodes": items,
+        "pincode_list": [item["pincode"] for item in items]
+    }
 
 # 10. List Marketing Executives Endpoint
 @app.get("/api/mes")

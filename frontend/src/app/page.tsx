@@ -172,12 +172,10 @@ export default function MarketingExecutiveDashboard() {
       try {
         const u = JSON.parse(userStr);
         setUser(u);
-        const roleClean = String(u.role || '').toUpperCase();
-        if (['DO', 'DIVISION', 'ME', 'DIV'].includes(roleClean)) {
-          const userDiv = u.assigned_division || u.division;
-          if (userDiv) {
-            setSelectedDivision(userDiv);
-          }
+        const role = (u.role || '').toUpperCase();
+        const assignedDiv = u.assigned_division || u.division;
+        if ((role === 'ME' || role === 'MARKETING EXECUTIVE' || role === 'DO' || role === 'EXECUTIVE') && assignedDiv) {
+          setSelectedDivision(assignedDiv);
         }
       } catch (e) {}
     }
@@ -188,7 +186,7 @@ export default function MarketingExecutiveDashboard() {
     setIsAnalyticsLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&` : '';
+      const queryParam = div && !div.toLowerCase().startsWith('all') ? `division_name=${encodeURIComponent(div)}&` : '';
       const res = await apiFetch(`/api/analytics?${queryParam}only_valid=false`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
@@ -227,7 +225,7 @@ export default function MarketingExecutiveDashboard() {
     setIsPincodesLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}` : '';
+      const queryParam = div && !div.toLowerCase().startsWith('all') ? `division_name=${encodeURIComponent(div)}` : '';
       const res = await apiFetch(`/api/analytics/pincodes?${queryParam}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
@@ -259,7 +257,7 @@ export default function MarketingExecutiveDashboard() {
     setIsPriorityLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     try {
-      const queryParam = div && div !== 'All Divisions' ? `division_name=${encodeURIComponent(div)}&limit=10` : 'limit=10';
+      const queryParam = div && !div.toLowerCase().startsWith('all') ? `division_name=${encodeURIComponent(div)}&limit=10` : 'limit=10';
       const res = await apiFetch(`/api/leads/priority?${queryParam}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
@@ -301,20 +299,6 @@ export default function MarketingExecutiveDashboard() {
         if (Array.isArray(data)) {
           const uniqueDivs = Array.from(new Set(data.map((d: string) => d.trim()).filter(Boolean)));
           setDivisions(uniqueDivs);
-          
-          const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-          if (userStr) {
-            try {
-              const u = JSON.parse(userStr);
-              const roleClean = String(u.role || '').toUpperCase();
-              if (['DO', 'DIVISION', 'ME', 'DIV'].includes(roleClean)) {
-                const userDiv = u.assigned_division || u.division || uniqueDivs[0];
-                if (userDiv) {
-                  setSelectedDivision(userDiv);
-                }
-              }
-            } catch (e) {}
-          }
         }
       }
     } catch (err) {
@@ -525,10 +509,12 @@ export default function MarketingExecutiveDashboard() {
     : 'Marketing Executive (ME) Field Analytics';
 
   const roleSubtitle = isCO 
-    ? 'Pipeline metrics, territory performance & predictive scoring across Karnataka Circle (All 34 Divisions).' 
+    ? 'Circle-wide pipeline metrics, territory performance & predictive scoring across all uploaded leads.' 
     : isRO 
-    ? `Regional pipeline metrics, territory performance & predictive scoring across ${user?.assigned_region || 'Regional Jurisdiction'}.` 
-    : `Divisional pipeline metrics, territory performance & predictive scoring for ${user?.assigned_division || selectedDivision || 'Assigned'} Division.`;
+    ? `Commercial pipeline metrics & territory analytics across all uploaded leads (Region: ${user?.assigned_region || 'Karnataka Circle'}).` 
+    : isDO 
+    ? `Commercial pipeline metrics & territory analytics across all uploaded leads (Division: ${user?.assigned_division || selectedDivision || 'Assigned'}).` 
+    : `Field commercial metrics & territory analytics across all uploaded leads (Territory: ${user?.assigned_division || selectedDivision || 'All Divisions'}).`;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6 animate-fade-in-up select-none">
@@ -553,36 +539,33 @@ export default function MarketingExecutiveDashboard() {
 
         {/* Division Filter Dropdown & Refresh */}
         <div className="flex items-center gap-3 self-start sm:self-auto">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 shadow-2xs">
-            <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-            <select
-              value={selectedDivision}
-              onChange={(e) => setSelectedDivision(e.target.value)}
-              className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer pr-2"
-            >
-              {isRO ? (
-                <option value="All Divisions">All Regional Divisions ({user?.assigned_region || 'Region'})</option>
-              ) : isDO || isME ? (
-                divisions.length <= 1 ? (
-                  <option value={divisions[0] || selectedDivision}>{divisions[0] || selectedDivision} Division (Assigned Territory)</option>
-                ) : (
-                  <option value="All Divisions">All Assigned Divisions</option>
-                )
-              ) : (
+          {(user?.role?.toUpperCase() === 'ME' || user?.role?.toUpperCase() === 'MARKETING EXECUTIVE' || user?.role?.toUpperCase() === 'DO' || user?.role?.toUpperCase() === 'EXECUTIVE') ? (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-1.5 shadow-2xs">
+              <span className="text-xs font-bold text-red-900 flex items-center gap-1.5">
+                <span>📍</span>
+                <span>{user?.assigned_division || user?.division || selectedDivision || 'Mysuru'} Division (My Territory)</span>
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 shadow-2xs">
+              <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <select
+                value={selectedDivision}
+                onChange={(e) => setSelectedDivision(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer pr-2"
+              >
                 <option value="All Divisions">All Divisions (Circle-wide)</option>
-              )}
-              {(!isDO && !isME) && divisions.map((div) => (
-                <option key={div} value={div}>
-                  {div} Division
-                </option>
-              ))}
-              {(isDO || isME) && divisions.length > 1 && divisions.map((div) => (
-                <option key={div} value={div}>
-                  {div} Division
-                </option>
-              ))}
-            </select>
-          </div>
+                {divisions.map((div) => {
+                  const isAssigned = div === (user?.assigned_division || user?.division);
+                  return (
+                    <option key={div} value={div}>
+                      {div} Division {isAssigned ? '(Assigned)' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
 
           <button
             onClick={handleRefreshAll}
