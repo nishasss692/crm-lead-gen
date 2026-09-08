@@ -18,7 +18,7 @@ import bcrypt
 import hashlib
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TypedDict
 
 # Global ML Model for Lead Scoring
 ml_model = None
@@ -47,6 +47,7 @@ def load_ml_model():
 async def lifespan(app: FastAPI):
     load_ml_model()
     seed_test_users()
+    cleanup_and_standardize_database()
     yield
 
 # 1. Setup & Config
@@ -269,6 +270,285 @@ def get_db():
     finally:
         db.close()
 
+# --- Karnataka Circle Territory & Division Registry ---
+class TerritoryInfo(TypedDict):
+    region: str
+    aliases: list[str]
+
+KARNATAKA_TERRITORY_REGISTRY: dict[str, TerritoryInfo] = {
+    # BG Region (Bengaluru HQ Region)
+    "BG East": {
+        "region": "Bengaluru HQ Region",
+        "aliases": ["bg east", "bg_east", "bgeast", "bengaluru east", "bangalore east", "bengaluru_east", "bangalore_east", "bg east division"]
+    },
+    "BG South": {
+        "region": "Bengaluru HQ Region",
+        "aliases": ["bg south", "bg_south", "bgsouth", "bengaluru south", "bangalore south", "bengaluru_south", "bangalore_south", "bg south division"]
+    },
+    "BG West": {
+        "region": "Bengaluru HQ Region",
+        "aliases": ["bg west", "bg_west", "bgwest", "bengaluru west", "bangalore west", "bengaluru_west", "bangalore_west", "bg west division"]
+    },
+    "BG Central": {
+        "region": "Bengaluru HQ Region",
+        "aliases": ["bg central", "bg_central", "bgcentral", "bengaluru central", "bangalore central"]
+    },
+    "BG GPO": {
+        "region": "Bengaluru HQ Region",
+        "aliases": ["bg gpo", "bg_gpo", "bggpo", "bengaluru gpo", "bangalore gpo", "gpo"]
+    },
+    "Channapatna": {
+        "region": "Bengaluru HQ Region",
+        "aliases": ["channapatna", "chanapatna", "channapatana", "channapatna division"]
+    },
+    "Kolar": {
+        "region": "Bengaluru HQ Region",
+        "aliases": ["kolar", "kolara", "kolar division"]
+    },
+
+    # SK Region (South Karnataka Region)
+    "Mysuru": {
+        "region": "South Karnataka Region",
+        "aliases": ["mysuru", "mysore", "mysuru division", "mysore division"]
+    },
+    "Nanjangud": {
+        "region": "South Karnataka Region",
+        "aliases": ["nanjangud", "nanjanagudu", "nanjangud division"]
+    },
+    "Mandya": {
+        "region": "South Karnataka Region",
+        "aliases": ["mandya", "mandya division"]
+    },
+    "Hassan": {
+        "region": "South Karnataka Region",
+        "aliases": ["hassan", "hasana", "hassan division"]
+    },
+    "Kodagu": {
+        "region": "South Karnataka Region",
+        "aliases": ["kodagu", "coorg", "madikeri", "kodagu division"]
+    },
+    "Mangaluru": {
+        "region": "South Karnataka Region",
+        "aliases": ["mangaluru", "mangalore", "mangaluru division", "mangalore division"]
+    },
+    "Puttur": {
+        "region": "South Karnataka Region",
+        "aliases": ["puttur", "putturu", "puttur division"]
+    },
+    "Udupi": {
+        "region": "South Karnataka Region",
+        "aliases": ["udupi", "udapi", "udupi division"]
+    },
+    "Shivamogga": {
+        "region": "South Karnataka Region",
+        "aliases": ["shivamogga", "shimoga", "shivamogga division", "shimoga division"]
+    },
+    "Chikkamagaluru": {
+        "region": "South Karnataka Region",
+        "aliases": ["chikkamagaluru", "chikmagalur", "chikmagaluru", "chikkamagaluru division"]
+    },
+    "Chitradurga": {
+        "region": "South Karnataka Region",
+        "aliases": ["chitradurga", "chitradurga division"]
+    },
+    "Davangere": {
+        "region": "South Karnataka Region",
+        "aliases": ["davangere", "davanagere", "davangere division", "davanagere division"]
+    },
+    "Tumakuru": {
+        "region": "South Karnataka Region",
+        "aliases": ["tumakuru", "tumkur", "tumakuru division", "tumkur division"]
+    },
+
+    # NK Region (North Karnataka Region)
+    "Dharwad": {
+        "region": "North Karnataka Region",
+        "aliases": ["dharwad", "dharwad division", "hubli", "hubballi"]
+    },
+    "Belagavi": {
+        "region": "North Karnataka Region",
+        "aliases": ["belagavi", "belgaum", "belagavi division"]
+    },
+    "Gokak": {
+        "region": "North Karnataka Region",
+        "aliases": ["gokak", "gokak division"]
+    },
+    "Chikodi": {
+        "region": "North Karnataka Region",
+        "aliases": ["chikodi", "chikkodi", "chikodi division"]
+    },
+    "Bagalkote": {
+        "region": "North Karnataka Region",
+        "aliases": ["bagalkote", "bagalkot", "bagalkote division", "bagalkot division"]
+    },
+    "Vijayapura": {
+        "region": "North Karnataka Region",
+        "aliases": ["vijayapura", "vijayapur", "bijapur", "vijayapura division", "vijayapur division"]
+    },
+    "Gadag": {
+        "region": "North Karnataka Region",
+        "aliases": ["gadag", "gadag division"]
+    },
+    "Haveri": {
+        "region": "North Karnataka Region",
+        "aliases": ["haveri", "haveri division"]
+    },
+    "Ballari": {
+        "region": "North Karnataka Region",
+        "aliases": ["ballari", "bellary", "ballari division", "bellary division"]
+    },
+    "Koppal": {
+        "region": "North Karnataka Region",
+        "aliases": ["koppal", "koppal division"]
+    },
+    "Kalaburagi": {
+        "region": "North Karnataka Region",
+        "aliases": ["kalaburagi", "gulbarga", "kalaburagi division", "gulbarga division"]
+    },
+    "Bidar": {
+        "region": "North Karnataka Region",
+        "aliases": ["bidar", "bidar division"]
+    },
+    "Raichur": {
+        "region": "North Karnataka Region",
+        "aliases": ["raichur", "raichur division"]
+    },
+    "Karwar": {
+        "region": "North Karnataka Region",
+        "aliases": ["karwar", "uttara kannada", "karwar division"]
+    },
+    "Sirsi": {
+        "region": "North Karnataka Region",
+        "aliases": ["sirsi", "sirsi division"]
+    },
+    "Yadgir": {
+        "region": "North Karnataka Region",
+        "aliases": ["yadgir", "yadagiri", "yadgir division"]
+    }
+}
+
+def normalize_division_name(raw_div: Optional[str]) -> str:
+    """Normalizes any casing or alias of a division to its canonical title (e.g. 'bg EAST' -> 'BG East')."""
+    if not raw_div:
+        return ""
+    cleaned = raw_div.strip()
+    if not cleaned or cleaned.lower() in ["nan", "none", "null", "unassigned", ""]:
+        return ""
+    c_lower = re.sub(r'[\s_\-]+', ' ', cleaned.lower()).strip()
+    c_lower_nodiv = re.sub(r'\bdivision\b', '', c_lower).strip()
+
+    # Exact key match
+    for canonical, info in KARNATAKA_TERRITORY_REGISTRY.items():
+        if c_lower == canonical.lower() or c_lower_nodiv == canonical.lower():
+            return canonical
+        for alias in info["aliases"]:
+            if c_lower == alias.lower() or c_lower_nodiv == alias.lower():
+                return canonical
+            
+    # Substring / partial match
+    for canonical, info in KARNATAKA_TERRITORY_REGISTRY.items():
+        can_clean = canonical.lower().replace(" division", "").strip()
+        if can_clean in c_lower or c_lower in can_clean:
+            return canonical
+
+    return cleaned
+
+def get_division_aliases(div_str: Optional[str]) -> list[str]:
+    """Returns all lowercase alias strings for a division to query SQL case-insensitively."""
+    if not div_str:
+        return []
+    canonical = normalize_division_name(div_str)
+    aliases = set()
+    if canonical:
+        aliases.add(canonical.lower())
+    raw_lower = div_str.strip().lower()
+    if raw_lower:
+        aliases.add(raw_lower)
+    raw_nodiv = raw_lower.replace(" division", "").strip()
+    if raw_nodiv:
+        aliases.add(raw_nodiv)
+
+    if canonical in KARNATAKA_TERRITORY_REGISTRY:
+        for a in KARNATAKA_TERRITORY_REGISTRY[canonical]["aliases"]:
+            aliases.add(a.lower())
+    return list(aliases)
+
+def get_region_for_division(div_str: Optional[str]) -> Optional[str]:
+    """Returns canonical parent region for a given division."""
+    if not div_str:
+        return None
+    canonical = normalize_division_name(div_str)
+    if canonical in KARNATAKA_TERRITORY_REGISTRY:
+        return KARNATAKA_TERRITORY_REGISTRY[canonical]["region"]
+    return None
+
+def get_divisions_for_region(region_str: Optional[str]) -> list[str]:
+    """Returns all canonical division names belonging to a given region."""
+    if not region_str:
+        return []
+    r_norm = region_str.upper().strip()
+    matched_divisions = []
+    target_region = None
+    if "BG" in r_norm or "BENGALURU" in r_norm or "BANGALORE" in r_norm:
+        target_region = "Bengaluru HQ Region"
+    elif "SK" in r_norm or "SOUTH" in r_norm:
+        target_region = "South Karnataka Region"
+    elif "NK" in r_norm or "NORTH" in r_norm:
+        target_region = "North Karnataka Region"
+
+    for canonical, info in KARNATAKA_TERRITORY_REGISTRY.items():
+        if target_region and info["region"] == target_region:
+            matched_divisions.append(canonical)
+        elif not target_region and (info["region"].lower() == region_str.lower() or region_str.lower() in info["region"].lower()):
+            matched_divisions.append(canonical)
+    return matched_divisions
+
+def cleanup_and_standardize_database():
+    """Runs a database cleanup to standardize legacy division names and infer missing regions."""
+    try:
+        with SessionLocal() as db:
+            replacement_map = {
+                'BG EAST': 'BG East',
+                'bg east': 'BG East',
+                'BG SOUTH': 'BG South',
+                'bg south': 'BG South',
+                'BG WEST': 'BG West',
+                'bg west': 'BG West',
+                'BG GPO': 'BG GPO',
+                'bg gpo': 'BG GPO',
+                'channapatna': 'Channapatna',
+                'Bagalkot': 'Bagalkote',
+                'bagalkot': 'Bagalkote',
+                'Shimoga': 'Shivamogga',
+                'shimoga': 'Shivamogga',
+                'Tumkur': 'Tumakuru',
+                'tumkur': 'Tumakuru',
+                'Davanagere': 'Davangere',
+                'davanagere': 'Davangere',
+                'Chikmagalur': 'Chikkamagaluru',
+                'chikmagalur': 'Chikkamagaluru',
+                'Vijayapur': 'Vijayapura',
+                'vijayapur': 'Vijayapura'
+            }
+            for old_div, new_div in replacement_map.items():
+                db.execute(text("UPDATE leads SET division = :new WHERE division = :old"), {"new": new_div, "old": old_div})
+                db.execute(text("UPDATE users SET assigned_division = :new WHERE TRIM(assigned_division) = :old"), {"new": new_div, "old": old_div})
+
+            db.execute(text("UPDATE leads SET division = TRIM(division) WHERE division IS NOT NULL"))
+            db.execute(text("UPDATE users SET assigned_division = TRIM(assigned_division) WHERE assigned_division IS NOT NULL"))
+            db.execute(text("UPDATE users SET assigned_region = TRIM(assigned_region) WHERE assigned_region IS NOT NULL"))
+
+            db.execute(text("UPDATE leads SET region = 'Bengaluru HQ Region' WHERE region = 'BG'"))
+            db.execute(text("UPDATE leads SET region = 'South Karnataka Region' WHERE region = 'SK'"))
+            db.execute(text("UPDATE leads SET region = 'North Karnataka Region' WHERE region = 'NK'"))
+
+            for can_div, info in KARNATAKA_TERRITORY_REGISTRY.items():
+                db.execute(text("UPDATE leads SET region = :reg WHERE (region IS NULL OR region = '' OR region = 'Karnataka Circle') AND division = :div"), {"reg": info["region"], "div": can_div})
+
+            db.commit()
+    except Exception as e:
+        print(f"[DB Standardize] Notice: {e}")
+
 def seed_mes_from_excel(db: Session):
     """Parses MEs DATA.xlsx and seeds all Marketing Executives with assigned division and default password Post@123."""
     file_candidates = [
@@ -304,9 +584,11 @@ def seed_mes_from_excel(db: Session):
             name_val = row.get("Name")
             name = str(name_val).strip() if bool(pd.notna(name_val)) else ""
             div_val = row.get("Division Name")
-            div_name = str(div_val).strip() if bool(pd.notna(div_val)) else ""
+            div_name = normalize_division_name(str(div_val).strip() if bool(pd.notna(div_val)) else "")
             reg_val = row.get("Region Name")
             reg_name = str(reg_val).strip() if bool(pd.notna(reg_val)) else ""
+            if not reg_name or reg_name.lower() in ["nan", "none", ""]:
+                reg_name = get_region_for_division(div_name) or ""
             mob_val = row.get("Mobile Number")
             mobile = str(mob_val).strip() if bool(pd.notna(mob_val)) else ""
 
@@ -343,6 +625,7 @@ def seed_mes_from_excel(db: Session):
     except Exception as e:
         db.rollback()
         print(f"[User Auth] Error seeding MEs from Excel: {e}")
+
 
 # Startup Event: Seed/Update Official Test Accounts & All MEs from Excel
 def seed_test_users():
@@ -394,23 +677,25 @@ def seed_test_users():
             # ME Accounts
             {"employee_id": "ME_MYS_01", "name": "Suresh M E", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru", "mobile_number": "9000000001"},
             {"employee_id": "me_user", "name": "Marketing Executive", "password": default_pwd_hash, "role": "ME", "assigned_region": None, "assigned_division": "Mysuru", "mobile_number": "9000000002"},
+            {"employee_id": "ME_BGE_01", "name": "Dilip Kumar", "password": default_pwd_hash, "role": "ME", "assigned_region": "Bengaluru HQ Region", "assigned_division": "BG East", "mobile_number": "9000000003"},
+            {"employee_id": "ME_BGE_02", "name": "Irfan", "password": default_pwd_hash, "role": "ME", "assigned_region": "Bengaluru HQ Region", "assigned_division": "BG East", "mobile_number": "9000000004"},
         ]
 
         for u_data in test_users:
-            emp_id = str(u_data.get("employee_id") or "")
+            emp_id = u_data.get("employee_id") or ""
             existing = db.query(User).filter(
                 func.lower(User.employee_id) == emp_id.lower()
             ).first()
             if existing:
                 u_name = u_data.get("name")
                 if u_name:
-                    existing.name = str(u_name)
-                existing.password = str(u_data.get("password") or "")
-                existing.role = str(u_data.get("role") or "")
+                    existing.name = u_name
+                existing.password = u_data.get("password") or ""
+                existing.role = u_data.get("role") or ""
                 existing.assigned_region = u_data.get("assigned_region")
                 existing.assigned_division = u_data.get("assigned_division")
                 if u_data.get("mobile_number"):
-                    existing.mobile_number = str(u_data["mobile_number"])
+                    existing.mobile_number = u_data["mobile_number"]
             else:
                 db.add(User(**u_data))
 
@@ -691,8 +976,9 @@ COLUMN_SYNONYMS = {
         "division_id", "div_id", "div_code", "division_code", "facility_id", "div_no"
     ],
     "assigned_agent": [
-        "assigned_agent", "assigned_to", "marketing_executive", "me_name", "executive_name", 
-        "sales_executive", "sales_exec", "agent", "officer", "assigned_officer", "owner"
+        "assigned_agent", "assigned_to", "assigned_me", "assigned_me_name", "me_name", 
+        "me", "me_id", "marketing_executive", "marketing_executive_name", "assigned_marketing_executive",
+        "executive_name", "sales_executive", "sales_exec", "agent", "officer", "assigned_officer", "owner"
     ],
     "date_of_meeting": [
         "date_of_meeting", "meeting_date", "contact_date", "visit_date", "scheduled_date", 
@@ -891,19 +1177,29 @@ def generate_lead_dedup_key(lead_data: dict, criteria: str = "composite") -> str
 def infer_territory_from_lead(lead_data: dict, current_user: Optional[dict] = None) -> tuple[str, str]:
     """
     Infers (division, region) for a lead record from existing fields, pincode, or user context.
-    Ensures that uploaded records have clean division and region metadata so data is visible everywhere.
+    Ensures that uploaded records have clean, normalized division and region metadata so data is visible everywhere.
     """
-    division = (lead_data.get("division") or "").strip()
-    region = (lead_data.get("region") or "").strip()
+    raw_div = (lead_data.get("division") or "").strip()
+    raw_reg = (lead_data.get("region") or "").strip()
     pincode = re.sub(r'\D', '', str(lead_data.get("pincode") or "")).strip()
 
-    # If pincode is 6 digits, infer division/region if either is missing
+    # Normalize division if provided
+    division = normalize_division_name(raw_div) if raw_div else ""
+    region = raw_reg
+
+    # If division is known, immediately resolve region from our territory registry if region is missing/generic
+    if division:
+        mapped_reg = get_region_for_division(division)
+        if mapped_reg and (not region or region.lower() in ["karnataka circle", "circle", "state", "karnataka", ""]):
+            region = mapped_reg
+
+    # If pincode is 6 digits, infer division/region if either is still missing
     if len(pincode) == 6:
         p3 = pincode[:3]
         if not division or not region:
             if p3 in ["560", "561", "562"]:
                 region = region or "Bengaluru HQ Region"
-                division = division or "Bengaluru East"
+                division = division or "BG East"
             elif p3 == "570":
                 region = region or "South Karnataka Region"
                 division = division or "Mysuru"
@@ -955,17 +1251,24 @@ def infer_territory_from_lead(lead_data: dict, current_user: Optional[dict] = No
 
     # User context fallback
     if not division and current_user and current_user.get("assigned_division"):
-        division = current_user.get("assigned_division")
+        division = normalize_division_name(current_user.get("assigned_division"))
     if not region and current_user and current_user.get("assigned_region"):
         region = current_user.get("assigned_region")
 
-    # Clean fallbacks so records are never empty strings
+    # If division is now set, ensure region is resolved
+    if division and (not region or region.lower() in ["karnataka circle", "circle", "state", "karnataka", ""]):
+        mapped_reg = get_region_for_division(division)
+        if mapped_reg:
+            region = mapped_reg
+
+    # Fallbacks so records are never empty strings
     if not division:
         division = "Commercial Division"
     if not region:
-        region = "Karnataka Circle"
+        region = "Bengaluru HQ Region" if "BG" in division else "Karnataka Circle"
 
     return division, region
+
 
 @app.post("/api/upload-excel")
 async def upload_excel(
@@ -1198,9 +1501,11 @@ def get_region_variants(region_str: Optional[str]) -> list[str]:
 def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] = None):
     """
     Role-Based Access Control (RBAC) territory filter:
-    - ME (Marketing Executive) & DO (Divisional Officer): Strictly scoped to their assigned division only.
-    - RO (Regional Officer): Strictly scoped to their assigned region.
-    - CO (Circle Office / Admin): Full circle-wide visibility across all divisions by default.
+    - ME (Marketing Executive): Strictly scoped to their assigned division (case-insensitively)
+      AND specifically to leads assigned to them (or unassigned in their division).
+    - DO (Divisional Officer): Strictly scoped to their assigned division (case-insensitively).
+    - RO (Regional Officer): Strictly scoped to their assigned region (by region variants or divisions in that region).
+    - CO (Circle Office / Admin): Full circle-wide visibility across all divisions; filtered if division_name is passed.
     """
     if not user:
         return query
@@ -1208,49 +1513,93 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
     role = str(user.get("role") if isinstance(user, dict) else getattr(user, "role", "") or "").upper().strip()
     assigned_division = user.get("assigned_division") if isinstance(user, dict) else getattr(user, "assigned_division", None)
     assigned_region = user.get("assigned_region") if isinstance(user, dict) else getattr(user, "assigned_region", None)
+    emp_id = str(user.get("employee_id") if isinstance(user, dict) else getattr(user, "employee_id", "") or "").strip()
+    user_name = str(user.get("name") if isinstance(user, dict) else getattr(user, "name", "") or "").strip()
 
-    # 1. ME or DO: Strictly restricted to their assigned division only
-    if role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE", "DO", "DIVISION", "DIV"]:
+    # 1. ME: Restricted to assigned division (case-insensitively) AND only their assigned leads (or unassigned)
+    if role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
         target_div = str(assigned_division or "").strip()
         if target_div:
-            clean_div = target_div.replace(" Division", "").strip()
-            query = query.filter(or_(
-                Lead.division == target_div,
-                Lead.division == clean_div,
-                Lead.division.ilike(f"%{clean_div}%")
-            ))
+            aliases = get_division_aliases(target_div)
+            div_conditions = [func.lower(func.trim(Lead.division)) == a for a in aliases]
+            div_clean = normalize_division_name(target_div).lower().replace(" division", "").strip()
+            if div_clean:
+                div_conditions.append(func.lower(func.trim(Lead.division)).like(f"%{div_clean}%"))
+            query = query.filter(or_(*div_conditions))
+
+        # ME assignment filter: only leads assigned to this ME, OR unassigned leads in their division
+        agent_conditions = [
+            Lead.assigned_agent == None,
+            func.trim(Lead.assigned_agent) == "",
+            func.lower(func.trim(Lead.assigned_agent)) == "unassigned"
+        ]
+        if emp_id:
+            agent_conditions.append(func.lower(func.trim(Lead.assigned_agent)) == emp_id.lower())
+            agent_conditions.append(func.lower(func.trim(Lead.assigned_agent)).like(f"%{emp_id.lower()}%"))
+        if user_name and user_name.lower() != emp_id.lower():
+            agent_conditions.append(func.lower(func.trim(Lead.assigned_agent)) == user_name.lower())
+            agent_conditions.append(func.lower(func.trim(Lead.assigned_agent)).like(f"%{user_name.lower()}%"))
+
+        query = query.filter(or_(*agent_conditions))
         return query
 
-    # 2. RO: Constrained to their assigned regional territory
+    # 2. DO: Strictly restricted to their assigned division (case-insensitively)
+    elif role in ["DO", "DIVISION", "DIV"]:
+        target_div = str(assigned_division or "").strip()
+        if target_div:
+            aliases = get_division_aliases(target_div)
+            div_conditions = [func.lower(func.trim(Lead.division)) == a for a in aliases]
+            div_clean = normalize_division_name(target_div).lower().replace(" division", "").strip()
+            if div_clean:
+                div_conditions.append(func.lower(func.trim(Lead.division)).like(f"%{div_clean}%"))
+            query = query.filter(or_(*div_conditions))
+        return query
+
+    # 3. RO: Constrained to their assigned regional territory (by region name OR divisions in region)
     elif role == "RO":
-        if assigned_region:
-            variants = get_region_variants(assigned_region)
-            if variants:
-                query = query.filter(Lead.region.in_(variants))
+        reg_variants = [v.lower() for v in get_region_variants(assigned_region)]
+        reg_div_names = get_divisions_for_region(assigned_region)
+        all_reg_div_aliases = []
+        for d in reg_div_names:
+            all_reg_div_aliases.extend(get_division_aliases(d))
+        all_reg_div_aliases = list(set(all_reg_div_aliases))
+
+        ro_conditions = []
+        if reg_variants:
+            ro_conditions.append(func.lower(func.trim(Lead.region)).in_(reg_variants))
+        if all_reg_div_aliases:
+            ro_conditions.append(func.lower(func.trim(Lead.division)).in_(all_reg_div_aliases))
+
+        if ro_conditions:
+            query = query.filter(or_(*ro_conditions))
+
+        # If RO explicitly filters by a specific division in the UI
         div_filter = (division_name or "").strip()
-        if div_filter and div_filter.lower() not in ["all", "all divisions", "all circle divisions", "all regional divisions", ""]:
-            clean_div = div_filter.replace(" Division", "").strip()
-            query = query.filter(or_(
-                Lead.division == div_filter,
-                Lead.division == clean_div,
-                Lead.division.ilike(f"%{clean_div}%")
-            ))
+        if div_filter and div_filter.lower() not in ["all", "all divisions", "all circle divisions", "all regional divisions", "assigned territory", ""]:
+            aliases = get_division_aliases(div_filter)
+            div_conditions = [func.lower(func.trim(Lead.division)) == a for a in aliases]
+            div_clean = normalize_division_name(div_filter).lower().replace(" division", "").strip()
+            if div_clean:
+                div_conditions.append(func.lower(func.trim(Lead.division)).like(f"%{div_clean}%"))
+            query = query.filter(or_(*div_conditions))
         return query
 
-    # 3. CO (Circle Officers / Admins): Circle-wide visibility, filtered only if a specific division is requested
+    # 4. CO (Circle Officers / Admins): Circle-wide visibility, filtered only if a specific division is requested
     div_filter = (division_name or "").strip()
     is_all_divs = not div_filter or div_filter.lower() in [
         "all", "all divisions", "all circle divisions", "all regional divisions", 
         "all assigned divisions", "assigned territory", "my division", ""
     ]
     if not is_all_divs:
-        clean_div = div_filter.replace(" Division", "").strip()
-        query = query.filter(or_(
-            Lead.division == div_filter,
-            Lead.division == clean_div,
-            Lead.division.ilike(f"%{clean_div}%")
-        ))
+        aliases = get_division_aliases(div_filter)
+        div_conditions = [func.lower(func.trim(Lead.division)) == a for a in aliases]
+        div_clean = normalize_division_name(div_filter).lower().replace(" division", "").strip()
+        if div_clean:
+            div_conditions.append(func.lower(func.trim(Lead.division)).like(f"%{div_clean}%"))
+        query = query.filter(or_(*div_conditions))
+
     return query
+
 
 # 4.5 Machine Learning Lead Scoring Engine
 def _parse_volume(val: Any) -> float:
@@ -1379,9 +1728,9 @@ def get_divisions(
 ):
     """
     Returns divisions accessible to the authenticated user based on role:
-    - ME / DO: Strictly returns their assigned division.
-    - RO: Returns divisions within their assigned regional jurisdiction.
-    - CO / Admin: Returns all divisions circle-wide.
+    - ME / DO: Strictly returns their assigned division (normalized).
+    - RO: Returns canonical divisions within their assigned regional jurisdiction.
+    - CO / Admin: Returns all canonical divisions circle-wide without duplicate casing.
     """
     role = str(user.get("role") if isinstance(user, dict) else getattr(user, "role", "") or "").upper().strip()
     assigned_div = user.get("assigned_division") if isinstance(user, dict) else getattr(user, "assigned_division", None)
@@ -1390,32 +1739,34 @@ def get_divisions(
     # ME and DO: Only their assigned division
     if role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE", "DO", "DIVISION", "DIV"]:
         if assigned_div:
-            return [assigned_div.strip()]
+            return [normalize_division_name(assigned_div.strip())]
         return ["Mysuru"]
 
     # RO: Divisions within regional territory
     elif role == "RO":
+        reg_divs = get_divisions_for_region(assigned_reg)
+        if reg_divs:
+            return sorted(list(set(reg_divs)))
         query = db.query(Lead.division)
         if assigned_reg:
             variants = get_region_variants(assigned_reg)
             if variants:
                 query = query.filter(Lead.region.in_(variants))
         divisions = query.distinct().all()
-        div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
-        return sorted(list(set(div_list)))
+        div_set = {normalize_division_name(div[0]) for div in divisions if div[0] and div[0].strip()}
+        clean_list = [d for d in div_set if d and d.lower() not in ['nan', 'none', 'null', 'unassigned', 'commercial division']]
+        return sorted(clean_list) if clean_list else ["BG East", "BG South", "BG West", "BG GPO", "Channapatna", "Kolar"]
 
-    # CO / Admin: Circle-wide divisions
+    # CO / Admin: Circle-wide divisions (canonicalized and deduplicated)
     query = db.query(Lead.division)
     divisions = query.distinct().all()
-    div_list = [div[0].strip() for div in divisions if div[0] and div[0].strip() and div[0].strip().lower() not in ['nan', 'none', 'null', 'unassigned']]
+    div_set = {normalize_division_name(div[0]) for div in divisions if div[0] and div[0].strip()}
+    for can_div in KARNATAKA_TERRITORY_REGISTRY.keys():
+        div_set.add(can_div)
     
-    standard_karnataka_divisions = [
-        "Mysuru", "Bengaluru East", "Bengaluru South", "Bengaluru West", "Bengaluru Central",
-        "Mangaluru", "Belagavi", "Dharwad", "Kalaburagi", "Tumakuru", "Udupi", "Shivamogga",
-        "Ballari", "Hassan", "Vijayapura", "Bagalkote", "Haveri", "Chamarajanagar"
-    ]
-    all_divs = sorted(list(set(div_list + (standard_karnataka_divisions if not div_list else []))))
-    return all_divs
+    clean_list = [d for d in div_set if d and d.lower() not in ['nan', 'none', 'null', 'unassigned', 'commercial division']]
+    return sorted(clean_list)
+
 
 # 6. Comprehensive Analytics Endpoint for Dashboard (Strict Valid Data & Pictorial Calculations)
 @app.get("/api/analytics")
@@ -2336,13 +2687,14 @@ def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
     Returns the list of pincodes and post office names strictly scoped to the specified division.
     Enables MEs to only view and select pincodes and offices relevant to their division.
     """
-    clean_div = division_name.replace(" Division", "").strip()
+    canonical_div = normalize_division_name(division_name)
+    clean_div = canonical_div or division_name.replace(" Division", "").strip()
     
     # 1. Match from pre-configured division pincode mapping
-    matched_data = DIVISION_PINCODES_DATA.get(clean_div) or DIVISION_PINCODES_DATA.get(division_name)
+    matched_data = DIVISION_PINCODES_DATA.get(canonical_div) or DIVISION_PINCODES_DATA.get(clean_div) or DIVISION_PINCODES_DATA.get(division_name)
     if not matched_data:
         for k, v in DIVISION_PINCODES_DATA.items():
-            if k.lower() in clean_div.lower() or clean_div.lower() in k.lower():
+            if k.lower() == clean_div.lower() or k.lower() in clean_div.lower() or clean_div.lower() in k.lower():
                 matched_data = v
                 clean_div = k
                 break
@@ -2351,12 +2703,12 @@ def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
 
     # 2. Augment with any unique pincodes present in database for this division
     try:
+        aliases = get_division_aliases(division_name)
+        div_conds = [func.lower(func.trim(Lead.division)) == a for a in aliases]
+        if clean_div:
+            div_conds.append(func.lower(func.trim(Lead.division)).like(f"%{clean_div.lower()}%"))
         db_records = db.query(Lead.pincode).filter(
-            or_(
-                Lead.division == clean_div,
-                Lead.division == division_name,
-                Lead.division.ilike(f"%{clean_div}%")
-            ),
+            or_(*div_conds),
             Lead.pincode != None
         ).distinct().all()
         for rec in db_records:
@@ -2366,6 +2718,7 @@ def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
                 pins_dict[pin] = [office_name]
     except Exception as e:
         print(f"[Division Pincodes] DB augmentation note: {e}")
+
 
     # Fallback to Mysuru if division not found
     if not pins_dict:

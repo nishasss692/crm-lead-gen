@@ -184,13 +184,36 @@ export const DIVISION_PINCODES_MAP: Record<string, Record<string, string[]>> = {
 // Aliases
 DIVISION_PINCODES_MAP["BG East"] = DIVISION_PINCODES_MAP["Bengaluru East"];
 DIVISION_PINCODES_MAP["BG EAST"] = DIVISION_PINCODES_MAP["Bengaluru East"];
+DIVISION_PINCODES_MAP["bg east"] = DIVISION_PINCODES_MAP["Bengaluru East"];
+DIVISION_PINCODES_MAP["bg east division"] = DIVISION_PINCODES_MAP["Bengaluru East"];
 DIVISION_PINCODES_MAP["BG South"] = DIVISION_PINCODES_MAP["Bengaluru South"];
 DIVISION_PINCODES_MAP["BG SOUTH"] = DIVISION_PINCODES_MAP["Bengaluru South"];
+DIVISION_PINCODES_MAP["bg south"] = DIVISION_PINCODES_MAP["Bengaluru South"];
 DIVISION_PINCODES_MAP["BG West"] = DIVISION_PINCODES_MAP["Bengaluru West"];
 DIVISION_PINCODES_MAP["BG WEST"] = DIVISION_PINCODES_MAP["Bengaluru West"];
+DIVISION_PINCODES_MAP["bg west"] = DIVISION_PINCODES_MAP["Bengaluru West"];
 DIVISION_PINCODES_MAP["Tumkur"] = DIVISION_PINCODES_MAP["Tumakuru"];
+DIVISION_PINCODES_MAP["tumkur"] = DIVISION_PINCODES_MAP["Tumakuru"];
 DIVISION_PINCODES_MAP["Shimoga"] = DIVISION_PINCODES_MAP["Shivamogga"];
+DIVISION_PINCODES_MAP["shimoga"] = DIVISION_PINCODES_MAP["Shivamogga"];
 DIVISION_PINCODES_MAP["Hubballi"] = DIVISION_PINCODES_MAP["Dharwad"];
+DIVISION_PINCODES_MAP["dharwad"] = DIVISION_PINCODES_MAP["Dharwad"];
+DIVISION_PINCODES_MAP["bagalkot"] = DIVISION_PINCODES_MAP["Bagalkote"] || {};
+DIVISION_PINCODES_MAP["channapatna"] = DIVISION_PINCODES_MAP["Channapatna"] || {};
+
+export const getDivisionPincodesMap = (divName: string): Record<string, string[]> => {
+  if (!divName) return DIVISION_PINCODES_MAP["Mysuru"] || {};
+  const clean = divName.replace(/ division/i, '').trim();
+  if (DIVISION_PINCODES_MAP[clean]) return DIVISION_PINCODES_MAP[clean];
+  if (DIVISION_PINCODES_MAP[divName]) return DIVISION_PINCODES_MAP[divName];
+  const lower = clean.toLowerCase();
+  for (const [key, val] of Object.entries(DIVISION_PINCODES_MAP)) {
+    if (key.toLowerCase() === lower || key.toLowerCase().replace(/ division/i, '').trim() === lower) {
+      return val;
+    }
+  }
+  return DIVISION_PINCODES_MAP["Mysuru"] || {};
+};
 
 // Flattened fallback lookup
 const ALL_PINCODE_OFFICES: Record<string, string[]> = {};
@@ -216,13 +239,14 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
 
   // Determine active territory / division for this ME
   const activeDivision = lead.division || currentUser?.assigned_division || currentUser?.division || 'Mysuru';
-  const cleanActiveDiv = activeDivision.replace(" Division", "").trim();
+  const cleanActiveDiv = activeDivision.replace(/ division/i, "").trim();
 
-  // Find pre-configured division pincodes
-  const initialDivMap = DIVISION_PINCODES_MAP[cleanActiveDiv] || DIVISION_PINCODES_MAP[activeDivision] || DIVISION_PINCODES_MAP["Mysuru"] || {};
+  // Find pre-configured division pincodes case-insensitively
+  const initialDivMap = getDivisionPincodesMap(cleanActiveDiv);
   const [divisionPinsMap, setDivisionPinsMap] = useState<Record<string, string[]>>(initialDivMap);
   const [divisionPincodes, setDivisionPincodes] = useState<string[]>(Object.keys(initialDivMap));
   const [isCustomPin, setIsCustomPin] = useState<boolean>(false);
+
 
   // Initial Pin: use lead.pincode if valid, else first pincode of ME's division (e.g. 570001 for Mysuru)
   const defaultDivPin = Object.keys(initialDivMap)[0] || '570001';

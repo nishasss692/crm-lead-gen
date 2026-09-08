@@ -293,7 +293,14 @@ function LeadsPageContent() {
     window.URL.revokeObjectURL(url);
   };
 
-  let filtered = selectedDivision ? leads.filter(d => d.division === selectedDivision) : leads;
+  let filtered = selectedDivision && !selectedDivision.toLowerCase().startsWith('all')
+    ? leads.filter(d => {
+        const divA = (d.division || '').trim().toLowerCase();
+        const divB = selectedDivision.trim().toLowerCase();
+        const cleanB = divB.replace(/ division/i, '').trim();
+        return divA === divB || divA === cleanB || (cleanB && divA.includes(cleanB));
+      })
+    : leads;
 
   if (statusFilter) {
     filtered = filtered.filter(lead => {
