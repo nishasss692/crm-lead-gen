@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, func, case, or_, and_, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 import sqlite3
+import json
 import pandas as pd
 import io
 import re
