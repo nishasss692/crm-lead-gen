@@ -286,7 +286,8 @@ function LeadsPageContent() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `indiapost_leads_${selectedDivision || 'all'}.csv`;
+    const regPrefix = user?.assigned_region ? user.assigned_region.replace(/\s+/g, '_') : 'all';
+    a.download = `indiapost_leads_${selectedDivision || regPrefix}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -339,14 +340,18 @@ function LeadsPageContent() {
   }
 
   const getTitle = () => {
+    const roleUpper = (user?.role || '').toUpperCase();
+    const regionName = user?.assigned_region || 'Regional';
+    const isRO = roleUpper === 'RO';
+
     switch (statusFilter) {
-      case 'pending': return 'Contact Pending Leads';
-      case 'contacted': return 'Contacted Leads';
-      case 'followup': return 'Follow-up Required';
-      case 'interested': return 'Interested Commercial Leads';
-      case 'willing': return 'Willing to Onboard';
-      case 'onboarded': return 'Onboarded Contracts';
-      default: return 'All Circle Leads Directory';
+      case 'pending': return isRO ? `${regionName} — Contact Pending Leads` : 'Contact Pending Leads';
+      case 'contacted': return isRO ? `${regionName} — Contacted Leads` : 'Contacted Leads';
+      case 'followup': return isRO ? `${regionName} — Follow-up Required` : 'Follow-up Required';
+      case 'interested': return isRO ? `${regionName} — Interested Commercial Leads` : 'Interested Commercial Leads';
+      case 'willing': return isRO ? `${regionName} — Willing to Onboard` : 'Willing to Onboard';
+      case 'onboarded': return isRO ? `${regionName} — Onboarded Contracts` : 'Onboarded Contracts';
+      default: return isRO ? `${regionName} Leads Directory` : 'All Circle Leads Directory';
     }
   };
 
@@ -429,7 +434,11 @@ function LeadsPageContent() {
                     onChange={(e) => setSelectedDivision(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#D1242F] focus:ring-2 focus:ring-[#D1242F]/20 shadow-xs cursor-pointer appearance-none pr-9"
                   >
-                    <option value="">🏢 All Divisions (Circle-wide)</option>
+                    <option value="">
+                      {user?.role?.toUpperCase() === 'RO'
+                        ? `🏢 All Regional Divisions (${user?.assigned_region || 'Regional Territory'})`
+                        : '🏢 All Divisions (Circle-wide)'}
+                    </option>
                     {divisions.map((div) => {
                       const isAssigned = div === (user?.assigned_division || user?.division);
                       return (

@@ -503,7 +503,7 @@ export default function MarketingExecutiveDashboard() {
   const roleTitle = isCO 
     ? 'Central Office (CO) Operations & Commercial Analytics' 
     : isRO 
-    ? 'Regional Office (RO) Operations & Territory Analytics' 
+    ? `${user?.assigned_region || 'Regional Office (RO)'} Operations & Territory Analytics` 
     : isDO 
     ? 'Divisional Office (DO) Commercial Operations' 
     : 'Marketing Executive (ME) Field Analytics';
@@ -511,7 +511,7 @@ export default function MarketingExecutiveDashboard() {
   const roleSubtitle = isCO 
     ? 'Circle-wide pipeline metrics, territory performance & predictive scoring across all uploaded leads.' 
     : isRO 
-    ? `Commercial pipeline metrics & territory analytics across all uploaded leads (Region: ${user?.assigned_region || 'Karnataka Circle'}).` 
+    ? `Commercial pipeline metrics & territory analytics strictly scoped to ${user?.assigned_region || 'Regional Territory'}.` 
     : isDO 
     ? `Commercial pipeline metrics & territory analytics across all uploaded leads (Division: ${user?.assigned_division || selectedDivision || 'Assigned'}).` 
     : `Field commercial metrics & territory analytics across all uploaded leads (Territory: ${user?.assigned_division || selectedDivision || 'All Divisions'}).`;
@@ -554,7 +554,9 @@ export default function MarketingExecutiveDashboard() {
                 onChange={(e) => setSelectedDivision(e.target.value)}
                 className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer pr-2"
               >
-                <option value="All Divisions">All Divisions (Circle-wide)</option>
+                <option value="All Divisions">
+                  {isRO ? `All Regional Divisions (${user?.assigned_region || 'Regional Territory'})` : 'All Divisions (Circle-wide)'}
+                </option>
                 {divisions.map((div) => {
                   const isAssigned = div === (user?.assigned_division || user?.division);
                   return (

@@ -14,6 +14,12 @@ import { API_BASE_URL } from '@/lib/api';
 const DEMO_ACCOUNTS: Record<string, { role: string; assigned_region: string | null; assigned_division: string | null }> = {
   'CO_ADMIN': { role: 'CO', assigned_region: null, assigned_division: null },
   'CO_USER': { role: 'CO', assigned_region: null, assigned_division: null },
+  'R001': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
+  'R002': { role: 'RO', assigned_region: 'South Karnataka Region', assigned_division: null },
+  'R003': { role: 'RO', assigned_region: 'North Karnataka Region', assigned_division: null },
+  'r001': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
+  'r002': { role: 'RO', assigned_region: 'South Karnataka Region', assigned_division: null },
+  'r003': { role: 'RO', assigned_region: 'North Karnataka Region', assigned_division: null },
   'RO_BG': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
   'RO_USER': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
   'RO_SK': { role: 'RO', assigned_region: 'South Karnataka Region', assigned_division: null },
@@ -299,11 +305,29 @@ export default function LoginPage() {
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('RO_BG', 'Post@123')}
+              onClick={() => handleQuickAccess('r001', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
-              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (Bengaluru HQ)</div>
-              <div className="text-gray-500 text-[9px]">7 Divisions</div>
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO Bangalore (r001)</div>
+              <div className="text-gray-500 text-[9px]">Bengaluru HQ Region</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickAccess('r002', 'Post@123')}
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO South Kar (r002)</div>
+              <div className="text-gray-500 text-[9px]">South Karnataka Region</div>
+            </button>
+            <button
+              type="button"
+              suppressHydrationWarning
+              onClick={() => handleQuickAccess('r003', 'Post@123')}
+              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
+            >
+              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO North Kar (r003)</div>
+              <div className="text-gray-500 text-[9px]">North Karnataka Region</div>
             </button>
             <button
               type="button"
@@ -317,29 +341,11 @@ export default function LoginPage() {
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('10044051', 'Post@123')}
-              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#D1242F] bg-gray-50 hover:bg-red-50/50 text-left transition-all cursor-pointer group"
-            >
-              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#D1242F]">ME S P Kulkarni</div>
-              <div className="text-gray-500 text-[9px]">Emp: 10044051</div>
-            </button>
-            <button
-              type="button"
-              suppressHydrationWarning
               onClick={() => handleQuickAccess('ME_MYS_01', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#D1242F] bg-gray-50 hover:bg-red-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#D1242F]">ME Suresh M E</div>
               <div className="text-gray-500 text-[9px]">Mysuru ME</div>
-            </button>
-            <button
-              type="button"
-              suppressHydrationWarning
-              onClick={() => handleQuickAccess('RO_SK', 'Post@123')}
-              className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
-            >
-              <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">RO (South Karnataka)</div>
-              <div className="text-gray-500 text-[9px]">14 Divisions</div>
             </button>
           </div>
         </div>

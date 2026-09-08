@@ -301,12 +301,12 @@ KARNATAKA_TERRITORY_REGISTRY: dict[str, TerritoryInfo] = {
         "region": "Bengaluru HQ Region",
         "aliases": ["channapatna", "chanapatna", "channapatana", "channapatna division"]
     },
-    "Kolar": {
-        "region": "Bengaluru HQ Region",
-        "aliases": ["kolar", "kolara", "kolar division"]
-    },
 
     # SK Region (South Karnataka Region)
+    "Kolar": {
+        "region": "South Karnataka Region",
+        "aliases": ["kolar", "kolara", "kolar division"]
+    },
     "Mysuru": {
         "region": "South Karnataka Region",
         "aliases": ["mysuru", "mysore", "mysuru division", "mysore division"]
@@ -543,7 +543,9 @@ def cleanup_and_standardize_database():
             db.execute(text("UPDATE leads SET region = 'North Karnataka Region' WHERE region = 'NK'"))
 
             for can_div, info in KARNATAKA_TERRITORY_REGISTRY.items():
-                db.execute(text("UPDATE leads SET region = :reg WHERE (region IS NULL OR region = '' OR region = 'Karnataka Circle') AND division = :div"), {"reg": info["region"], "div": can_div})
+                db.execute(text("UPDATE leads SET region = :reg WHERE TRIM(division) = :div"), {"reg": info["region"], "div": can_div})
+                for alias in info["aliases"]:
+                    db.execute(text("UPDATE leads SET region = :reg WHERE LOWER(TRIM(division)) = :alias"), {"reg": info["region"], "alias": alias.lower()})
 
             db.commit()
     except Exception as e:
@@ -663,7 +665,11 @@ def seed_test_users():
             # CO Accounts
             {"employee_id": "CO_ADMIN", "name": "Circle Admin", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999999"},
             {"employee_id": "co_user", "name": "CO Operations", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999998"},
-            # RO Accounts (BG, SK, NK)
+            # 3 Official Regional Office (RO) Accounts: r001 (Bangalore), r002 (SK), r003 (NK)
+            {"employee_id": "r001", "name": "RO Bangalore (Bengaluru HQ)", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888801"},
+            {"employee_id": "r002", "name": "RO South Karnataka (SK)", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None, "mobile_number": "9888888802"},
+            {"employee_id": "r003", "name": "RO North Karnataka (NK)", "password": default_pwd_hash, "role": "RO", "assigned_region": "North Karnataka Region", "assigned_division": None, "mobile_number": "9888888803"},
+            # Legacy RO Accounts (compatibility)
             {"employee_id": "RO_BG", "name": "RO Bengaluru Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888888"},
             {"employee_id": "ro_user", "name": "RO User", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888889"},
             {"employee_id": "RO_SK", "name": "RO South Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None, "mobile_number": "9888888887"},
@@ -728,6 +734,9 @@ def get_current_user(token: str = Depends(OAuth2PasswordBearer(tokenUrl="api/log
             "RO_BG": ("RO", "Bengaluru HQ Region", None),
             "RO_SK": ("RO", "South Karnataka Region", None),
             "RO_NK": ("RO", "North Karnataka Region", None),
+            "R001": ("RO", "Bengaluru HQ Region", None),
+            "R002": ("RO", "South Karnataka Region", None),
+            "R003": ("RO", "North Karnataka Region", None),
             "DIV_MYS": ("DO", None, "Mysuru"),
             "DO_MYS": ("DO", None, "Mysuru"),
             "DIV_BGE": ("DO", None, "BG East"),
@@ -865,6 +874,9 @@ async def login(
             demo_roles = {
                 "CO_ADMIN": ("CO", None, None, "Circle Admin"),
                 "CO_USER": ("CO", None, None, "CO Operations"),
+                "R001": ("RO", "Bengaluru HQ Region", None, "RO Bangalore (Bengaluru HQ)"),
+                "R002": ("RO", "South Karnataka Region", None, "RO South Karnataka (SK)"),
+                "R003": ("RO", "North Karnataka Region", None, "RO North Karnataka (NK)"),
                 "RO_BG": ("RO", "Bengaluru HQ Region", None, "RO Bengaluru Officer"),
                 "RO_USER": ("RO", "Bengaluru HQ Region", None, "RO User"),
                 "RO_SK": ("RO", "South Karnataka Region", None, "RO South Karnataka Officer"),
@@ -1491,7 +1503,7 @@ def get_region_variants(region_str: Optional[str]) -> list[str]:
         return []
     r = region_str.upper().strip()
     if "BG" in r or "BENGALURU" in r or "BANGALORE" in r:
-        return ["BG", "BG HQ Region", "Bengaluru HQ Region", "BG REGION", "BG HQ", "Bangalore"]
+        return ["BG", "BG HQ Region", "Bengaluru HQ Region", "BG REGION", "BG HQ", "Bangalore", "Bengaluru", "Bengaluru HQ"]
     elif "SK" in r or "SOUTH" in r:
         return ["SK", "SK REGION", "South Karnataka Region", "South Karnataka", "SK Region"]
     elif "NK" in r or "NORTH" in r:
@@ -1555,7 +1567,7 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
             query = query.filter(or_(*div_conditions))
         return query
 
-    # 3. RO: Constrained to their assigned regional territory (by region name OR divisions in region)
+    # 3. RO: Strictly constrained to their assigned regional territory (by region name OR divisions in region)
     elif role == "RO":
         reg_variants = [v.lower() for v in get_region_variants(assigned_region)]
         reg_div_names = get_divisions_for_region(assigned_region)
@@ -1564,18 +1576,37 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
             all_reg_div_aliases.extend(get_division_aliases(d))
         all_reg_div_aliases = list(set(all_reg_div_aliases))
 
+        # Other region division aliases to prevent any cross-region leaking
+        other_div_aliases = []
+        for can_d, info in KARNATAKA_TERRITORY_REGISTRY.items():
+            if can_d not in reg_div_names:
+                other_div_aliases.extend(get_division_aliases(can_d))
+        other_div_aliases = list(set(other_div_aliases))
+
         ro_conditions = []
-        if reg_variants:
-            ro_conditions.append(func.lower(func.trim(Lead.region)).in_(reg_variants))
         if all_reg_div_aliases:
             ro_conditions.append(func.lower(func.trim(Lead.division)).in_(all_reg_div_aliases))
+        if reg_variants:
+            if other_div_aliases:
+                ro_conditions.append(
+                    and_(
+                        func.lower(func.trim(Lead.region)).in_(reg_variants),
+                        or_(
+                            Lead.division == None,
+                            func.trim(Lead.division) == "",
+                            func.lower(func.trim(Lead.division)).notin_(other_div_aliases)
+                        )
+                    )
+                )
+            else:
+                ro_conditions.append(func.lower(func.trim(Lead.region)).in_(reg_variants))
 
         if ro_conditions:
             query = query.filter(or_(*ro_conditions))
 
         # If RO explicitly filters by a specific division in the UI
         div_filter = (division_name or "").strip()
-        if div_filter and div_filter.lower() not in ["all", "all divisions", "all circle divisions", "all regional divisions", "assigned territory", ""]:
+        if div_filter and div_filter.lower() not in ["all", "all divisions", "all circle divisions", "all regional divisions", "assigned territory", "my region", ""]:
             aliases = get_division_aliases(div_filter)
             div_conditions = [func.lower(func.trim(Lead.division)) == a for a in aliases]
             div_clean = normalize_division_name(div_filter).lower().replace(" division", "").strip()
@@ -2733,10 +2764,27 @@ def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
 
 # 10. List Marketing Executives Endpoint
 @app.get("/api/mes")
-def get_marketing_executives(db: Session = Depends(get_db)):
-    me_users = db.query(User).filter(
+def get_marketing_executives(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").upper().strip()
+    assigned_reg = current_user.get("assigned_region")
+    assigned_div = current_user.get("assigned_division")
+
+    query = db.query(User).filter(
         or_(func.upper(User.role) == "ME", User.role == None)
-    ).all()
+    )
+
+    if role == "RO" and assigned_reg:
+        reg_divs = get_divisions_for_region(assigned_reg)
+        query = query.filter(
+            or_(
+                User.assigned_region == assigned_reg,
+                User.assigned_division.in_(reg_divs)
+            )
+        )
+    elif role in ["DO", "DIVISION", "DIV", "ME"] and assigned_div:
+        query = query.filter(User.assigned_division == assigned_div)
+
+    me_users = query.all()
     results = []
     for u in me_users:
         results.append({
