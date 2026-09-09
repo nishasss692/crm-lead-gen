@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo } from 'react';
-import UpdateLeadModal from './UpdateLeadModal';
+import UpdateLeadModal, { sanitizeIndianMobile, sanitizeText } from './UpdateLeadModal';
 import ModifyLeadSourceModal from './ModifyLeadSourceModal';
 import { 
   Edit, 
@@ -265,8 +265,12 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
             <tbody className="divide-y divide-gray-100 text-slate-700 text-xs">
               {currentData.map((lead, index) => {
                 const { product, provider } = parseProductAndProvider(lead.serviceUsing, lead.customerMet);
-                const meName = lead.assignedMeName || lead.assignedAgent || lead.assigned_me_name || lead.assigned_agent || 'Testing1';
-                const meMob = lead.meMobile || lead.me_mobile || '9000000001';
+                const rawMeName = lead.assignedMeName || lead.assignedAgent || lead.assigned_me_name || lead.assigned_agent || '';
+                const meName = sanitizeText(rawMeName) || 'Unassigned';
+                const rawMeMob = lead.meMobile || lead.me_mobile || '';
+                const meMob = sanitizeIndianMobile(rawMeMob) || '—';
+                const contactPerson = sanitizeText(lead.customerMet) || '—';
+                const contactPhone = sanitizeIndianMobile(lead.contactNumber) || '—';
                 const locationPo = lead.poName || lead.po_name || (lead.pincode ? `Post Office - ${lead.pincode}` : (lead.division || '—'));
 
                 return (
@@ -325,10 +329,10 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                     {/* 5. Contact Person */}
                     <td className="px-4 py-3.5 text-left">
                       <div className="text-xs font-medium text-slate-800 leading-tight">
-                        {lead.customerMet || '—'}
+                        {contactPerson}
                       </div>
                       <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                        {lead.contactNumber || '—'}
+                        {contactPhone}
                       </div>
                     </td>
 

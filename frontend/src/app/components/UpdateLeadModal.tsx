@@ -225,6 +225,66 @@ Object.values(DIVISION_PINCODES_MAP).forEach(divPins => {
   });
 });
 
+/**
+ * Validates and standardizes a 10-digit Indian mobile number.
+ * Removes country code 91, trunk prefix 0, non-digits, and filters out dummy/repetitive numbers.
+ */
+export const sanitizeIndianMobile = (val: any): string => {
+  if (!val) return '';
+  let s = String(val).trim().replace(/\D/g, '');
+  if (s.length === 12 && s.startsWith('91')) {
+    s = s.slice(2);
+  } else if (s.length === 11 && s.startsWith('0')) {
+    s = s.slice(1);
+  }
+  if (s.length !== 10) return '';
+  if (!/^[6-9]/.test(s)) return '';
+  if (/^(\d)\1{9}$/.test(s)) return ''; // e.g. 9999999999, 0000000000, 1111111111
+  if (s === '1234567890' || s === '9876543210' || s === '0123456789') return '';
+  return s;
+};
+
+/**
+ * Validates email addresses and filters out dummy/placeholder values.
+ */
+export const sanitizeEmail = (val: any): string => {
+  if (!val) return '';
+  let s = String(val).trim();
+  if (!s) return '';
+  
+  const lower = s.toLowerCase();
+  if (['nan', 'none', 'null', 'nil', 'na', 'n/a', '-', '--', 'no', 'not available', 'noemail', 'test', 'dummy'].includes(lower)) {
+    return '';
+  }
+  
+  if (lower.startsWith('dummy') || lower.startsWith('test@') || lower.includes('example.com') || 
+      lower.startsWith('fake') || lower.startsWith('sample') || lower.startsWith('noemail') ||
+      lower.startsWith('na@') || lower.startsWith('none@') || lower.startsWith('null@') ||
+      lower.startsWith('temp@') || lower.includes('@test.') || lower.includes('test@test')) {
+    return '';
+  }
+  
+  s = s.replace(/\s+/g, '');
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(s)) {
+    return '';
+  }
+  return s;
+};
+
+/**
+ * Cleans dummy text placeholders (e.g. N/A, None, null, -, dummy, test).
+ */
+export const sanitizeText = (val: any): string => {
+  if (!val) return '';
+  const s = String(val).trim();
+  const lower = s.toLowerCase();
+  if (['nan', 'none', 'null', 'nil', 'na', 'n/a', '-', '--', 'unknown', 'not available', 'not met', 'dummy', 'test'].includes(lower)) {
+    return '';
+  }
+  return s;
+};
+
 export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'outcome' }: UpdateLeadModalProps) {
   const [activeTab, setActiveTab] = useState<'outcome' | 'source'>(initialTab);
 
@@ -281,8 +341,13 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
   const initialDate2 = lead.contactedDate2 || lead.contacted_date_2 || '';
   const initialDate3 = lead.contactedDate3 || lead.contacted_date_3 || '';
 
-  const userMobile = currentUser?.mobile_number ? String(currentUser.mobile_number).replace(/\D/g, '').slice(0, 10) : '';
-  const initialContactNumber = lead.contactNumber ? String(lead.contactNumber).replace(/\D/g, '').slice(0, 10) : '';
+  // Clean and sanitize all initial lead fields to eliminate dummy data
+  const userMobile = sanitizeIndianMobile(currentUser?.mobile_number || currentUser?.mobile);
+  const initialContactNumber = sanitizeIndianMobile(lead.contactNumber || (lead as any).contact_number);
+  const initialAltNumber = sanitizeIndianMobile((lead as any).alternativeNumber || (lead as any).alternative_number);
+  const initialEmail = sanitizeEmail(lead.email);
+  const initialCustomerMet = sanitizeText(lead.customerMet || (lead as any).customer_met);
+  const initialRemarks = sanitizeText(lead.remarks);
 
   const initialWilling = (lead as any).willingToOnboard || (lead as any).willing_to_onboard || (
     lead.meetingOutcome && ['willing to onboard', 'interested', 'willing', 'onboarded'].includes(lead.meetingOutcome.toLowerCase()) 
@@ -301,17 +366,17 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
     address: lead.address || '',
     pincode: initialPin,
     poName: lead.poName || initialOffices[0] || '',
-    customerMet: lead.customerMet || '',
+    customerMet: initialCustomerMet,
     contactNumber: initialContactNumber,
-    alternativeNumber: '',
-    email: lead.email || '',
+    alternativeNumber: initialAltNumber,
+    email: initialEmail,
     productType: '',
     serviceUsing: lead.serviceUsing || 'DHL',
     monthlyVolume: lead.monthlyVolume || '',
     meetingOutcome: lead.meetingOutcome || 'Interested',
     willingToOnboard: initialWilling,
     contractId: lead.contractId || '',
-    remarks: lead.remarks || '',
+    remarks: initialRemarks,
     division: cleanActiveDiv,
     region: lead.region || '',
   });
@@ -378,7 +443,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
         const u = JSON.parse(userStr);
         setCurrentUser(u);
         const name = u.name || u.username || u.employee_id;
-        const mobile = (u.mobile_number || u.mobile || '').replace(/\D/g, '').slice(0, 10);
+        const mobile = sanitizeIndianMobile(u.mobile_number || u.mobile || '');
 
         if (name) {
           setFormData(prev => ({
@@ -406,8 +471,9 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
           const mobiles: Record<string, string> = {};
           data.forEach((m: any) => {
             const n = m.name || m.employee_id;
-            if (n && m.mobile_number) {
-              mobiles[n] = String(m.mobile_number).replace(/\D/g, '').slice(0, 10);
+            const mob = sanitizeIndianMobile(m.mobile_number);
+            if (n && mob) {
+              mobiles[n] = mob;
             }
           });
           setMeOptions(prev => Array.from(new Set([...prev, ...names])));
@@ -511,7 +577,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
   };
 
   const handleMeChange = (selectedMe: string) => {
-    const mobile = meMobileMap[selectedMe] || '';
+    const mobile = sanitizeIndianMobile(meMobileMap[selectedMe] || '');
     setFormData(prev => ({
       ...prev,
       assignedMeName: selectedMe,
@@ -528,19 +594,24 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
     e.preventDefault();
     setSaving(true);
     try {
-      // Validate 10-digit phone numbers
-      if (formData.contactNumber && formData.contactNumber.length !== 10) {
-        alert('Contact number must be exactly 10 digits.');
+      // Validate mobile numbers
+      if (formData.contactNumber && !sanitizeIndianMobile(formData.contactNumber)) {
+        alert('Contact number must be a valid 10-digit mobile number starting with 6, 7, 8, or 9.');
         setSaving(false);
         return;
       }
-      if (formData.meMobile && formData.meMobile.length !== 10) {
-        alert('ME mobile number must be exactly 10 digits.');
+      if (formData.meMobile && !sanitizeIndianMobile(formData.meMobile)) {
+        alert('ME mobile number must be a valid 10-digit mobile number starting with 6, 7, 8, or 9.');
         setSaving(false);
         return;
       }
-      if (formData.alternativeNumber && formData.alternativeNumber.length !== 10) {
-        alert('Alternative number must be exactly 10 digits.');
+      if (formData.alternativeNumber && !sanitizeIndianMobile(formData.alternativeNumber)) {
+        alert('Alternative number must be a valid 10-digit mobile number starting with 6, 7, 8, or 9.');
+        setSaving(false);
+        return;
+      }
+      if (formData.email && !sanitizeEmail(formData.email)) {
+        alert('Please enter a valid email address (e.g., exporter@domain.com).');
         setSaving(false);
         return;
       }

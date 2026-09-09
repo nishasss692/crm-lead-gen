@@ -597,6 +597,8 @@ def cleanup_and_standardize_database():
                 for alias in info["aliases"]:
                     db.execute(text("UPDATE leads SET region = :reg WHERE LOWER(TRIM(division)) = :alias"), {"reg": info["region"], "alias": alias.lower()})
 
+            db.execute(text("UPDATE users SET mobile_number = NULL WHERE mobile_number IN ('9999999999', '0000000000', '1234567890') OR mobile_number LIKE '999999%'"))
+
             db.commit()
     except Exception as e:
         print(f"[DB Standardize] Notice: {e}")
@@ -715,7 +717,7 @@ def seed_test_users():
         
         test_users = [
             # Circle Admin
-            {"employee_id": "CO_ADMIN", "name": "Circle Admin", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999999"},
+            {"employee_id": "CO_ADMIN", "name": "Circle Admin", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": None},
             # 3 Official Regional Office (RO) Accounts: r001 (Bangalore), r002 (SK), r003 (NK)
             {"employee_id": "r001", "name": "RO Bangalore (Bengaluru HQ)", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888801"},
             {"employee_id": "r002", "name": "RO South Karnataka (SK)", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None, "mobile_number": "9888888802"},
@@ -1103,7 +1105,21 @@ def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db
     if not user_rec or not verify_password(request.old_password, user_rec.password or ""):
         raise HTTPException(status_code=400, detail="Incorrect old password")
     
-    user_rec.password = get_password_hash(request.new_password)
+    new_pwd = request.new_password.strip()
+    if new_pwd == request.old_password:
+        raise HTTPException(status_code=400, detail="New password cannot be the same as the current password.")
+    if len(new_pwd) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long.")
+    if not re.search(r'[A-Z]', new_pwd):
+        raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter (A-Z).")
+    if not re.search(r'[a-z]', new_pwd):
+        raise HTTPException(status_code=400, detail="Password must contain at least one lowercase letter (a-z).")
+    if not re.search(r'[0-9]', new_pwd):
+        raise HTTPException(status_code=400, detail="Password must contain at least one numeric digit (0-9).")
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>\-_=+[\];/~`]', new_pwd):
+        raise HTTPException(status_code=400, detail="Password must contain at least one special character (!@#$%^&*...).")
+
+    user_rec.password = get_password_hash(new_pwd)
     db.commit()
     return {"success": True, "message": "Password updated successfully"}
 
@@ -1260,19 +1276,63 @@ def map_dataframe_columns(df: pd.DataFrame) -> Dict[str, str]:
                 
     return mapping
 
-def is_valid_phone(phone_str: str) -> bool:
-    """Validate phone string has at least 7 real numeric digits"""
+def sanitize_contact_phone(phone_str: Optional[str]) -> str:
+    """Returns valid 10-digit Indian mobile number starting with 6-9, or empty string if invalid/dummy."""
     if not phone_str:
-        return False
-    digits = re.sub(r'\D', '', phone_str)
-    return len(digits) >= 7 and digits not in ['0000000000', '1234567890', '9999999999']
+        return ""
+    digits = re.sub(r'\D', '', str(phone_str))
+    if len(digits) == 12 and digits.startswith("91"):
+        digits = digits[2:]
+    elif len(digits) == 11 and digits.startswith("0"):
+        digits = digits[1:]
+    if len(digits) != 10 or digits[0] not in '6789':
+        return ""
+    if len(set(digits)) == 1:
+        return ""
+    if digits in ['1234567890', '9876543210', '0123456789']:
+        return ""
+    return digits
+
+def sanitize_lead_email(email_str: Optional[str]) -> str:
+    """Returns valid email, or empty string if dummy/placeholder or malformed."""
+    if not email_str:
+        return ""
+    clean = str(email_str).strip().replace(" ", "").lower()
+    if clean in ["nan", "none", "null", "nil", "na", "n/a", "-", "--", "no", "noemail", "test", "dummy"]:
+        return ""
+    if any(clean.startswith(p) for p in ["dummy", "test@", "fake", "sample", "na@", "none@", "null@", "temp@"]):
+        return ""
+    if "example.com" in clean or "test@test" in clean or "@test." in clean:
+        return ""
+    if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', clean):
+        return ""
+    return str(email_str).strip().replace(" ", "")
+
+def sanitize_customer_name(name_str: Optional[str]) -> str:
+    """Returns clean customer name, stripping dummy/placeholder values."""
+    if not name_str:
+        return ""
+    clean = str(name_str).strip()
+    if clean.lower() in ["nan", "none", "null", "nil", "na", "n/a", "-", "--", "unknown", "dummy", "test", "not met", "not available"]:
+        return ""
+    return clean
+
+def sanitize_remarks_text(remarks_str: Optional[str]) -> str:
+    """Returns clean remarks, stripping dummy/placeholder values."""
+    if not remarks_str:
+        return ""
+    clean = str(remarks_str).strip()
+    if clean.lower() in ["nan", "none", "null", "nil", "na", "n/a", "-", "--"]:
+        return ""
+    return clean
+
+def is_valid_phone(phone_str: str) -> bool:
+    """Validate Indian 10-digit mobile phone number starting with 6-9, rejecting dummy numbers"""
+    return bool(sanitize_contact_phone(phone_str))
 
 def is_valid_email(email_str: str) -> bool:
-    """Validate email format"""
-    if not email_str:
-        return False
-    clean = email_str.strip().lower()
-    return bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', clean))
+    """Validate email format, rejecting dummy/placeholder emails"""
+    return bool(sanitize_lead_email(email_str))
 
 def is_valid_pincode(pin_str: str) -> bool:
     """Validate Indian 6-digit PIN code"""
@@ -1859,8 +1919,16 @@ def lead_to_dict(lead: Lead, win_prob: float = 0.0) -> dict:
     res["assigned_me_name"] = lead.assigned_agent or ""
     res["contractId"] = lead.contract_id or ""
     res["exporterName"] = lead.exporter_name or ""
-    res["customerMet"] = lead.customer_met or ""
-    res["contactNumber"] = lead.contact_number or ""
+    clean_cust = sanitize_customer_name(lead.customer_met)
+    clean_contact = sanitize_contact_phone(lead.contact_number)
+    clean_email = sanitize_lead_email(lead.email)
+    clean_remarks = sanitize_remarks_text(lead.remarks)
+    res["customerMet"] = clean_cust
+    res["customer_met"] = clean_cust
+    res["contactNumber"] = clean_contact
+    res["contact_number"] = clean_contact
+    res["email"] = clean_email
+    res["remarks"] = clean_remarks
     res["serviceUsing"] = lead.service_using or ""
     res["monthlyVolume"] = lead.monthly_volume or ""
     res["meetingOutcome"] = lead.meeting_outcome or ""
@@ -2723,7 +2791,16 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
     for key, value in data.items():
         db_key = field_map.get(key, key)
         if db_key and hasattr(lead, db_key):
-            setattr(lead, db_key, str(value).strip() if value is not None else "")
+            val_str = str(value).strip() if value is not None else ""
+            if db_key == "contact_number":
+                val_str = sanitize_contact_phone(val_str)
+            elif db_key == "email":
+                val_str = sanitize_lead_email(val_str)
+            elif db_key == "customer_met":
+                val_str = sanitize_customer_name(val_str)
+            elif db_key == "remarks":
+                val_str = sanitize_remarks_text(val_str)
+            setattr(lead, db_key, val_str)
             
     # Auto-assign agent if empty and user is ME
     user_role = str(current_user.get("role", "")).upper()
