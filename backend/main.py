@@ -55,7 +55,7 @@ app = FastAPI(title="India Post Lead Management API", version="2.5", lifespan=li
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1645,6 +1645,30 @@ def clear_all_leads(db: Session = Depends(get_db), current_user: dict = Depends(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to clear leads: {str(e)}")
+
+# Health Check & Database Diagnostic Endpoint
+@app.get("/api/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        lead_count = db.query(Lead).count()
+        db_url_str = str(engine.url)
+        is_pg = "postgresql" in db_url_str
+        masked_url = db_url_str.split("@")[-1] if "@" in db_url_str else db_url_str
+        return {
+            "status": "healthy",
+            "database": "postgresql" if is_pg else "sqlite",
+            "database_host": masked_url,
+            "leads_count": lead_count,
+            "supabase_connected": is_pg,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "degraded",
+            "database": "error",
+            "leads_count": 0,
+            "error": str(e)
+        }
 
 # Download Template Endpoint
 @app.get("/api/download-template")

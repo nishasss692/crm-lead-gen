@@ -17,15 +17,30 @@ export function getApiBaseUrl(): string {
     if (custom && custom.trim()) {
       return normalizeUrl(custom);
     }
-  }
-  let rawUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
-  if (!rawUrl) {
-    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const rawUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
+
+    // If on a different device (phone, tablet, remote network) and the configured URL points to localhost:
+    // Do NOT let the phone try to connect to port 8000 on itself!
+    if (!isLocalhost && (rawUrl.includes('localhost') || rawUrl.includes('127.0.0.1') || !rawUrl)) {
+      // Use relative path so Next.js server reverse-proxies directly to the FastAPI backend
+      return '';
+    }
+
+    if (rawUrl) {
+      return normalizeUrl(rawUrl);
+    }
+
+    if (isLocalhost) {
       return 'http://localhost:8000';
     }
+
     return '';
   }
-  return normalizeUrl(rawUrl);
+
+  const rawUrl = (process.env.NEXT_PUBLIC_API_URL || '').trim();
+  return rawUrl ? normalizeUrl(rawUrl) : 'http://127.0.0.1:8000';
 }
 
 export const API_BASE_URL = normalizeUrl(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');

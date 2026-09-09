@@ -15,6 +15,7 @@ import {
   FileSpreadsheet, 
   FileCheck, 
   AlertTriangle,
+  AlertCircle,
   ShieldCheck,
   BadgeCheck,
   Server,
@@ -44,6 +45,7 @@ function LeadsPageContent() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Upload Modal State
@@ -96,6 +98,7 @@ function LeadsPageContent() {
 
   const fetchLeads = async (token: string, division = selectedDivision) => {
     setLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
       if (division && !division.toLowerCase().startsWith('all')) {
@@ -144,9 +147,17 @@ function LeadsPageContent() {
           }));
           setLeads(formattedData);
         }
+      } else {
+        if (res.status === 401) {
+          router.push('/login');
+          return;
+        }
+        const err = await safeJson(res);
+        setFetchError(err?.detail || `Backend returned status ${res.status}. Could not retrieve leads.`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch leads", error);
+      setFetchError(error.message || 'Network error: Cannot reach backend server. Please ensure backend is reachable.');
     } finally {
       setLoading(false);
     }
@@ -521,6 +532,29 @@ function LeadsPageContent() {
             </div>
           </div>
         </div>
+
+        {/* Connection Error Banner */}
+        {fetchError && (
+          <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-xl text-amber-900 flex items-start justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-900">Backend Connection Error</p>
+                <p className="text-xs text-amber-800 mt-0.5">{fetchError}</p>
+                <p className="text-[11px] text-amber-700 mt-1">If accessing from a different device, ensure your backend server is running and accessible.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                if (token) fetchLeads(token, selectedDivision);
+              }}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shrink-0 transition-colors cursor-pointer"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
 
         {/* Table Content */}
         {loading ? (

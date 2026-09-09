@@ -18,7 +18,7 @@ import {
   TrendingUp,
   Layers
 } from 'lucide-react';
-import { API_BASE_URL } from '@/lib/api';
+import { API_BASE_URL, apiFetch, getApiBaseUrl, safeJson } from '@/lib/api';
 
 const KARNATAKA_DIVISIONS: Record<string, { region: string; aliases: string[] }> = {
   // Bengaluru HQ Region
@@ -118,13 +118,43 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [backendUrl, setBackendUrl] = useState('');
   const [showConfig, setShowConfig] = useState(false);
+  const [serverStatus, setServerStatus] = useState<{
+    checked: boolean;
+    online: boolean;
+    database?: string;
+    leadsCount?: number;
+    url?: string;
+  }>({ checked: false, online: false });
   const router = useRouter();
+
+  const checkBackendHealth = async () => {
+    try {
+      const res = await apiFetch('/api/health');
+      if (res.ok) {
+        const data = await safeJson(res);
+        setServerStatus({
+          checked: true,
+          online: true,
+          database: data?.database || 'postgresql',
+          leadsCount: data?.leads_count ?? 0,
+          url: getApiBaseUrl() || (typeof window !== 'undefined' ? window.location.origin : '')
+        });
+        return;
+      }
+    } catch {}
+    setServerStatus({
+      checked: true,
+      online: false,
+      url: getApiBaseUrl() || (typeof window !== 'undefined' ? window.location.origin : '')
+    });
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('custom_backend_url') || '';
       setBackendUrl(saved);
     }
+    checkBackendHealth();
   }, []);
 
   const saveCustomBackend = (url: string) => {
@@ -137,10 +167,9 @@ export default function LoginPage() {
         localStorage.removeItem('custom_backend_url');
       }
     }
-  };
-
-  const getActiveBackend = () => {
-    return (typeof window !== 'undefined' && localStorage.getItem('custom_backend_url')) || backendUrl || API_BASE_URL;
+    setTimeout(() => {
+      checkBackendHealth();
+    }, 150);
   };
 
   const handleLogin = async (e?: React.FormEvent, directId?: string, directPass?: string) => {
@@ -155,10 +184,8 @@ export default function LoginPage() {
     const isDemo = targetIdUpper in DEMO_ACCOUNTS || (targetId in DEMO_ACCOUNTS) || (targetId.toLowerCase() in DEMO_ACCOUNTS) || !!divMatch;
     const isDemoPass = ['password123', 'Post@123'].includes(targetPass) || !targetPass;
 
-    const activeApiUrl = getActiveBackend();
-
     try {
-      const res = await fetch(`${activeApiUrl}/api/login`, {
+      const res = await apiFetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,60 +208,12 @@ export default function LoginPage() {
         router.push('/');
         return;
       } else {
-        // Demo accounts fallback
-        if (isDemo && (isDemoPass || targetPass === 'password123' || targetPass === 'Post@123')) {
-          const divInfo = findDivisionAccount(targetId);
-          const info = divInfo 
-            ? { role: 'DO', assigned_region: divInfo.region, assigned_division: divInfo.division }
-            : (DEMO_ACCOUNTS[targetIdUpper] || DEMO_ACCOUNTS[targetId] || DEMO_ACCOUNTS[targetId.toLowerCase()] || { role: 'DO', assigned_region: null, assigned_division: targetId });
-          const finalEmpId = divInfo ? divInfo.division : targetIdUpper;
-          const demoUser = {
-            employee_id: finalEmpId,
-            username: finalEmpId,
-            name: `DO ${finalEmpId}`,
-            role: info.role,
-            assigned_region: info.assigned_region,
-            assigned_division: info.assigned_division,
-            region: info.assigned_region,
-            division: info.assigned_division
-          };
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('token', 'demo_access_token_' + finalEmpId);
-            localStorage.setItem('role', info.role);
-            localStorage.setItem('user', JSON.stringify(demoUser));
-          }
-          router.push('/');
-          return;
-        }
         const errData = await res.json().catch(() => null);
         setError(errData?.detail || 'Invalid Employee ID or Password.');
       }
-    } catch (err) {
-      if (isDemo && (isDemoPass || targetPass === 'password123' || targetPass === 'Post@123')) {
-        const divInfo = findDivisionAccount(targetId);
-        const info = divInfo 
-          ? { role: 'DO', assigned_region: divInfo.region, assigned_division: divInfo.division }
-          : (DEMO_ACCOUNTS[targetIdUpper] || DEMO_ACCOUNTS[targetId] || DEMO_ACCOUNTS[targetId.toLowerCase()] || { role: 'DO', assigned_region: null, assigned_division: targetId });
-        const finalEmpId = divInfo ? divInfo.division : targetIdUpper;
-        const demoUser = {
-          employee_id: finalEmpId,
-          username: finalEmpId,
-          name: `DO ${finalEmpId}`,
-          role: info.role,
-          assigned_region: info.assigned_region,
-          assigned_division: info.assigned_division,
-          region: info.assigned_region,
-          division: info.assigned_division
-        };
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('token', 'demo_access_token_' + finalEmpId);
-          localStorage.setItem('role', info.role);
-          localStorage.setItem('user', JSON.stringify(demoUser));
-        }
-        router.push('/');
-        return;
-      }
-      setError('Unable to connect to backend server. Please verify your server URL.');
+    } catch (err: any) {
+      setShowConfig(true);
+      setError('Cannot connect to backend server. If accessing from a different device, please configure the Backend Server URL below.');
     } finally {
       setLoading(false);
     }
@@ -296,11 +275,6 @@ export default function LoginPage() {
 
           {/* Center Floating Hub Beacon Information */}
           <div className="relative z-10 my-auto py-8 max-w-xl">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-red-50 border border-slate-200 px-3.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-4 shadow-xs backdrop-blur-sm">
-              <Radio className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
-              <span className="text-[#1B2A4A]">National Commercial Gateway</span>
-            </div>
-
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#1B2A4A] tracking-tight leading-tight">
               Connecting Commerce across <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-[#1B2A4A] to-[#D1242F]">Karnataka & India</span>
             </h2>
@@ -535,35 +509,61 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Backend Configuration Toggle */}
+            {/* Backend Configuration & Live Status */}
             <div className="pt-3 border-t border-slate-200 text-center">
               <button
                 type="button"
                 onClick={() => setShowConfig(!showConfig)}
-                className="text-[11px] text-slate-500 hover:text-blue-700 flex items-center justify-center gap-1.5 mx-auto transition-colors"
+                className="text-[11px] text-slate-600 hover:text-blue-700 flex items-center justify-center gap-1.5 mx-auto transition-colors font-medium cursor-pointer"
               >
-                <Server className="w-3.5 h-3.5 text-blue-600/70" />
-                <span>Server: <strong className="text-[#1B2A4A]">{backendUrl ? backendUrl.replace('https://', '').replace('http://', '') : 'Local API (Port 8000)'}</strong></span>
+                <Server className="w-3.5 h-3.5 text-blue-600" />
+                <span>
+                  Backend:{' '}
+                  {serverStatus.checked ? (
+                    serverStatus.online ? (
+                      <span className="text-emerald-700 font-bold inline-flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
+                        Connected ({serverStatus.leadsCount?.toLocaleString() ?? 0} leads)
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 font-bold inline-flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>
+                        Not Connected (Click to set URL)
+                      </span>
+                    )
+                  ) : (
+                    <strong className="text-[#1B2A4A]">{backendUrl ? backendUrl.replace('https://', '').replace('http://', '') : 'Auto / Local'}</strong>
+                  )}
+                </span>
               </button>
               {showConfig && (
-                <div className="mt-2.5 p-3 bg-blue-50/30 border border-blue-200 rounded-xl text-left animate-in fade-in">
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Backend Server URL:</label>
+                <div className="mt-2.5 p-3 bg-blue-50/50 border border-blue-200 rounded-xl text-left animate-in fade-in">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-700">Backend Server URL:</label>
+                    <span className="text-[10px] text-slate-500">For phone/cloud access</span>
+                  </div>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={backendUrl}
                       onChange={(e) => setBackendUrl(e.target.value)}
-                      placeholder="http://localhost:8000"
-                      className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:border-blue-600"
+                      placeholder="e.g. https://your-backend.onrender.com or http://192.168.0.104:8000"
+                      className="flex-1 px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white text-slate-800 focus:outline-none focus:border-blue-600 font-mono"
                     />
                     <button
                       type="button"
                       onClick={() => saveCustomBackend(backendUrl)}
                       className="px-3 py-1.5 bg-[#1B2A4A] hover:bg-blue-900 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
                     >
-                      Save
+                      Connect
                     </button>
                   </div>
+                  {serverStatus.checked && (
+                    <div className="mt-2 pt-2 border-t border-blue-100 text-[10px] flex items-center justify-between text-slate-600">
+                      <span>Database: <strong className="text-slate-800">{serverStatus.database || 'offline'}</strong></span>
+                      <span>Total Leads: <strong className="text-slate-800">{serverStatus.leadsCount?.toLocaleString() ?? 0}</strong></span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -1093,12 +1093,12 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Contact person</label>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Customer name</label>
                 <input 
                   type="text" 
                   value={formData.customerMet} 
                   onChange={e => handleChange('customerMet', e.target.value)}
-                  placeholder="Key Contact / Customer Met"
+                  placeholder="Customer Name"
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
                 />
               </div>
@@ -1132,27 +1132,8 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
               </div>
             </div>
 
-            {/* ROW 4: Alternative number, Email, Product type, Current provider */}
+            {/* ROW 4: Email, Current provider, Monthly volume (₹), Outcome */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-800">Alternative number</label>
-                  <span className={`text-[10px] font-mono font-bold ${
-                    formData.alternativeNumber.length === 10 ? 'text-emerald-600' : formData.alternativeNumber.length > 0 ? 'text-amber-600' : 'text-slate-400'
-                  }`}>
-                    {formData.alternativeNumber ? `${formData.alternativeNumber.length}/10 digits` : ''}
-                  </span>
-                </div>
-                <input 
-                  type="text" 
-                  maxLength={10}
-                  value={formData.alternativeNumber} 
-                  onChange={e => handleChange('alternativeNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="Optional 10-digit phone"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
-                />
-              </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1">Email</label>
                 <input 
@@ -1160,17 +1141,6 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                   value={formData.email} 
                   onChange={e => handleChange('email', e.target.value)}
                   placeholder="exporter@domain.com"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Product type</label>
-                <input 
-                  type="text" 
-                  value={formData.productType} 
-                  onChange={e => handleChange('productType', e.target.value)}
-                  placeholder="e.g. Handicrafts, Textiles, Books"
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
                 />
               </div>
@@ -1192,10 +1162,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                   )}
                 </select>
               </div>
-            </div>
 
-            {/* ROW 5: Monthly volume (₹), Outcome, Willing to onboard, Contract ID */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1">Monthly volume (₹)</label>
                 <input 
@@ -1214,7 +1181,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                   onChange={e => {
                     const val = e.target.value;
                     handleChange('meetingOutcome', val);
-                    if (val === 'Willing to Onboard' || val === 'Interested' || val === 'Onboarded') {
+                    if (val === 'Interested' || val === 'Onboarded') {
                       handleChange('willingToOnboard', 'Yes');
                     } else if (val === 'Not Interested') {
                       handleChange('willingToOnboard', 'No');
@@ -1224,46 +1191,26 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                 >
                   <option value="Interested">Interested</option>
                   <option value="Follow-up Required">Follow-up Required</option>
-                  <option value="Willing to Onboard">Willing to Onboard</option>
                   <option value="Onboarded">Onboarded</option>
                   <option value="Contacted">Contacted</option>
                   <option value="Not Interested">Not Interested</option>
-                  {formData.meetingOutcome && !['Interested', 'Follow-up Required', 'Willing to Onboard', 'Onboarded', 'Contacted', 'Not Interested'].includes(formData.meetingOutcome) && (
+                  {formData.meetingOutcome && !['Interested', 'Follow-up Required', 'Onboarded', 'Contacted', 'Not Interested'].includes(formData.meetingOutcome) && (
                     <option value={formData.meetingOutcome}>{formData.meetingOutcome}</option>
                   )}
                 </select>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Willing to onboard</label>
-                <select 
-                  value={formData.willingToOnboard} 
-                  onChange={e => {
-                    const val = e.target.value;
-                    handleChange('willingToOnboard', val);
-                    if (val === 'Yes' && (!formData.meetingOutcome || formData.meetingOutcome === 'Not Interested')) {
-                      handleChange('meetingOutcome', 'Interested');
-                    } else if (val === 'No' && formData.meetingOutcome === 'Willing to Onboard') {
-                      handleChange('meetingOutcome', 'Not Interested');
-                    }
-                  }}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
-                >
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Contract ID</label>
-                <input 
-                  type="text" 
-                  value={formData.contractId} 
-                  onChange={e => handleChange('contractId', e.target.value)}
-                  placeholder="Enter Contract ID if already created"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
-                />
-              </div>
+            {/* ROW 5: Contract ID */}
+            <div>
+              <label className="block text-xs font-bold text-slate-800 mb-1">Contract ID</label>
+              <input 
+                type="text" 
+                value={formData.contractId} 
+                onChange={e => handleChange('contractId', e.target.value)}
+                placeholder="Enter Contract ID if already created"
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
+              />
             </div>
 
             {/* ROW 6: Remarks */}
