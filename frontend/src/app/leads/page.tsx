@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import LeadsTable, { Lead } from '../components/LeadsTable';
 import { 
@@ -17,7 +17,8 @@ import {
   AlertTriangle,
   ShieldCheck,
   BadgeCheck,
-  Server
+  Server,
+  ChevronDown
 } from 'lucide-react';
 import { apiFetch, safeJson, getApiBaseUrl } from '@/lib/api';
 
@@ -37,6 +38,9 @@ function LeadsPageContent() {
   } | null>(null);
 
   const [selectedDivision, setSelectedDivision] = useState('');
+  const [selectedPincode, setSelectedPincode] = useState('');
+  const [selectedOutcome, setSelectedOutcome] = useState('');
+  const [selectedRecordScope, setSelectedRecordScope] = useState('All Records');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [divisions, setDivisions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +133,10 @@ function LeadsPageContent() {
             serviceUsing: item.service_using || item.serviceUsing || '', 
             monthlyVolume: item.monthly_volume || item.monthlyVolume || '', 
             meetingOutcome: item.meeting_outcome || item.meetingOutcome || '',
+            willingToOnboard: item.willing_to_onboard || item.willingToOnboard || (
+              item.meeting_outcome && ['willing to onboard', 'willing', 'interested'].includes(String(item.meeting_outcome).toLowerCase()) ? 'Yes' : ''
+            ),
+            willing_to_onboard: item.willing_to_onboard || item.willingToOnboard || '',
             contractId: item.contract_id || item.contractId || '', 
             remarks: item.remarks || '',
             win_probability: item.win_probability ?? 0,
@@ -313,24 +321,58 @@ function LeadsPageContent() {
     filtered = filtered.filter(lead => {
       const outcome = (lead.meetingOutcome || '').trim().toLowerCase();
       const hasContract = !!(lead.contractId || '').trim();
+      const wVal = (lead.willingToOnboard || lead.willing_to_onboard || '').trim().toLowerCase();
+      const isContacted = Boolean(
+        (outcome !== '' && outcome !== 'pending' && outcome !== 'nan' && outcome !== 'none' && outcome !== 'new')
+        || lead.contactedDate1 || lead.contactedDate2 || lead.contactedDate3 || lead.dateOfMeeting || wVal
+      );
       
       switch (statusFilter.toLowerCase()) {
         case 'pending':
-          return !outcome || outcome === 'pending' || outcome === 'nan' || outcome === 'none' || outcome === 'new';
+          return !isContacted;
         case 'contacted':
-          return outcome !== '' && outcome !== 'pending' && outcome !== 'nan' && outcome !== 'none' && outcome !== 'new';
+          return isContacted;
         case 'followup':
           return outcome.includes('follow') || outcome.includes('warm');
         case 'interested':
-          return outcome.includes('positive') || outcome.includes('interested');
+          return outcome.includes('positive') || outcome.includes('interested') || wVal === 'yes';
         case 'willing':
-          return outcome.includes('willing') || (outcome.includes('interested') && !hasContract);
+          return wVal === 'yes' || wVal === 'willing' || outcome.includes('willing') || (outcome.includes('interested') && !hasContract);
         case 'onboarded':
-          return hasContract || outcome.includes('onboard');
+          return hasContract || (outcome.includes('onboard') && !outcome.includes('pending') && !outcome.includes('willing'));
         default:
           return true;
       }
     });
+  }
+
+  const availablePincodes = useMemo(() => {
+    return Array.from(new Set(leads.map(l => (l.pincode || '').trim()).filter(Boolean))).sort();
+  }, [leads]);
+
+  if (selectedPincode) {
+    filtered = filtered.filter(lead => (lead.pincode || '').trim() === selectedPincode.trim());
+  }
+
+  if (selectedOutcome) {
+    const sOut = selectedOutcome.toLowerCase();
+    filtered = filtered.filter(lead => {
+      const out = (lead.meetingOutcome || '').toLowerCase();
+      const wVal = (lead.willingToOnboard || lead.willing_to_onboard || '').toLowerCase();
+      if (sOut === 'interested') return out.includes('interest') || out.includes('positive') || wVal === 'yes';
+      if (sOut === 'follow') return out.includes('follow') || out.includes('warm');
+      if (sOut === 'contacted') return out !== '' && out !== 'pending';
+      if (sOut === 'not interested') return out.includes('not interest') || wVal === 'no';
+      if (sOut === 'willing') return wVal === 'yes' || wVal === 'willing' || out.includes('willing');
+      if (sOut === 'onboarded') return Boolean(lead.contractId) || out.includes('onboard');
+      return out.includes(sOut);
+    });
+  }
+
+  if (selectedRecordScope === 'Valid Contacts') {
+    filtered = filtered.filter(l => Boolean((l.contactNumber && l.contactNumber.trim()) || (l.email && l.email.trim())));
+  } else if (selectedRecordScope === 'With Contract') {
+    filtered = filtered.filter(l => Boolean(l.contractId && l.contractId.trim()));
   }
 
   if (searchTerm) {
@@ -344,6 +386,14 @@ function LeadsPageContent() {
       (lead.id || '').toString().includes(term)
     );
   }
+
+  const handleResetFilters = () => {
+    setSelectedPincode('');
+    setSelectedOutcome('');
+    setSelectedRecordScope('All Records');
+    setSelectedDivision('');
+    setSearchTerm('');
+  };
 
   const getTitle = () => {
     const roleUpper = (user?.role || '').toUpperCase();

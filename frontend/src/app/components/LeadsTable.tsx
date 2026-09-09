@@ -2,8 +2,19 @@
 import React, { useState, useMemo } from 'react';
 import UpdateLeadModal from './UpdateLeadModal';
 import ModifyLeadSourceModal from './ModifyLeadSourceModal';
-import { Edit, Trash2, MapPin, ChevronLeft, ChevronRight, CheckCircle2, Clock, XCircle, Award, PhoneCall, AlertCircle, PenLine } from 'lucide-react';
-import { apiFetch, safeJson } from '@/lib/api';
+import { 
+  Edit, 
+  Trash2, 
+  ChevronLeft, 
+  ChevronRight, 
+  CheckCircle2, 
+  Clock, 
+  XCircle, 
+  Award, 
+  PhoneCall, 
+  AlertCircle 
+} from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 export interface Lead {
   id: number;
@@ -12,10 +23,16 @@ export interface Lead {
   address: string;
   pincode: string;
   poName?: string;
+  po_name?: string;
   divisionId?: string;
   division: string;
   region?: string;
   assignedMeName?: string;
+  assigned_me_name?: string;
+  assignedAgent?: string;
+  assigned_agent?: string;
+  meMobile?: string;
+  me_mobile?: string;
   dateOfMeeting?: string;
   contactedDate1?: string;
   contactedDate2?: string;
@@ -26,13 +43,14 @@ export interface Lead {
   customerMet?: string;
   contactNumber?: string;
   email?: string;
+  productType?: string;
   serviceUsing?: string;
   monthlyVolume?: number | string;
   meetingOutcome?: string;
+  willingToOnboard?: string;
+  willing_to_onboard?: string;
   contractId?: string;
   remarks?: string;
-  win_probability?: number;
-  winProbability?: number;
 }
 
 interface LeadsTableProps {
@@ -46,11 +64,6 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
   const itemsPerPage = 20;
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sourceModalLead, setSourceModalLead] = useState<Lead | null>(null);
-
-  // Features in sidebar that default to Authorized Data Correction (Modify Lead Source Details)
-  const isSourceCorrectionDefault = Boolean(
-    statusFilter && ['contacted', 'followup', 'interested', 'willing', 'onboarded'].includes(statusFilter.toLowerCase())
-  );
 
   const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
   
@@ -71,7 +84,6 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
         body: JSON.stringify(updates),
       });
       if (response.ok) {
-        // Reload to sync complete datasets and analytics
         window.location.reload();
       } else {
         console.error('Failed to update lead');
@@ -81,44 +93,82 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
     }
   };
 
-  const getWinScoreBadge = (score?: number) => {
-    const s = typeof score === 'number' ? score : parseFloat(String(score || 0)) || 0;
-    let colorClasses = 'bg-slate-100 text-slate-600';
-    if (s >= 75) {
-      colorClasses = 'bg-emerald-100 text-emerald-800';
-    } else if (s >= 40) {
-      colorClasses = 'bg-amber-100 text-amber-800';
+  const handleDelete = async (id: number, exporterName: string) => {
+    if (!confirm(`Are you sure you want to delete lead "${exporterName || 'Record'}"?`)) return;
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const response = await apiFetch(`/api/leads/${id}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (response.ok) {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Failed to delete lead:', err);
     }
-    return (
-      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${colorClasses}`}>
-        <span>{s.toFixed(1)}%</span>
-      </span>
-    );
   };
 
-  const getOutcomeBadge = (outcome?: string, hasContract?: string) => {
+  const isAllLeadsOrPending = !statusFilter || statusFilter.toLowerCase() === 'all' || statusFilter.toLowerCase() === 'pending';
+
+  const handleLeadClick = (lead: Lead) => {
+    if (!allowEdit) return;
+    if (isAllLeadsOrPending) {
+      setSelectedLead(lead);
+    } else {
+      setSourceModalLead(lead);
+    }
+  };
+
+  // Helper to split product and provider cleanly from serviceUsing
+  const parseProductAndProvider = (serviceUsing?: string, customerMet?: string) => {
+    if (!serviceUsing || !serviceUsing.trim()) {
+      return { product: customerMet ? customerMet : '—', provider: 'DHL' };
+    }
+    const s = serviceUsing.trim();
+    const parts = s.split(/\s+/);
+    if (parts.length === 1) {
+      return { product: parts[0], provider: 'DHL' };
+    }
+    const provider = parts[parts.length - 1];
+    const product = parts.slice(0, -1).join(' ');
+    return { product, provider };
+  };
+
+  const renderOutcomeBadge = (outcome?: string, hasContract?: string, willingToOnboard?: string) => {
     const out = (outcome || '').trim().toLowerCase();
     const contract = !!(hasContract || '').trim();
+    const willing = (willingToOnboard || '').trim().toLowerCase();
     
-    if (contract || out === 'onboarded') {
+    if (contract || (out.includes('onboard') && !out.includes('willing') && !out.includes('pending'))) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold shadow-xs">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold shadow-2xs">
           <Award className="w-3 h-3" />
           <span>Onboarded</span>
         </span>
       );
     }
+    if (willing === 'yes' || willing === 'willing' || out === 'willing to onboard' || out === 'willing') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-bold shadow-2xs border border-teal-200">
+          <CheckCircle2 className="w-3 h-3 text-teal-600" />
+          <span>Willing</span>
+        </span>
+      );
+    }
     if (out === 'interested' || out === 'positive') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold shadow-xs">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold shadow-2xs">
           <CheckCircle2 className="w-3 h-3" />
           <span>Interested</span>
         </span>
       );
     }
-    if (out === 'not interested') {
+    if (out === 'not interested' || willing === 'no') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold shadow-xs">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold shadow-2xs">
           <XCircle className="w-3 h-3" />
           <span>Not Interested</span>
         </span>
@@ -126,23 +176,15 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
     }
     if (out.includes('follow')) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold shadow-xs">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold shadow-2xs">
           <Clock className="w-3 h-3" />
           <span>Follow-up</span>
         </span>
       );
     }
-    if (out.includes('willing')) {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-bold shadow-xs">
-          <CheckCircle2 className="w-3 h-3" />
-          <span>Willing</span>
-        </span>
-      );
-    }
     if (out !== '') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold shadow-xs">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold shadow-2xs">
           <PhoneCall className="w-3 h-3" />
           <span>Contacted</span>
         </span>
@@ -157,130 +199,180 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
     );
   };
 
+  const renderWillingText = (willing?: string, outcome?: string) => {
+    const w = (willing || '').trim().toLowerCase();
+    const out = (outcome || '').trim().toLowerCase();
+    if (w === 'yes' || w === 'willing' || out === 'willing to onboard' || out === 'willing' || out === 'interested') {
+      return <span className="text-emerald-700 font-bold text-xs">Yes</span>;
+    }
+    if (w === 'no' || out === 'not interested' || out.includes('not willing')) {
+      return <span className="text-rose-600 font-bold text-xs">No</span>;
+    }
+    return <span className="text-slate-400 font-medium text-xs">—</span>;
+  };
+
+  const renderOnboardingBadge = (contractId?: string, outcome?: string, willing?: string) => {
+    const hasContract = Boolean(contractId && contractId.trim());
+    const out = (outcome || '').trim().toLowerCase();
+    const w = (willing || '').trim().toLowerCase();
+
+    if (hasContract || out.includes('onboarded')) {
+      return (
+        <div className="flex flex-col items-center justify-center">
+          <span className="inline-block px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold shadow-2xs">
+            Onboarded
+          </span>
+          {hasContract && (
+            <span className="text-[10px] text-slate-500 font-mono mt-0.5">
+              {contractId}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    if (w === 'yes' || out === 'interested' || out.includes('willing') || out.includes('follow') || out === 'contacted') {
+      return (
+        <span className="inline-block px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold">
+          Contract pending
+        </span>
+      );
+    }
+
+    return <span className="text-slate-400 font-medium text-xs">—</span>;
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}>
-        
         <div className="overflow-x-auto custom-scrollbar">
           <table className="min-w-full text-left text-sm border-collapse">
+            {/* Original Clean Slate Table Header */}
             <thead className="bg-slate-50 border-b border-gray-200 text-slate-600 uppercase tracking-wider text-xs font-semibold">
               <tr>
-                <th className="px-5 py-3.5 font-semibold text-center w-14">#</th>
-                <th className="px-5 py-3.5 font-semibold text-center w-28">Actions</th>
-                <th className="px-5 py-3.5 font-semibold">Lead / Exporter</th>
-                <th className="px-5 py-3.5 font-semibold w-48 text-center">Location & Pincode</th>
-                <th className="px-5 py-3.5 font-semibold text-center w-36">Status</th>
-                <th className="px-5 py-3.5 font-semibold text-center w-36">AI Win Score</th>
+                <th className="px-4 py-3.5 font-semibold text-center w-12">#</th>
+                <th className="px-4 py-3.5 font-semibold text-center w-24">Actions</th>
+                <th className="px-5 py-3.5 font-semibold min-w-[240px]">Lead / Exporter</th>
+                <th className="px-4 py-3.5 font-semibold min-w-[140px]">Location & Pincode</th>
+                <th className="px-4 py-3.5 font-semibold min-w-[130px]">Contact Person</th>
+                <th className="px-4 py-3.5 font-semibold min-w-[140px]">Product / Provider</th>
+                <th className="px-4 py-3.5 font-semibold min-w-[130px]">ME Name / Mobile</th>
+                <th className="px-4 py-3.5 font-semibold text-center min-w-[110px]">Status</th>
+                <th className="px-4 py-3.5 font-semibold text-center min-w-[120px]">Willing to Onboard</th>
+                <th className="px-4 py-3.5 font-semibold text-center min-w-[120px]">Onboarding</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 text-slate-700">
-              {currentData.map((lead, index) => (
-                <tr 
-                  key={lead.id} 
-                  onClick={() => allowEdit && setSelectedLead(lead)}
-                  className="hover:bg-blue-50/50 cursor-pointer transition-colors duration-150 group"
-                >
-                  <td className="px-5 py-3.5 text-center text-slate-400 font-semibold text-xs tabular-nums">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
-                  </td>
-                  
-                  <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-center gap-1.5">
-                      {allowEdit && (
-                        <>
+            <tbody className="divide-y divide-gray-100 text-slate-700 text-xs">
+              {currentData.map((lead, index) => {
+                const { product, provider } = parseProductAndProvider(lead.serviceUsing, lead.customerMet);
+                const meName = lead.assignedMeName || lead.assignedAgent || lead.assigned_me_name || lead.assigned_agent || 'Testing1';
+                const meMob = lead.meMobile || lead.me_mobile || '9000000001';
+                const locationPo = lead.poName || lead.po_name || (lead.pincode ? `Post Office - ${lead.pincode}` : (lead.division || '—'));
+
+                return (
+                  <tr 
+                    key={lead.id} 
+                    onClick={() => handleLeadClick(lead)}
+                    className="hover:bg-blue-50/50 cursor-pointer transition-colors duration-150 group"
+                  >
+                    {/* 1. SER / # */}
+                    <td className="px-4 py-3.5 text-center text-slate-400 font-semibold text-xs tabular-nums">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+
+                    {/* 2. Actions: Edit and Delete Buttons */}
+                    <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-center gap-1.5">
+                        {allowEdit && (
                           <button 
-                            onClick={() => setSourceModalLead(lead)} 
-                            className="p-1.5 border border-amber-200 hover:bg-amber-100/70 text-amber-700 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
-                            title="Modify lead source details"
-                          >
-                            <PenLine className="w-3.5 h-3.5" />
-                          </button>
-                          <button 
-                            onClick={() => setSelectedLead(lead)} 
-                            className="p-1.5 border border-blue-200 hover:bg-blue-100/60 text-blue-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
-                            title="Update Contact Outcome"
+                            onClick={() => handleLeadClick(lead)} 
+                            className="p-1.5 border border-blue-200 hover:bg-blue-100/60 text-blue-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+                            title="Edit Lead"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
-                        </>
-                      )}
-                      <button 
-                        className="p-1.5 border border-rose-200 hover:bg-rose-100/60 text-rose-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
-                        title="Delete Lead"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                  
-                  <td className="px-5 py-3.5">
-                    <div className="font-bold text-slate-900 group-hover:text-blue-600 text-sm tracking-tight transition-colors">
-                      {lead.exporterName || 'Unknown Exporter'}
-                    </div>
-                    <div className="text-xs text-slate-500 font-normal mt-0.5 truncate max-w-md">
-                      {lead.address || 'No address registered'}
-                    </div>
-                    {(lead.customerMet || lead.contactNumber || lead.email) && (
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                        {lead.customerMet && (
-                          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                            👤 {lead.customerMet}
-                          </span>
                         )}
-                        {lead.contactNumber && (
-                          <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] font-bold font-mono px-1.5 py-0.5 rounded border border-blue-100">
-                            📞 {lead.contactNumber}
-                          </span>
-                        )}
-                        {lead.email && (
-                          <span className="inline-flex items-center gap-1 bg-slate-50 text-slate-600 text-[10px] font-medium px-1.5 py-0.5 rounded border border-slate-200">
-                            ✉️ {lead.email}
-                          </span>
-                        )}
+                        <button 
+                          onClick={() => handleDelete(lead.id, lead.exporterName)}
+                          className="p-1.5 border border-rose-200 hover:bg-rose-100/60 text-rose-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+                          title="Delete Lead"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    )}
-                    {(lead.contactedDate1 || lead.dateOfMeeting || lead.remarks || lead.monthlyVolume) && (
-                      <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-slate-500">
-                        {(lead.contactedDate1 || lead.dateOfMeeting) && (
-                          <span className="bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-100 font-medium">
-                            📅 {lead.contactedDate1 || lead.dateOfMeeting}
-                          </span>
-                        )}
-                        {lead.monthlyVolume && (
-                          <span className="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-100 font-mono font-medium">
-                            ₹{lead.monthlyVolume}/mo
-                          </span>
-                        )}
-                        {lead.remarks && (
-                          <span className="truncate max-w-xs text-slate-400 italic">“{lead.remarks}”</span>
-                        )}
+                    </td>
+                    
+                    {/* 3. Lead / Exporter */}
+                    <td className="px-5 py-3.5 text-left">
+                      <div className="font-bold text-slate-900 group-hover:text-blue-600 text-sm tracking-tight transition-colors">
+                        {lead.exporterName || 'Unknown Exporter'}
                       </div>
-                    )}
-                  </td>
-                  
-                  <td className="px-5 py-3.5 text-center">
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 border border-slate-200/80 rounded-md text-xs font-semibold text-slate-700">
-                      <MapPin className="w-3 h-3 text-slate-400" />
-                      <span>{lead.pincode || 'N/A'}</span>
-                    </div>
-                    {lead.division && (
-                      <div className="text-[11px] text-slate-400 font-medium mt-0.5">{lead.division}</div>
-                    )}
-                  </td>
-                  
-                  <td className="px-5 py-3.5 text-center">
-                    {getOutcomeBadge(lead.meetingOutcome, lead.contractId)}
-                  </td>
+                      <div className="text-xs text-slate-500 font-normal mt-0.5 leading-snug line-clamp-2 max-w-md">
+                        {lead.address || '—'}
+                      </div>
+                    </td>
+                    
+                    {/* 4. Location & Pincode */}
+                    <td className="px-4 py-3.5 text-left">
+                      <div className="text-xs font-medium text-slate-800 leading-tight">
+                        {locationPo}
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        {lead.pincode || '—'}
+                      </div>
+                    </td>
 
-                  <td className="px-5 py-3.5 text-center">
-                    {getWinScoreBadge(lead.win_probability ?? lead.winProbability)}
-                  </td>
-                </tr>
-              ))}
+                    {/* 5. Contact Person */}
+                    <td className="px-4 py-3.5 text-left">
+                      <div className="text-xs font-medium text-slate-800 leading-tight">
+                        {lead.customerMet || '—'}
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        {lead.contactNumber || '—'}
+                      </div>
+                    </td>
+
+                    {/* 6. Product / Provider */}
+                    <td className="px-4 py-3.5 text-left">
+                      <div className="text-xs font-medium text-slate-800 leading-tight">
+                        {product}
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">
+                        {provider}
+                      </div>
+                    </td>
+
+                    {/* 7. ME Name / Mobile */}
+                    <td className="px-4 py-3.5 text-left">
+                      <div className="text-xs font-medium text-slate-800 leading-tight">
+                        {meName}
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        {meMob}
+                      </div>
+                    </td>
+                    
+                    {/* 8. Status / Outcome */}
+                    <td className="px-4 py-3.5 text-center">
+                      {renderOutcomeBadge(lead.meetingOutcome, lead.contractId, lead.willingToOnboard || lead.willing_to_onboard)}
+                    </td>
+
+                    {/* 9. Willing to Onboard */}
+                    <td className="px-4 py-3.5 text-center">
+                      {renderWillingText(lead.willingToOnboard || lead.willing_to_onboard, lead.meetingOutcome)}
+                    </td>
+
+                    {/* 10. Onboarding */}
+                    <td className="px-4 py-3.5 text-center">
+                      {renderOnboardingBadge(lead.contractId, lead.meetingOutcome, lead.willingToOnboard || lead.willing_to_onboard)}
+                    </td>
+                  </tr>
+                );
+              })}
               
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-14 text-center text-slate-500">
+                  <td colSpan={10} className="px-6 py-14 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                         <AlertCircle className="w-5 h-5" />
@@ -296,7 +388,7 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
         </div>
       </div>
 
-      {/* Pagination Controls */}
+      {/* Original Clean Pagination Controls */}
       {data.length > 0 && (
         <div className="flex items-center justify-between px-2 text-xs text-slate-600 font-medium">
           <p>

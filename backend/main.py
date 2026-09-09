@@ -136,6 +136,8 @@ if is_sqlite:
                     raw_cur.execute("ALTER TABLE leads ADD COLUMN contacted_date_2 VARCHAR")
                 if "contacted_date_3" not in existing_lead_cols:
                     raw_cur.execute("ALTER TABLE leads ADD COLUMN contacted_date_3 VARCHAR")
+                if "willing_to_onboard" not in existing_lead_cols:
+                    raw_cur.execute("ALTER TABLE leads ADD COLUMN willing_to_onboard VARCHAR")
             raw_conn.commit()
             raw_conn.close()
     except Exception as _e:
@@ -172,6 +174,7 @@ class Lead(Base):
     contacted_date_1: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     contacted_date_2: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     contacted_date_3: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    willing_to_onboard: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
 class User(Base):
     __tablename__ = "users"
@@ -212,6 +215,7 @@ if not is_sqlite:
             _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS contacted_date_1 VARCHAR"))
             _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS contacted_date_2 VARCHAR"))
             _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS contacted_date_3 VARCHAR"))
+            _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS willing_to_onboard VARCHAR"))
             _conn.commit()
     except Exception as _e:
         pass
@@ -682,6 +686,11 @@ def seed_test_users():
         do_default_pwd_hash = get_password_hash("Post@123")
         
         test_users = [
+            # Direct Shortcut Accounts (case-insensitive in login: CO, RO, DO, ME)
+            {"employee_id": "CO", "name": "Circle Admin (CO)", "password": do_default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999999"},
+            {"employee_id": "RO", "name": "Regional Officer (RO)", "password": do_default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None, "mobile_number": "9888888802"},
+            {"employee_id": "DO", "name": "Divisional Officer (DO)", "password": do_default_pwd_hash, "role": "DO", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9777777779"},
+            {"employee_id": "ME", "name": "Marketing Executive (ME)", "password": do_default_pwd_hash, "role": "ME", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9000000001"},
             # CO Accounts
             {"employee_id": "CO_ADMIN", "name": "Circle Admin", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999999"},
             {"employee_id": "co_user", "name": "CO Operations", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999998"},
@@ -768,18 +777,24 @@ def get_current_user(token: str = Depends(OAuth2PasswordBearer(tokenUrl="api/log
         raw_emp_id = token.replace("demo_access_token_", "").replace("demo_offline_token_", "").strip()
         emp_id = raw_emp_id.upper()
         demo_roles = {
+            "CO": ("CO", None, None),
             "CO_ADMIN": ("CO", None, None),
             "CO_USER": ("CO", None, None),
+            "RO": ("RO", "South Karnataka Region", None),
+            "RO_USER": ("RO", "South Karnataka Region", None),
             "RO_BG": ("RO", "Bengaluru HQ Region", None),
             "RO_SK": ("RO", "South Karnataka Region", None),
             "RO_NK": ("RO", "North Karnataka Region", None),
             "R001": ("RO", "Bengaluru HQ Region", None),
             "R002": ("RO", "South Karnataka Region", None),
             "R003": ("RO", "North Karnataka Region", None),
-            "DIV_MYS": ("DO", "South Karnataka Region", "Mysuru"),
+            "DO": ("DO", "South Karnataka Region", "Mysuru"),
             "DO_MYS": ("DO", "South Karnataka Region", "Mysuru"),
+            "DIV_MYS": ("DO", "South Karnataka Region", "Mysuru"),
             "DIV_BGE": ("DO", "Bengaluru HQ Region", "BG East"),
             "DIV_BGS": ("DO", "Bengaluru HQ Region", "BG South"),
+            "ME": ("ME", "South Karnataka Region", "Mysuru"),
+            "ME_USER": ("ME", "South Karnataka Region", "Mysuru"),
             "ME_MYS_01": ("ME", "South Karnataka Region", "Mysuru"),
         }
         clean_div = re.sub(r'^(do|div|division)[\s_\-]+', '', raw_emp_id, flags=re.IGNORECASE).strip()
@@ -1158,6 +1173,9 @@ COLUMN_SYNONYMS = {
     "meeting_outcome": [
         "meeting_outcome", "lead_status", "status", "outcome", "stage", "result", 
         "disposition", "meeting_status", "interaction_result"
+    ],
+    "willing_to_onboard": [
+        "willing_to_onboard", "willingtoonboard", "willing_onboard", "willing", "onboard_willingness", "willingness"
     ],
     "contract_id": [
         "contract_id", "deal_id", "ref_no", "account_no", "agreement_no", "contract_number", "deal_ref"
@@ -1659,10 +1677,11 @@ def get_region_variants(region_str: Optional[str]) -> list[str]:
 def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] = None):
     """
     Role-Based Access Control (RBAC) territory filter:
-    - ME (Marketing Executive): Strictly scoped to their assigned division (case-insensitively)
-      AND specifically to leads assigned to them (or unassigned in their division).
-    - DO (Divisional Officer): Strictly scoped to their assigned division (case-insensitively).
-    - RO (Regional Officer): Strictly scoped to their assigned region (by region variants or divisions in that region).
+    - ME (Marketing Executive): Scoped to their assigned division (or selected division).
+      All leads in the division (including Contacted, Willing to Onboard, Interested, etc.) are visible.
+    - DO (Divisional Officer): Scoped to their assigned division (or selected division).
+    - RO (Regional Officer): Scoped to their assigned region, or to explicitly selected division.
+      If RO selects a division, that division takes priority so RO can inspect any division.
     - CO (Circle Office / Admin): Full circle-wide visibility across all divisions; filtered if division_name is passed.
     """
     if not user:
@@ -1671,13 +1690,11 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
     role = str(user.get("role") if isinstance(user, dict) else getattr(user, "role", "") or "").upper().strip()
     assigned_division = user.get("assigned_division") if isinstance(user, dict) else getattr(user, "assigned_division", None)
     assigned_region = user.get("assigned_region") if isinstance(user, dict) else getattr(user, "assigned_region", None)
-    emp_id = str(user.get("employee_id") if isinstance(user, dict) else getattr(user, "employee_id", "") or "").strip()
-    user_name = str(user.get("name") if isinstance(user, dict) else getattr(user, "name", "") or "").strip()
 
-    # 1. ME: Restricted to assigned division (case-insensitively) AND only their assigned leads (or unassigned)
+    # 1. ME: Scoped to assigned division or selected division (case-insensitively)
     if role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
-        target_div = str(assigned_division or "").strip()
-        if target_div:
+        target_div = str(division_name or assigned_division or "").strip()
+        if target_div and not target_div.lower().startswith("all"):
             aliases = get_division_aliases(target_div)
             div_conditions = [func.lower(func.trim(Lead.division)) == a for a in aliases]
             div_clean = normalize_division_name(target_div).lower().replace(" division", "").strip()
@@ -1685,26 +1702,13 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
                 div_conditions.append(func.lower(func.trim(Lead.division)).like(f"%{div_clean}%"))
             query = query.filter(or_(*div_conditions))
 
-        # ME assignment filter: only leads assigned to this ME, OR unassigned leads in their division
-        agent_conditions = [
-            Lead.assigned_agent == None,
-            func.trim(Lead.assigned_agent) == "",
-            func.lower(func.trim(Lead.assigned_agent)) == "unassigned"
-        ]
-        if emp_id:
-            agent_conditions.append(func.lower(func.trim(Lead.assigned_agent)) == emp_id.lower())
-            agent_conditions.append(func.lower(func.trim(Lead.assigned_agent)).like(f"%{emp_id.lower()}%"))
-        if user_name and user_name.lower() != emp_id.lower():
-            agent_conditions.append(func.lower(func.trim(Lead.assigned_agent)) == user_name.lower())
-            agent_conditions.append(func.lower(func.trim(Lead.assigned_agent)).like(f"%{user_name.lower()}%"))
-
-        query = query.filter(or_(*agent_conditions))
+        # Do NOT filter out leads from ME based on agent_conditions so all updated outcome leads remain visible!
         return query
 
-    # 2. DO: Strictly restricted to their assigned division (case-insensitively)
+    # 2. DO: Scoped to their assigned division or selected division (case-insensitively)
     elif role in ["DO", "DIVISION", "DIV"]:
-        target_div = str(assigned_division or "").strip()
-        if target_div:
+        target_div = str(division_name or assigned_division or "").strip()
+        if target_div and not target_div.lower().startswith("all"):
             aliases = get_division_aliases(target_div)
             div_conditions = [func.lower(func.trim(Lead.division)) == a for a in aliases]
             div_clean = normalize_division_name(target_div).lower().replace(" division", "").strip()
@@ -1713,52 +1717,42 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
             query = query.filter(or_(*div_conditions))
         return query
 
-    # 3. RO: Strictly constrained to their assigned regional territory (by region name OR divisions in region)
+    # 3. RO: Constrained to regional territory, or specifically chosen division
     elif role == "RO":
-        reg_variants = [v.lower() for v in get_region_variants(assigned_region)]
-        reg_div_names = get_divisions_for_region(assigned_region)
-        all_reg_div_aliases = []
-        for d in reg_div_names:
-            all_reg_div_aliases.extend(get_division_aliases(d))
-        all_reg_div_aliases = list(set(all_reg_div_aliases))
-
-        # Other region division aliases to prevent any cross-region leaking
-        other_div_aliases = []
-        for can_d, info in KARNATAKA_TERRITORY_REGISTRY.items():
-            if can_d not in reg_div_names:
-                other_div_aliases.extend(get_division_aliases(can_d))
-        other_div_aliases = list(set(other_div_aliases))
-
-        ro_conditions = []
-        if all_reg_div_aliases:
-            ro_conditions.append(func.lower(func.trim(Lead.division)).in_(all_reg_div_aliases))
-        if reg_variants:
-            if other_div_aliases:
-                ro_conditions.append(
-                    and_(
-                        func.lower(func.trim(Lead.region)).in_(reg_variants),
-                        or_(
-                            Lead.division == None,
-                            func.trim(Lead.division) == "",
-                            func.lower(func.trim(Lead.division)).notin_(other_div_aliases)
-                        )
-                    )
-                )
-            else:
-                ro_conditions.append(func.lower(func.trim(Lead.region)).in_(reg_variants))
-
-        if ro_conditions:
-            query = query.filter(or_(*ro_conditions))
-
-        # If RO explicitly filters by a specific division in the UI
         div_filter = (division_name or "").strip()
-        if div_filter and div_filter.lower() not in ["all", "all divisions", "all circle divisions", "all regional divisions", "assigned territory", "my region", ""]:
+        is_specific_div = div_filter and div_filter.lower() not in [
+            "all", "all divisions", "all circle divisions", "all regional divisions", 
+            "assigned territory", "my region", ""
+        ]
+        
+        # If RO explicitly selects a division from the dropdown/filter, prioritize that division!
+        if is_specific_div:
             aliases = get_division_aliases(div_filter)
             div_conditions = [func.lower(func.trim(Lead.division)) == a for a in aliases]
             div_clean = normalize_division_name(div_filter).lower().replace(" division", "").strip()
             if div_clean:
                 div_conditions.append(func.lower(func.trim(Lead.division)).like(f"%{div_clean}%"))
             query = query.filter(or_(*div_conditions))
+            return query
+
+        # Otherwise filter by assigned region if defined and not all/circle
+        if assigned_region and assigned_region.lower() not in ["all", "circle", "karnataka circle", "none", ""]:
+            reg_variants = [v.lower() for v in get_region_variants(assigned_region)]
+            reg_div_names = get_divisions_for_region(assigned_region)
+            all_reg_div_aliases = []
+            for d in reg_div_names:
+                all_reg_div_aliases.extend(get_division_aliases(d))
+            all_reg_div_aliases = list(set(all_reg_div_aliases))
+
+            ro_conditions = []
+            if all_reg_div_aliases:
+                ro_conditions.append(func.lower(func.trim(Lead.division)).in_(all_reg_div_aliases))
+            if reg_variants:
+                ro_conditions.append(func.lower(func.trim(Lead.region)).in_(reg_variants))
+
+            if ro_conditions:
+                query = query.filter(or_(*ro_conditions))
+
         return query
 
     # 4. CO (Circle Officers / Admins): Circle-wide visibility, filtered only if a specific division is requested
@@ -1830,6 +1824,27 @@ def lead_to_dict(lead: Lead, win_prob: float = 0.0) -> dict:
     res["contacted_date_3"] = date3
     if not res.get("date_of_meeting"):
         res["date_of_meeting"] = date1
+    
+    willing_val = getattr(lead, "willing_to_onboard", None) or ""
+    if not willing_val and lead.meeting_outcome:
+        m_low = lead.meeting_outcome.lower()
+        if any(w in m_low for w in ["willing to onboard", "willing_to_onboard", "willing"]):
+            willing_val = "Yes"
+        elif "not willing" in m_low:
+            willing_val = "No"
+    res["willingToOnboard"] = willing_val
+    res["willing_to_onboard"] = willing_val
+    res["assignedMeName"] = lead.assigned_agent or ""
+    res["assigned_me_name"] = lead.assigned_agent or ""
+    res["contractId"] = lead.contract_id or ""
+    res["exporterName"] = lead.exporter_name or ""
+    res["customerMet"] = lead.customer_met or ""
+    res["contactNumber"] = lead.contact_number or ""
+    res["serviceUsing"] = lead.service_using or ""
+    res["monthlyVolume"] = lead.monthly_volume or ""
+    res["meetingOutcome"] = lead.meeting_outcome or ""
+    res["poName"] = lead.po_name or ""
+    res["po_name"] = lead.po_name or ""
     return res
 
 # 5. Lead Data Endpoints
@@ -1863,32 +1878,49 @@ def get_leads(
     if status_filter:
         stat = status_filter.lower()
         if stat == "pending":
-            leads_filtered = [l for l in leads_filtered if not l.meeting_outcome or l.meeting_outcome.lower() in ['nan', 'none', 'pending', 'new', '']]
+            leads_filtered = [
+                l for l in leads_filtered 
+                if (not l.meeting_outcome or l.meeting_outcome.lower() in ['nan', 'none', 'pending', 'new', ''])
+                and not l.contacted_date_1 and not l.date_of_meeting and not getattr(l, 'willing_to_onboard', None)
+            ]
         elif stat == "contacted":
-            leads_filtered = [l for l in leads_filtered if l.meeting_outcome and l.meeting_outcome.lower() not in ['nan', 'none', 'pending', 'new', '']]
+            leads_filtered = [
+                l for l in leads_filtered 
+                if (l.meeting_outcome and l.meeting_outcome.lower() not in ['nan', 'none', 'pending', 'new', ''])
+                or l.contacted_date_1 or l.date_of_meeting or getattr(l, 'willing_to_onboard', None)
+            ]
         elif stat == "interested":
-            leads_filtered = [l for l in leads_filtered if l.meeting_outcome and ('positive' in l.meeting_outcome.lower() or 'interested' in l.meeting_outcome.lower())]
+            leads_filtered = [
+                l for l in leads_filtered 
+                if (l.meeting_outcome and ('positive' in l.meeting_outcome.lower() or 'interested' in l.meeting_outcome.lower()))
+                or (getattr(l, 'willing_to_onboard', None) and l.willing_to_onboard.lower() in ['yes', 'willing'])
+            ]
         elif stat == "willing":
-            leads_filtered = [l for l in leads_filtered if l.meeting_outcome and ('willing' in l.meeting_outcome.lower() or ('interested' in l.meeting_outcome.lower() and not l.contract_id))]
+            leads_filtered = [
+                l for l in leads_filtered 
+                if (getattr(l, 'willing_to_onboard', None) and l.willing_to_onboard.lower() in ['yes', 'willing'])
+                or (l.meeting_outcome and ('willing' in l.meeting_outcome.lower() or ('interested' in l.meeting_outcome.lower() and not l.contract_id)))
+            ]
         elif stat == "onboarded":
-            leads_filtered = [l for l in leads_filtered if l.contract_id or (l.meeting_outcome and 'onboard' in l.meeting_outcome.lower())]
-        elif stat == "followup":
-            leads_filtered = [l for l in leads_filtered if l.meeting_outcome and ('follow' in l.meeting_outcome.lower() or 'warm' in l.meeting_outcome.lower())]
+            leads_filtered = [
+                l for l in leads_filtered 
+                if l.contract_id or (l.meeting_outcome and 'onboard' in l.meeting_outcome.lower() and 'pending' not in l.meeting_outcome.lower() and 'willing' not in l.meeting_outcome.lower())
+            ]
 
+    # Filter by search string if present
     if search:
         s = search.lower()
         leads_filtered = [
             l for l in leads_filtered
             if (l.exporter_name and s in l.exporter_name.lower())
+            or (l.pincode and s in l.pincode.lower())
+            or (l.address and s in l.address.lower())
             or (l.contact_number and s in l.contact_number.lower())
-            or (l.division and s in l.division.lower())
             or (l.email and s in l.email.lower())
             or (l.service_using and s in l.service_using.lower())
         ]
 
-    # Calculate win probabilities via ML model
-    scores = calculate_win_probability(leads_filtered)
-    return [lead_to_dict(l, s) for l, s in zip(leads_filtered, scores)]
+    return [lead_to_dict(l, 0.0) for l in leads_filtered]
 
 @app.get("/api/leads/priority")
 def get_priority_leads(
@@ -1897,17 +1929,8 @@ def get_priority_leads(
     db: Session = Depends(get_db),
     user: dict = Depends(get_current_user)
 ):
-    """Returns top high-priority prospective leads ordered by predicted win probability."""
-    query = db.query(Lead)
-    query = apply_rbac_filter(query, user, division_name)
-    all_leads = query.all()
-    if not all_leads:
-        return []
-        
-    scores = calculate_win_probability(all_leads)
-    scored_leads = [lead_to_dict(l, s) for l, s in zip(all_leads, scores)]
-    scored_leads.sort(key=lambda x: x.get("win_probability", 0), reverse=True)
-    return scored_leads[:limit]
+    """AI Prediction feature removed."""
+    return []
 
 @app.get("/api/divisions")
 def get_divisions(
@@ -2088,20 +2111,26 @@ def get_analytics(
             
         monthly_pipeline_est += lead_pipeline
             
-        # Exact calculation of 8 KPIs based on meeting_outcome
-        if not outcome or outcome in ['nan', 'none', 'null', '']:
+        # Exact calculation of 8 KPIs based on meeting_outcome and willing_to_onboard
+        w_val = (getattr(lead, 'willing_to_onboard', '') or '').strip().lower()
+        is_contacted = bool(
+            (outcome and outcome not in ['nan', 'none', 'null', 'pending', 'new', ''])
+            or lead.contacted_date_1 or lead.contacted_date_2 or lead.contacted_date_3
+            or lead.date_of_meeting or lead.customer_met or w_val
+        )
+        if not is_contacted:
             contact_pending += 1
         else:
             contacted += 1
             
-        if outcome in ["positive", "interested"]:
-            interested += 1
-        elif outcome in ["not interested", "not_interested", "rejected"]:
-            not_interested += 1
-        elif outcome in ["willing to onboard", "willing_to_onboard", "willing"]:
-            willing_to_onboard += 1
-        elif outcome in ["onboarded", "onboard"] or has_contract:
+        if outcome in ["onboarded", "onboard"] or has_contract:
             onboarded += 1
+        elif w_val in ["yes", "willing", "true", "1"] or outcome in ["willing to onboard", "willing_to_onboard", "willing"]:
+            willing_to_onboard += 1
+        elif outcome in ["positive", "interested"]:
+            interested += 1
+        elif w_val in ["no", "not willing", "false", "0"] or outcome in ["not interested", "not_interested", "rejected", "not willing to onboard"]:
+            not_interested += 1
         elif outcome in ["onboard pending", "onboard_pending", "onboarding pending"]:
             onboard_pending += 1
         elif "follow" in outcome or "warm" in outcome:
@@ -2124,9 +2153,9 @@ def get_analytics(
         if is_valid_phone(contact_str):
             division_map[div_name]["verified_contacts"] += 1
         
-        if outcome and outcome not in ['nan', 'none', 'null', 'pending', '']:
+        if is_contacted:
             division_map[div_name]["contacted"] += 1
-        if "positive" in outcome or "interested" in outcome:
+        if "positive" in outcome or "interested" in outcome or w_val in ["yes", "willing"]:
             division_map[div_name]["interested"] += 1
         if has_contract or "onboard" in outcome:
             division_map[div_name]["onboarded"] += 1
@@ -2148,13 +2177,13 @@ def get_analytics(
             agents[agent_name] = {"leads": 0, "contacted": 0, "converted": 0, "pipeline": 0}
         agents[agent_name]["leads"] += 1
         agents[agent_name]["pipeline"] += lead_pipeline
-        if outcome and outcome not in ["nan", "none", "null", "pending", ""]:
+        if is_contacted:
             agents[agent_name]["contacted"] += 1
         if has_contract or "onboard" in outcome:
             agents[agent_name]["converted"] += 1
             
         # Temporal series
-        date_str = lead.date_of_meeting
+        date_str = lead.contacted_date_1 or lead.date_of_meeting or lead.contacted_date_2 or lead.contacted_date_3
         if date_str:
             date_clean = str(date_str).strip().split(' ')[0]
             if date_clean and date_clean not in ['nan', 'None', 'null', '', 'NaT']:
@@ -2411,13 +2440,23 @@ def get_pincode_performance(
         func.count(Lead.id).label("total"),
         func.count(
             case(
-                (or_(Lead.meeting_outcome == None, Lead.meeting_outcome == '', func.lower(Lead.meeting_outcome) == 'nan', func.lower(Lead.meeting_outcome) == 'none', func.lower(Lead.meeting_outcome) == 'null'), 1),
+                (and_(
+                    or_(Lead.meeting_outcome == None, Lead.meeting_outcome == '', func.lower(Lead.meeting_outcome) == 'nan', func.lower(Lead.meeting_outcome) == 'none', func.lower(Lead.meeting_outcome) == 'null'),
+                    or_(Lead.contacted_date_1 == None, Lead.contacted_date_1 == ''),
+                    or_(Lead.date_of_meeting == None, Lead.date_of_meeting == ''),
+                    or_(Lead.willing_to_onboard == None, Lead.willing_to_onboard == '')
+                ), 1),
                 else_=None
             )
         ).label("pending"),
         func.count(
             case(
-                (and_(Lead.meeting_outcome != None, Lead.meeting_outcome != '', func.lower(Lead.meeting_outcome) != 'nan', func.lower(Lead.meeting_outcome) != 'none', func.lower(Lead.meeting_outcome) != 'null'), 1),
+                (or_(
+                    and_(Lead.meeting_outcome != None, Lead.meeting_outcome != '', func.lower(Lead.meeting_outcome) != 'nan', func.lower(Lead.meeting_outcome) != 'none', func.lower(Lead.meeting_outcome) != 'null'),
+                    and_(Lead.contacted_date_1 != None, Lead.contacted_date_1 != ''),
+                    and_(Lead.date_of_meeting != None, Lead.date_of_meeting != ''),
+                    and_(Lead.willing_to_onboard != None, Lead.willing_to_onboard != '')
+                ), 1),
                 else_=None
             )
         ).label("contacted"),
@@ -2441,13 +2480,25 @@ def get_pincode_performance(
         ).label("follow_up_required"),
         func.count(
             case(
-                (or_(func.lower(Lead.meeting_outcome) == "willing to onboard", func.lower(Lead.meeting_outcome) == "willing_to_onboard", func.lower(Lead.meeting_outcome) == "willing"), 1),
+                (or_(
+                    func.lower(Lead.meeting_outcome) == "willing to onboard", 
+                    func.lower(Lead.meeting_outcome) == "willing_to_onboard", 
+                    func.lower(Lead.meeting_outcome) == "willing",
+                    func.lower(Lead.willing_to_onboard) == "yes",
+                    func.lower(Lead.willing_to_onboard) == "willing"
+                ), 1),
                 else_=None
             )
         ).label("willing_to_onboard"),
         func.count(
             case(
-                (or_(func.lower(Lead.meeting_outcome) == "not willing to onboard", func.lower(Lead.meeting_outcome) == "not_willing_to_onboard", func.lower(Lead.meeting_outcome) == "not willing"), 1),
+                (or_(
+                    func.lower(Lead.meeting_outcome) == "not willing to onboard", 
+                    func.lower(Lead.meeting_outcome) == "not_willing_to_onboard", 
+                    func.lower(Lead.meeting_outcome) == "not willing",
+                    func.lower(Lead.willing_to_onboard) == "no",
+                    func.lower(Lead.willing_to_onboard) == "not willing"
+                ), 1),
                 else_=None
             )
         ).label("not_willing_to_onboard"),
@@ -2643,14 +2694,39 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
         "po_name": "po_name",
         "division": "division",
         "region": "region",
-        "email": "email"
+        "email": "email",
+        "willingToOnboard": "willing_to_onboard",
+        "willing_to_onboard": "willing_to_onboard"
     }
     
     for key, value in data.items():
         db_key = field_map.get(key, key)
         if db_key and hasattr(lead, db_key):
-            setattr(lead, db_key, str(value) if value is not None else "")
+            setattr(lead, db_key, str(value).strip() if value is not None else "")
             
+    # Auto-assign agent if empty and user is ME
+    user_role = str(current_user.get("role", "")).upper()
+    if not lead.assigned_agent and user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
+        lead.assigned_agent = current_user.get("name") or current_user.get("employee_id") or ""
+
+    # Synchronize willing_to_onboard and meeting_outcome
+    w_val = (lead.willing_to_onboard or "").strip().lower()
+    m_val = (lead.meeting_outcome or "").strip().lower()
+    
+    if w_val in ["yes", "willing", "true"]:
+        lead.willing_to_onboard = "Yes"
+        if not lead.meeting_outcome or m_val in ["nan", "none", "pending", "new", ""]:
+            lead.meeting_outcome = "Willing to Onboard"
+    elif w_val in ["no", "not willing", "false"]:
+        lead.willing_to_onboard = "No"
+        if not lead.meeting_outcome or m_val in ["nan", "none", "pending", "new", ""]:
+            lead.meeting_outcome = "Not Interested"
+
+    if m_val in ["willing to onboard", "willing_to_onboard", "willing"]:
+        lead.willing_to_onboard = "Yes"
+    elif m_val in ["not willing to onboard", "not_willing_to_onboard", "not willing"]:
+        lead.willing_to_onboard = "No"
+
     # For backward compatibility, keep date_of_meeting and contacted_date_1 in sync
     if lead.contacted_date_1:
         lead.date_of_meeting = lead.contacted_date_1
@@ -2658,7 +2734,7 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
         lead.contacted_date_1 = lead.date_of_meeting
 
     db.commit()
-    return {"success": True, "message": "Lead updated successfully"}
+    return {"success": True, "message": "Lead updated successfully", "lead": lead_to_dict(lead)}
 
 # 9. Pincode Post Offices Helper Endpoint
 @app.get("/api/pincode-offices/{pincode}")

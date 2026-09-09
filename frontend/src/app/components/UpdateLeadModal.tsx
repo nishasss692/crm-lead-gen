@@ -284,8 +284,14 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
   const userMobile = currentUser?.mobile_number ? String(currentUser.mobile_number).replace(/\D/g, '').slice(0, 10) : '';
   const initialContactNumber = lead.contactNumber ? String(lead.contactNumber).replace(/\D/g, '').slice(0, 10) : '';
 
+  const initialWilling = (lead as any).willingToOnboard || (lead as any).willing_to_onboard || (
+    lead.meetingOutcome && ['willing to onboard', 'interested', 'willing', 'onboarded'].includes(lead.meetingOutcome.toLowerCase()) 
+      ? 'Yes' 
+      : (lead.meetingOutcome && ['not interested', 'not willing to onboard', 'rejected'].includes(lead.meetingOutcome.toLowerCase()) ? 'No' : 'Yes')
+  );
+
   const [formData, setFormData] = useState({
-    assignedMeName: lead.assignedMeName || (currentUser?.role === 'ME' ? (currentUser.name || currentUser.username || '') : ''),
+    assignedMeName: lead.assignedMeName || (lead as any).assigned_agent || (currentUser?.role === 'ME' ? (currentUser.name || currentUser.username || '') : ''),
     meMobile: userMobile,
     dateOfMeeting: initialDate1,
     contactedDate1: initialDate1,
@@ -303,7 +309,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
     serviceUsing: lead.serviceUsing || 'DHL',
     monthlyVolume: lead.monthlyVolume || '',
     meetingOutcome: lead.meetingOutcome || 'Interested',
-    willingToOnboard: 'Yes',
+    willingToOnboard: initialWilling,
     contractId: lead.contractId || '',
     remarks: lead.remarks || '',
     division: cleanActiveDiv,
@@ -565,6 +571,8 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
         contacted_date_1?: string;
         contacted_date_2?: string;
         contacted_date_3?: string;
+        willingToOnboard?: string;
+        willing_to_onboard?: string;
       } = {
         exporterName: formData.exporterName,
         address: formData.address,
@@ -579,6 +587,8 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
         serviceUsing: formData.serviceUsing,
         monthlyVolume: formData.monthlyVolume,
         meetingOutcome: formData.meetingOutcome || 'Interested',
+        willingToOnboard: formData.willingToOnboard || 'Yes',
+        willing_to_onboard: formData.willingToOnboard || 'Yes',
         contractId: formData.contractId,
         remarks: formData.remarks,
         dateOfMeeting: formData.contactedDate1 || formData.dateOfMeeting,
@@ -673,7 +683,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
             }`}
           >
-            <span>✏️</span>
+            <span>🏢</span>
             <span>Modify Lead Source Details</span>
           </button>
         </div>
@@ -1201,7 +1211,15 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                 <label className="block text-xs font-bold text-slate-800 mb-1">Outcome</label>
                 <select 
                   value={formData.meetingOutcome} 
-                  onChange={e => handleChange('meetingOutcome', e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    handleChange('meetingOutcome', val);
+                    if (val === 'Willing to Onboard' || val === 'Interested' || val === 'Onboarded') {
+                      handleChange('willingToOnboard', 'Yes');
+                    } else if (val === 'Not Interested') {
+                      handleChange('willingToOnboard', 'No');
+                    }
+                  }}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                 >
                   <option value="Interested">Interested</option>
@@ -1223,8 +1241,10 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                   onChange={e => {
                     const val = e.target.value;
                     handleChange('willingToOnboard', val);
-                    if (val === 'Yes' && !formData.meetingOutcome) {
+                    if (val === 'Yes' && (!formData.meetingOutcome || formData.meetingOutcome === 'Not Interested')) {
                       handleChange('meetingOutcome', 'Interested');
+                    } else if (val === 'No' && formData.meetingOutcome === 'Willing to Onboard') {
+                      handleChange('meetingOutcome', 'Not Interested');
                     }
                   }}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
