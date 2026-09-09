@@ -20,95 +20,6 @@ import {
 } from 'lucide-react';
 import { API_BASE_URL, apiFetch, getApiBaseUrl, safeJson } from '@/lib/api';
 
-const KARNATAKA_DIVISIONS: Record<string, { region: string; aliases: string[] }> = {
-  // Bengaluru HQ Region
-  'BG East': { region: 'Bengaluru HQ Region', aliases: ['bg east', 'bgeast', 'bg_east', 'bengaluru east', 'bangalore east'] },
-  'BG South': { region: 'Bengaluru HQ Region', aliases: ['bg south', 'bgsouth', 'bg_south', 'bengaluru south', 'bangalore south'] },
-  'BG West': { region: 'Bengaluru HQ Region', aliases: ['bg west', 'bgwest', 'bg_west', 'bengaluru west', 'bangalore west'] },
-  'BG Central': { region: 'Bengaluru HQ Region', aliases: ['bg central', 'bgcentral', 'bg_central', 'bengaluru central', 'bangalore central'] },
-  'BG GPO': { region: 'Bengaluru HQ Region', aliases: ['bg gpo', 'bggpo', 'bg_gpo', 'bengaluru gpo', 'bangalore gpo', 'gpo'] },
-  'Channapatna': { region: 'Bengaluru HQ Region', aliases: ['channapatna', 'chanapatna', 'channapatana'] },
-
-  // South Karnataka Region
-  'Kolar': { region: 'South Karnataka Region', aliases: ['kolar', 'kolara'] },
-  'Mysuru': { region: 'South Karnataka Region', aliases: ['mysuru', 'mysore'] },
-  'Nanjangud': { region: 'South Karnataka Region', aliases: ['nanjangud', 'nanjanagudu'] },
-  'Mandya': { region: 'South Karnataka Region', aliases: ['mandya'] },
-  'Hassan': { region: 'South Karnataka Region', aliases: ['hassan', 'hasana'] },
-  'Kodagu': { region: 'South Karnataka Region', aliases: ['kodagu', 'coorg', 'madikeri'] },
-  'Mangaluru': { region: 'South Karnataka Region', aliases: ['mangaluru', 'mangalore'] },
-  'Puttur': { region: 'South Karnataka Region', aliases: ['puttur', 'putturu'] },
-  'Udupi': { region: 'South Karnataka Region', aliases: ['udupi', 'udapi'] },
-  'Shivamogga': { region: 'South Karnataka Region', aliases: ['shivamogga', 'shimoga'] },
-  'Chikkamagaluru': { region: 'South Karnataka Region', aliases: ['chikkamagaluru', 'chikmagalur', 'chikmagaluru'] },
-  'Chitradurga': { region: 'South Karnataka Region', aliases: ['chitradurga'] },
-  'Davangere': { region: 'South Karnataka Region', aliases: ['davangere', 'davanagere'] },
-  'Tumakuru': { region: 'South Karnataka Region', aliases: ['tumakuru', 'tumkur'] },
-
-  // North Karnataka Region
-  'Dharwad': { region: 'North Karnataka Region', aliases: ['dharwad', 'hubli', 'hubballi'] },
-  'Belagavi': { region: 'North Karnataka Region', aliases: ['belagavi', 'belgaum'] },
-  'Gokak': { region: 'North Karnataka Region', aliases: ['gokak'] },
-  'Chikodi': { region: 'North Karnataka Region', aliases: ['chikodi', 'chikkodi'] },
-  'Bagalkote': { region: 'North Karnataka Region', aliases: ['bagalkote', 'bagalkot'] },
-  'Vijayapura': { region: 'North Karnataka Region', aliases: ['vijayapura', 'vijayapur', 'bijapur'] },
-  'Gadag': { region: 'North Karnataka Region', aliases: ['gadag'] },
-  'Haveri': { region: 'North Karnataka Region', aliases: ['haveri'] },
-  'Ballari': { region: 'North Karnataka Region', aliases: ['ballari', 'bellary'] },
-  'Koppal': { region: 'North Karnataka Region', aliases: ['koppal'] },
-  'Kalaburagi': { region: 'North Karnataka Region', aliases: ['kalaburagi', 'gulbarga'] },
-  'Bidar': { region: 'North Karnataka Region', aliases: ['bidar'] },
-  'Raichur': { region: 'North Karnataka Region', aliases: ['raichur'] },
-  'Karwar': { region: 'North Karnataka Region', aliases: ['karwar', 'uttara kannada'] },
-  'Sirsi': { region: 'North Karnataka Region', aliases: ['sirsi'] },
-  'Yadgir': { region: 'North Karnataka Region', aliases: ['yadgir', 'yadagiri'] },
-};
-
-function findDivisionAccount(input: string): { division: string; region: string } | null {
-  if (!input) return null;
-  const clean = input.trim().toLowerCase();
-  const stripped = clean.replace(/^(do|div|division)[\s_-]+/, '').replace(/[\s_-]+division$/, '').trim();
-  const noSpaces = stripped.replace(/[\s_-]+/g, '');
-
-  for (const [canonical, info] of Object.entries(KARNATAKA_DIVISIONS)) {
-    const canClean = canonical.toLowerCase();
-    const canNoSpaces = canClean.replace(/[\s_-]+/g, '');
-    if (stripped === canClean || noSpaces === canNoSpaces || clean === canClean) {
-      return { division: canonical, region: info.region };
-    }
-    for (const alias of info.aliases) {
-      const aClean = alias.toLowerCase();
-      const aNoSpaces = aClean.replace(/[\s_-]+/g, '');
-      if (stripped === aClean || noSpaces === aNoSpaces || clean === aClean) {
-        return { division: canonical, region: info.region };
-      }
-    }
-  }
-  return null;
-}
-
-const DEMO_ACCOUNTS: Record<string, { role: string; assigned_region: string | null; assigned_division: string | null }> = {
-  'CO_ADMIN': { role: 'CO', assigned_region: null, assigned_division: null },
-  'CO_USER': { role: 'CO', assigned_region: null, assigned_division: null },
-  'R001': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
-  'R002': { role: 'RO', assigned_region: 'South Karnataka Region', assigned_division: null },
-  'R003': { role: 'RO', assigned_region: 'North Karnataka Region', assigned_division: null },
-  'r001': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
-  'r002': { role: 'RO', assigned_region: 'South Karnataka Region', assigned_division: null },
-  'r003': { role: 'RO', assigned_region: 'North Karnataka Region', assigned_division: null },
-  'RO_BG': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
-  'RO_USER': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
-  'RO_SK': { role: 'RO', assigned_region: 'South Karnataka Region', assigned_division: null },
-  'RO_NK': { role: 'RO', assigned_region: 'North Karnataka Region', assigned_division: null },
-  'DIV_MYS': { role: 'DO', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
-  'DIV_USER': { role: 'DO', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
-  'DO_MYS': { role: 'DO', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
-  'DIV_BGE': { role: 'DO', assigned_region: 'Bengaluru HQ Region', assigned_division: 'BG East' },
-  'DIV_BGS': { role: 'DO', assigned_region: 'Bengaluru HQ Region', assigned_division: 'BG South' },
-  'ME_MYS_01': { role: 'ME', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
-  'ME_USER': { role: 'ME', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
-  '10021758': { role: 'ME', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
-};
 
 export default function LoginPage() {
   const [employeeId, setEmployeeId] = useState('');
@@ -174,15 +85,22 @@ export default function LoginPage() {
 
   const handleLogin = async (e?: React.FormEvent, directId?: string, directPass?: string) => {
     if (e) e.preventDefault();
-    setLoading(true);
     setError('');
 
-    const targetId = (directId || employeeId).trim();
-    const targetPass = directPass || password;
-    const targetIdUpper = targetId.toUpperCase();
-    const divMatch = findDivisionAccount(targetId);
-    const isDemo = targetIdUpper in DEMO_ACCOUNTS || (targetId in DEMO_ACCOUNTS) || (targetId.toLowerCase() in DEMO_ACCOUNTS) || !!divMatch;
-    const isDemoPass = ['password123', 'Post@123'].includes(targetPass) || !targetPass;
+    const targetId = (directId !== undefined ? directId : employeeId).trim();
+    const targetPass = directPass !== undefined ? directPass : password;
+
+    if (!targetId) {
+      setError('Please enter your Employee ID or Division Name.');
+      return;
+    }
+
+    if (!targetPass) {
+      setError('Please enter your password.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await apiFetch('/api/login', {
@@ -192,7 +110,7 @@ export default function LoginPage() {
         },
         body: JSON.stringify({
           employee_id: targetId,
-          password: targetPass || 'Post@123',
+          password: targetPass,
         }),
       });
 
@@ -500,11 +418,11 @@ export default function LoginPage() {
                 <button
                   type="button"
                   suppressHydrationWarning
-                  onClick={() => handleQuickAccess('ME_MYS_01', 'Post@123')}
+                  onClick={() => handleQuickAccess('10021758', 'Post@123')}
                   className="p-2.5 rounded-xl border border-red-100 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all cursor-pointer group shadow-xs hover:shadow-sm"
                 >
                   <div className="font-bold text-[#D1242F] text-xs">ME Suresh</div>
-                  <div className="text-slate-500 text-[10px] mt-0.5">Field Executive</div>
+                  <div className="text-slate-500 text-[10px] mt-0.5">Emp ID: 10021758</div>
                 </button>
               </div>
             </div>

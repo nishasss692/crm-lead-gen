@@ -227,14 +227,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    if not plain_password:
+    if not plain_password or not hashed_password:
         return False
-    if plain_password in ["password123", "Post@123"]:
-        return True
-    if not hashed_password:
-        return False
-    if plain_password == hashed_password:
-        return True
     
     # 1. Direct native bcrypt verify
     try:
@@ -475,6 +469,40 @@ def normalize_division_name(raw_div: Optional[str]) -> str:
 
     return cleaned
 
+def get_canonical_division(raw_div: Optional[str]) -> Optional[str]:
+    """Strictly validates and returns the canonical Karnataka division name if valid, else None."""
+    if not raw_div:
+        return None
+    cleaned = raw_div.strip()
+    if not cleaned or cleaned.lower() in ["nan", "none", "null", "unassigned", ""]:
+        return None
+    c_lower = re.sub(r'^(do|div|division)[\s_\-]+', '', cleaned, flags=re.IGNORECASE).strip().lower()
+    c_lower = re.sub(r'[\s_\-]+', ' ', c_lower).strip()
+    c_lower_nodiv = re.sub(r'\bdivision\b', '', c_lower).strip()
+
+    # 1. Exact match against canonical name
+    for canonical, info in KARNATAKA_TERRITORY_REGISTRY.items():
+        if c_lower == canonical.lower() or c_lower_nodiv == canonical.lower():
+            return canonical
+        for alias in info.get("aliases", []):
+            a_lower = alias.lower()
+            a_lower_nodiv = re.sub(r'\bdivision\b', '', a_lower).strip()
+            if c_lower == a_lower or c_lower_nodiv == a_lower or c_lower_nodiv == a_lower_nodiv:
+                return canonical
+
+    # 2. Compact match without spaces (e.g. "bgeast", "bgsouth", "bgcentral")
+    c_compact = c_lower_nodiv.replace(" ", "").replace("_", "")
+    for canonical, info in KARNATAKA_TERRITORY_REGISTRY.items():
+        can_compact = canonical.lower().replace(" ", "").replace("_", "")
+        if c_compact == can_compact:
+            return canonical
+        for alias in info.get("aliases", []):
+            alias_compact = alias.lower().replace(" division", "").replace(" ", "").replace("_", "")
+            if c_compact == alias_compact:
+                return canonical
+
+    return None
+
 def get_division_aliases(div_str: Optional[str]) -> list[str]:
     """Returns all lowercase alias strings for a division to query SQL case-insensitively."""
     if not div_str:
@@ -682,38 +710,16 @@ def seed_test_users():
     
     db = SessionLocal()
     try:
-        default_pwd_hash = get_password_hash("password123")
+        default_pwd_hash = get_password_hash("Post@123")
         do_default_pwd_hash = get_password_hash("Post@123")
         
         test_users = [
-            # Direct Shortcut Accounts (case-insensitive in login: CO, RO, DO, ME)
-            {"employee_id": "CO", "name": "Circle Admin (CO)", "password": do_default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999999"},
-            {"employee_id": "RO", "name": "Regional Officer (RO)", "password": do_default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None, "mobile_number": "9888888802"},
-            {"employee_id": "DO", "name": "Divisional Officer (DO)", "password": do_default_pwd_hash, "role": "DO", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9777777779"},
-            {"employee_id": "ME", "name": "Marketing Executive (ME)", "password": do_default_pwd_hash, "role": "ME", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9000000001"},
-            # CO Accounts
+            # Circle Admin
             {"employee_id": "CO_ADMIN", "name": "Circle Admin", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999999"},
-            {"employee_id": "co_user", "name": "CO Operations", "password": default_pwd_hash, "role": "CO", "assigned_region": None, "assigned_division": None, "mobile_number": "9999999998"},
             # 3 Official Regional Office (RO) Accounts: r001 (Bangalore), r002 (SK), r003 (NK)
             {"employee_id": "r001", "name": "RO Bangalore (Bengaluru HQ)", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888801"},
             {"employee_id": "r002", "name": "RO South Karnataka (SK)", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None, "mobile_number": "9888888802"},
             {"employee_id": "r003", "name": "RO North Karnataka (NK)", "password": default_pwd_hash, "role": "RO", "assigned_region": "North Karnataka Region", "assigned_division": None, "mobile_number": "9888888803"},
-            # Legacy RO Accounts (compatibility)
-            {"employee_id": "RO_BG", "name": "RO Bengaluru Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888888"},
-            {"employee_id": "ro_user", "name": "RO User", "password": default_pwd_hash, "role": "RO", "assigned_region": "Bengaluru HQ Region", "assigned_division": None, "mobile_number": "9888888889"},
-            {"employee_id": "RO_SK", "name": "RO South Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "South Karnataka Region", "assigned_division": None, "mobile_number": "9888888887"},
-            {"employee_id": "RO_NK", "name": "RO North Karnataka Officer", "password": default_pwd_hash, "role": "RO", "assigned_region": "North Karnataka Region", "assigned_division": None, "mobile_number": "9888888886"},
-            # Legacy DO Accounts (compatibility) - updated with default password Post@123
-            {"employee_id": "DIV_MYS", "name": "DO Mysuru Officer", "password": do_default_pwd_hash, "role": "DO", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9777777777"},
-            {"employee_id": "div_user", "name": "DO User", "password": do_default_pwd_hash, "role": "DO", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9777777778"},
-            {"employee_id": "DO_MYS", "name": "DO Mysuru", "password": do_default_pwd_hash, "role": "DO", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9777777779"},
-            {"employee_id": "DIV_BGE", "name": "DO BG East", "password": do_default_pwd_hash, "role": "DO", "assigned_region": "Bengaluru HQ Region", "assigned_division": "BG East", "mobile_number": "9777777771"},
-            {"employee_id": "DIV_BGS", "name": "DO BG South", "password": do_default_pwd_hash, "role": "DO", "assigned_region": "Bengaluru HQ Region", "assigned_division": "BG South", "mobile_number": "9777777772"},
-            # ME Accounts
-            {"employee_id": "ME_MYS_01", "name": "Suresh M E", "password": do_default_pwd_hash, "role": "ME", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9000000001"},
-            {"employee_id": "me_user", "name": "Marketing Executive", "password": do_default_pwd_hash, "role": "ME", "assigned_region": "South Karnataka Region", "assigned_division": "Mysuru", "mobile_number": "9000000002"},
-            {"employee_id": "ME_BGE_01", "name": "Dilip Kumar", "password": do_default_pwd_hash, "role": "ME", "assigned_region": "Bengaluru HQ Region", "assigned_division": "BG East", "mobile_number": "9000000003"},
-            {"employee_id": "ME_BGE_02", "name": "Irfan", "password": do_default_pwd_hash, "role": "ME", "assigned_region": "Bengaluru HQ Region", "assigned_division": "BG East", "mobile_number": "9000000004"},
         ]
 
         # One DO user account for each division in Karnataka with employee_id = division name and default password Post@123
@@ -737,16 +743,13 @@ def seed_test_users():
                 u_name = u_data.get("name")
                 if u_name:
                     existing.name = u_name
-                # Ensure DO accounts always get the Post@123 password
-                if u_data.get("role") == "DO" or u_data.get("password") == do_default_pwd_hash:
-                    existing.password = do_default_pwd_hash
-                else:
-                    existing.password = u_data.get("password") or existing.password
                 existing.role = u_data.get("role") or existing.role
                 existing.assigned_region = u_data.get("assigned_region") or existing.assigned_region
                 existing.assigned_division = u_data.get("assigned_division") or existing.assigned_division
                 if u_data.get("mobile_number"):
                     existing.mobile_number = u_data["mobile_number"]
+                if not existing.password:
+                    existing.password = do_default_pwd_hash
             else:
                 db.add(User(**u_data))
 
@@ -891,7 +894,7 @@ async def login(
         except Exception:
             pass
         
-    if not emp_id or not pwd:
+    if not emp_id or not pwd or not str(emp_id).strip() or not str(pwd).strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Employee ID and password are required"
@@ -901,155 +904,143 @@ async def login(
     emp_id_clean = emp_id_str.lower()
     emp_id_nospaces = emp_id_clean.replace(" ", "").replace("_", "")
 
-    # 1. Direct case-insensitive search by employee_id (allowing spaces or underscores)
-    user = db.query(User).filter(
-        or_(
-            func.lower(func.trim(User.employee_id)) == emp_id_clean,
-            func.lower(User.employee_id) == emp_id_clean,
-            func.replace(func.replace(func.lower(func.trim(User.employee_id)), " ", ""), "_", "") == emp_id_nospaces
-        )
-    ).first()
-    
-    # 2. Division match: if employee_id is the name of a division (any case/alias, e.g. "mysuru", "MYSURU", "bg east", "BGEAST", "DO MYSURU")
-    if not user:
-        clean_div_str = re.sub(r'^(do|div|division)[\s_\-]+', '', emp_id_str, flags=re.IGNORECASE).strip()
-        norm_div = normalize_division_name(clean_div_str) or normalize_division_name(emp_id_str)
-        if norm_div and norm_div in KARNATAKA_TERRITORY_REGISTRY:
-            user = db.query(User).filter(
-                or_(
-                    func.lower(func.trim(User.employee_id)) == norm_div.lower(),
-                    and_(
-                        func.upper(User.role) == "DO",
-                        func.lower(func.trim(User.assigned_division)) == norm_div.lower()
-                    )
-                )
-            ).first()
-            if not user:
-                # Auto-create DO account for this division with default password Post@123
-                region_name = KARNATAKA_TERRITORY_REGISTRY[norm_div]["region"]
-                user = User(
-                    employee_id=norm_div,
-                    name=f"DO {norm_div}",
-                    password=get_password_hash("Post@123"),
-                    role="DO",
-                    assigned_division=norm_div,
-                    assigned_region=region_name
-                )
-                db.add(user)
-                try:
-                    db.commit()
-                    db.refresh(user)
-                except Exception:
-                    db.rollback()
+    user = None
 
-    if not user:
-        # 3. Dynamic lookup against MEs DATA.xlsx (case-insensitively)
-        file_candidates = [
-            os.path.join(BASE_DIR, "MEs DATA.xlsx"),
-            os.path.join(BASE_DIR, "..", "MEs DATA.xlsx"),
-            "MEs DATA.xlsx",
-            os.path.join(os.getcwd(), "MEs DATA.xlsx")
-        ]
-        me_file = next((p for p in file_candidates if os.path.exists(p)), None)
-        if me_file:
-            try:
-                df = pd.read_excel(me_file)
-                for _, row in df.iterrows():
-                    row_emp_id = str(row.get("Emp ID", "")).strip()
-                    if row_emp_id.endswith(".0"):
-                        row_emp_id = row_emp_id[:-2]
-                    if row_emp_id.lower() == emp_id_clean:
-                        user = User(
-                            employee_id=row_emp_id,
-                            name=str(row.get("Name", "")).strip(),
-                            password=get_password_hash("Post@123"),
-                            role="ME",
-                            assigned_division=str(row.get("Division Name", "")).strip(),
-                            assigned_region=str(row.get("Region Name", "")).strip(),
-                            mobile_number=str(row.get("Mobile Number", "")).strip()
-                        )
-                        try:
-                            db.add(user)
-                            db.commit()
-                            db.refresh(user)
-                        except Exception:
-                            db.rollback()
-                        break
-            except Exception as e:
-                print(f"[User Auth] Dynamic ME lookup note: {e}")
-
-        # 4. Demo roles fallback (case-insensitive)
+    # 1. DO login: strictly validate canonical division name or alias (case-insensitive)
+    canon_div = get_canonical_division(emp_id_str)
+    if canon_div:
+        user = db.query(User).filter(
+            func.lower(func.trim(User.employee_id)) == canon_div.lower()
+        ).first()
         if not user:
-            demo_roles = {
-                "CO_ADMIN": ("CO", None, None, "Circle Admin"),
-                "CO_USER": ("CO", None, None, "CO Operations"),
-                "R001": ("RO", "Bengaluru HQ Region", None, "RO Bangalore (Bengaluru HQ)"),
-                "R002": ("RO", "South Karnataka Region", None, "RO South Karnataka (SK)"),
-                "R003": ("RO", "North Karnataka Region", None, "RO North Karnataka (NK)"),
-                "RO_BG": ("RO", "Bengaluru HQ Region", None, "RO Bengaluru Officer"),
-                "RO_USER": ("RO", "Bengaluru HQ Region", None, "RO User"),
-                "RO_SK": ("RO", "South Karnataka Region", None, "RO South Karnataka Officer"),
-                "RO_NK": ("RO", "North Karnataka Region", None, "RO North Karnataka Officer"),
-                "DIV_MYS": ("DO", "South Karnataka Region", "Mysuru", "DO Mysuru Officer"),
-                "DIV_USER": ("DO", "South Karnataka Region", "Mysuru", "DO User"),
-                "DO_MYS": ("DO", "South Karnataka Region", "Mysuru", "DO Mysuru"),
-                "DIV_BGE": ("DO", "Bengaluru HQ Region", "BG East", "DO BG East"),
-                "DIV_BGS": ("DO", "Bengaluru HQ Region", "BG South", "DO BG South"),
-                "ME_MYS_01": ("ME", "South Karnataka Region", "Mysuru", "Suresh M E"),
-                "ME_USER": ("ME", "South Karnataka Region", "Mysuru", "Marketing Executive"),
-            }
-            clean_div_str = re.sub(r'^(do|div|division)[\s_\-]+', '', emp_id_str, flags=re.IGNORECASE).strip()
-            norm_div = normalize_division_name(clean_div_str) or normalize_division_name(emp_id_str)
-            if norm_div and norm_div in KARNATAKA_TERRITORY_REGISTRY and str(pwd) in ["password123", "Post@123"]:
-                region_name = KARNATAKA_TERRITORY_REGISTRY[norm_div]["region"]
-                user = User(
-                    employee_id=norm_div,
-                    name=f"DO {norm_div}",
-                    password=get_password_hash("Post@123"),
-                    role="DO",
-                    assigned_region=region_name,
-                    assigned_division=norm_div
-                )
-                try:
-                    db.add(user)
-                    db.commit()
-                    db.refresh(user)
-                except Exception:
-                    db.rollback()
-            else:
-                demo_key = next((k for k in demo_roles if k.lower() == emp_id_clean), None)
-                if demo_key and str(pwd) in ["password123", "Post@123"]:
-                    role, region, div, name = demo_roles[demo_key]
-                    user = User(
-                        employee_id=demo_key,
-                        name=name,
-                        password=get_password_hash("Post@123"),
-                        role=role,
-                        assigned_region=region,
-                        assigned_division=div
-                    )
-                    try:
-                        db.add(user)
-                        db.commit()
-                        db.refresh(user)
-                    except Exception:
-                        db.rollback()
-
-    is_valid_pwd = False
-    if user:
-        user_password = user.password if user.password else ""
-        if verify_password(str(pwd), user_password):
-            is_valid_pwd = True
-        elif str(pwd) == "Post@123":
-            # Post@123 is valid default password for all DO, ME, and test accounts
-            is_valid_pwd = True
+            region_name = KARNATAKA_TERRITORY_REGISTRY[canon_div]["region"]
+            user = User(
+                employee_id=canon_div,
+                name=f"DO {canon_div}",
+                password=get_password_hash("Post@123"),
+                role="DO",
+                assigned_division=canon_div,
+                assigned_region=region_name
+            )
+            db.add(user)
             try:
-                user.password = get_password_hash("Post@123")
                 db.commit()
+                db.refresh(user)
             except Exception:
                 db.rollback()
-        elif str(pwd) == "password123" and (user.role in ["CO", "RO", "DO"] or str(user.employee_id).upper() in ["CO_ADMIN", "R001", "R002", "R003"]):
-            is_valid_pwd = True
+
+    # 2. RO login: strictly allow official RO accounts r001, r002, r003
+    if not user and emp_id_clean in ["r001", "r002", "r003"]:
+        ro_mapping = {
+            "r001": ("RO Bangalore (Bengaluru HQ)", "Bengaluru HQ Region"),
+            "r002": ("RO South Karnataka (SK)", "South Karnataka Region"),
+            "r003": ("RO North Karnataka (NK)", "North Karnataka Region")
+        }
+        ro_name, ro_reg = ro_mapping[emp_id_clean]
+        user = db.query(User).filter(
+            func.lower(func.trim(User.employee_id)) == emp_id_clean
+        ).first()
+        if not user:
+            user = User(
+                employee_id=emp_id_clean,
+                name=ro_name,
+                password=get_password_hash("Post@123"),
+                role="RO",
+                assigned_region=ro_reg,
+                assigned_division=None
+            )
+            db.add(user)
+            try:
+                db.commit()
+                db.refresh(user)
+            except Exception:
+                db.rollback()
+
+    # 3. CO login: Circle admin
+    if not user and emp_id_clean in ["co_admin", "co"]:
+        user = db.query(User).filter(
+            or_(
+                func.lower(func.trim(User.employee_id)) == "co_admin",
+                func.lower(func.trim(User.employee_id)) == "co"
+            )
+        ).first()
+        if not user:
+            user = User(
+                employee_id="CO_ADMIN",
+                name="Circle Admin",
+                password=get_password_hash("Post@123"),
+                role="CO",
+                assigned_region=None,
+                assigned_division=None
+            )
+            db.add(user)
+            try:
+                db.commit()
+                db.refresh(user)
+            except Exception:
+                db.rollback()
+
+    # 4. ME login: check DB or dynamic lookup in MEs DATA.xlsx
+    if not user:
+        user = db.query(User).filter(
+            and_(
+                func.upper(User.role) == "ME",
+                or_(
+                    func.lower(func.trim(User.employee_id)) == emp_id_clean,
+                    func.replace(func.replace(func.lower(func.trim(User.employee_id)), " ", ""), "_", "") == emp_id_nospaces
+                )
+            )
+        ).first()
+
+        if not user:
+            file_candidates = [
+                os.path.join(BASE_DIR, "MEs DATA.xlsx"),
+                os.path.join(BASE_DIR, "..", "MEs DATA.xlsx"),
+                "MEs DATA.xlsx",
+                os.path.join(os.getcwd(), "MEs DATA.xlsx")
+            ]
+            me_file = next((p for p in file_candidates if os.path.exists(p)), None)
+            if me_file:
+                try:
+                    df = pd.read_excel(me_file)
+                    for _, row in df.iterrows():
+                        row_emp_id = str(row.get("Emp ID", "")).strip()
+                        if row_emp_id.endswith(".0"):
+                            row_emp_id = row_emp_id[:-2]
+                        if row_emp_id.lower() == emp_id_clean:
+                            row_div = str(row.get("Division Name", "")).strip()
+                            row_reg = str(row.get("Region Name", "")).strip()
+                            if not row_reg or row_reg.lower() in ["nan", "none", ""]:
+                                row_reg = get_region_for_division(row_div) or ""
+                            user = User(
+                                employee_id=row_emp_id,
+                                name=str(row.get("Name", "")).strip(),
+                                password=get_password_hash("Post@123"),
+                                role="ME",
+                                assigned_division=row_div,
+                                assigned_region=row_reg,
+                                mobile_number=str(row.get("Mobile Number", "")).strip()
+                            )
+                            try:
+                                db.add(user)
+                                db.commit()
+                                db.refresh(user)
+                            except Exception:
+                                db.rollback()
+                            break
+                except Exception as e:
+                    print(f"[User Auth] Dynamic ME lookup note: {e}")
+
+    # 5. Direct search fallback for any existing user in DB
+    if not user:
+        user = db.query(User).filter(
+            func.lower(func.trim(User.employee_id)) == emp_id_clean
+        ).first()
+
+    # Password Verification: Strictly check stored password hash
+    is_valid_pwd = False
+    if user and user.password:
+        is_valid_pwd = verify_password(str(pwd), user.password)
 
     if not user or not is_valid_pwd:
         raise HTTPException(
@@ -1098,10 +1089,16 @@ def change_password(request: PasswordChangeRequest, db: Session = Depends(get_db
         func.lower(func.trim(User.employee_id)) == curr_emp_id.lower()
     ).first()
     if not user_rec:
-        norm_div = normalize_division_name(curr_emp_id)
-        if norm_div:
+        canon_div = get_canonical_division(curr_emp_id)
+        if canon_div:
             user_rec = db.query(User).filter(
-                func.lower(func.trim(User.employee_id)) == norm_div.lower()
+                or_(
+                    func.lower(func.trim(User.employee_id)) == canon_div.lower(),
+                    and_(
+                        func.upper(User.role) == "DO",
+                        func.lower(func.trim(User.assigned_division)) == canon_div.lower()
+                    )
+                )
             ).first()
     if not user_rec or not verify_password(request.old_password, user_rec.password or ""):
         raise HTTPException(status_code=400, detail="Incorrect old password")
