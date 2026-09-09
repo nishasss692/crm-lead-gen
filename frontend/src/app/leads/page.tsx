@@ -679,7 +679,7 @@ function LeadsPageContent() {
                 />
                 <div className="text-xs">
                   <span className="font-bold text-slate-800 block">Replace existing data with this upload</span>
-                  <span className="text-slate-500 text-[11px]">Wipes previous leads so ONLY your uploaded file's data is visible.</span>
+                  <span className="text-slate-500 text-[11px]">Wipes previous leads so ONLY your uploaded file&apos;s data is visible.</span>
                 </div>
               </label>
 

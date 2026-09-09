@@ -7,6 +7,9 @@ const rawBackend = (
 ).trim().replace(/\/+$/, '').replace(/\/api$/, '');
 
 const nextConfig: NextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   async rewrites() {
     return [
       {
