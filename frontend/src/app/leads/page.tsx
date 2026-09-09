@@ -116,7 +116,13 @@ function LeadsPageContent() {
             division: item.division,
             region: item.region, 
             assignedMeName: item.assigned_agent, 
-            dateOfMeeting: item.date_of_meeting,
+            dateOfMeeting: item.date_of_meeting || item.contactedDate1 || item.contacted_date_1 || '',
+            contactedDate1: item.contactedDate1 || item.contacted_date_1 || item.date_of_meeting || '',
+            contacted_date_1: item.contacted_date_1 || item.contactedDate1 || item.date_of_meeting || '',
+            contactedDate2: item.contactedDate2 || item.contacted_date_2 || '',
+            contacted_date_2: item.contacted_date_2 || item.contactedDate2 || '',
+            contactedDate3: item.contactedDate3 || item.contacted_date_3 || '',
+            contacted_date_3: item.contacted_date_3 || item.contactedDate3 || '',
             customerMet: item.customer_met, 
             contactNumber: item.contact_number, 
             email: item.email,
@@ -474,7 +480,7 @@ function LeadsPageContent() {
           </div>
         ) : (
           <div>
-            <LeadsTable data={filtered} allowEdit={true} />
+            <LeadsTable data={filtered} allowEdit={true} statusFilter={statusFilter} />
           </div>
         )}
         

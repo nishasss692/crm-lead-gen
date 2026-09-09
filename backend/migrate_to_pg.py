@@ -45,6 +45,9 @@ class Lead(Base):
     meeting_outcome = Column(String, nullable=True)
     contract_id = Column(String, nullable=True)
     remarks = Column(String, nullable=True)
+    contacted_date_1 = Column(String, nullable=True)
+    contacted_date_2 = Column(String, nullable=True)
+    contacted_date_3 = Column(String, nullable=True)
 
 class User(Base):
     __tablename__ = "users"

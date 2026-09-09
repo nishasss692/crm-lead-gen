@@ -1,14 +1,16 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Lead } from './LeadsTable';
-import { X, Check, ChevronDown } from 'lucide-react';
+import { X, Check, ChevronDown, Calendar, AlertTriangle, Building2 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { resolvePincodeTerritory, PINCODE_TERRITORY_CATALOG } from '@/lib/karnatakaTerritory';
 
 interface UpdateLeadModalProps {
   lead: Lead;
   onClose: () => void;
   onSave: (id: number, updates: Partial<Lead>) => Promise<void>;
+  initialTab?: 'outcome' | 'source';
 }
 
 // Division-scoped Post Office and Pincode Mapping for Karnataka Postal Circle
@@ -223,7 +225,9 @@ Object.values(DIVISION_PINCODES_MAP).forEach(divPins => {
   });
 });
 
-export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadModalProps) {
+export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'outcome' }: UpdateLeadModalProps) {
+  const [activeTab, setActiveTab] = useState<'outcome' | 'source'>(initialTab);
+
   // Read current user
   const [currentUser, setCurrentUser] = useState<any>(() => {
     if (typeof window !== 'undefined') {
@@ -256,6 +260,19 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
   const [meOptions, setMeOptions] = useState<string[]>(['ME1', 'ME2', 'ME3', 'ME_MYS_01', 'me_user', 'Testing1']);
   const [meDropdownOpen, setMeDropdownOpen] = useState(false);
   const meDropdownRef = useRef<HTMLDivElement>(null);
+  const date1Ref = useRef<HTMLInputElement>(null);
+  const date2Ref = useRef<HTMLInputElement>(null);
+  const date3Ref = useRef<HTMLInputElement>(null);
+
+  const openDatePicker = (inputRef: React.RefObject<HTMLInputElement | null>) => {
+    if (inputRef.current) {
+      if (typeof inputRef.current.showPicker === 'function') {
+        inputRef.current.showPicker();
+      } else {
+        inputRef.current.focus();
+      }
+    }
+  };
 
   const [meMobileMap, setMeMobileMap] = useState<Record<string, string>>({
     'ME1': '9000000001',
@@ -268,10 +285,17 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
 
   const [availableOffices, setAvailableOffices] = useState<string[]>(initialOffices);
 
+  const initialDate1 = lead.contactedDate1 || lead.contacted_date_1 || lead.dateOfMeeting || new Date().toISOString().split('T')[0];
+  const initialDate2 = lead.contactedDate2 || lead.contacted_date_2 || '';
+  const initialDate3 = lead.contactedDate3 || lead.contacted_date_3 || '';
+
   const [formData, setFormData] = useState({
     assignedMeName: lead.assignedMeName || 'ME1',
     meMobile: '9000000001',
-    dateOfMeeting: lead.dateOfMeeting || new Date().toISOString().split('T')[0],
+    dateOfMeeting: initialDate1,
+    contactedDate1: initialDate1,
+    contactedDate2: initialDate2,
+    contactedDate3: initialDate3,
     exporterName: lead.exporterName || '',
     address: lead.address || '',
     pincode: initialPin,
@@ -490,11 +514,42 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
     }));
   };
 
+  const sourceTerritory = useMemo(() => {
+    const pin = (formData.pincode || initialPin || '').trim();
+    return resolvePincodeTerritory(pin, formData.division || cleanActiveDiv);
+  }, [formData.pincode, formData.division, initialPin, cleanActiveDiv]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const updates: Partial<Lead> = {
+      if (activeTab === 'source') {
+        const cleanPo = formData.poName.includes('[') ? formData.poName.split('[')[0].trim() : formData.poName.trim();
+        const updates: Partial<Lead> = {
+          exporterName: formData.exporterName.trim(),
+          address: formData.address.trim(),
+          pincode: formData.pincode.trim(),
+          poName: cleanPo || formData.poName.trim(),
+          division: sourceTerritory.division,
+          region: sourceTerritory.region,
+        };
+
+        await onSave(lead.id, updates);
+        setSaveSuccess(true);
+        setTimeout(() => {
+          onClose();
+        }, 400);
+        return;
+      }
+
+      const updates: Partial<Lead> & {
+        contactedDate1?: string;
+        contactedDate2?: string;
+        contactedDate3?: string;
+        contacted_date_1?: string;
+        contacted_date_2?: string;
+        contacted_date_3?: string;
+      } = {
         exporterName: formData.exporterName,
         address: formData.address,
         pincode: formData.pincode,
@@ -510,7 +565,13 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
         meetingOutcome: formData.meetingOutcome || 'Interested',
         contractId: formData.contractId,
         remarks: formData.remarks,
-        dateOfMeeting: formData.dateOfMeeting,
+        dateOfMeeting: formData.contactedDate1 || formData.dateOfMeeting,
+        contactedDate1: formData.contactedDate1,
+        contacted_date_1: formData.contactedDate1,
+        contactedDate2: formData.contactedDate2,
+        contacted_date_2: formData.contactedDate2,
+        contactedDate3: formData.contactedDate3,
+        contacted_date_3: formData.contactedDate3,
       };
 
       await onSave(lead.id, updates);
@@ -553,14 +614,14 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-black tracking-wider uppercase text-[#b91c1c] block leading-none">
-                CONTACT OUTCOME
+                {activeTab === 'source' ? 'AUTHORIZED DATA CORRECTION' : 'CONTACT OUTCOME'}
               </span>
               <span className="inline-flex items-center gap-1 bg-red-50 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-200">
-                📍 {cleanActiveDiv} Division Territory
+                📍 {activeTab === 'source' ? sourceTerritory.divisionLabel : `${cleanActiveDiv} Division Territory`}
               </span>
             </div>
             <h2 className="text-2xl font-bold font-serif text-[#1e3a8a] tracking-tight mt-1 leading-none">
-              Update lead
+              {activeTab === 'source' ? 'Modify lead source details' : 'Update lead'}
             </h2>
           </div>
           <button 
@@ -573,15 +634,155 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
           </button>
         </div>
 
-        {/* Separator line below header */}
-        <div className="h-[1px] bg-slate-200 mx-6 shrink-0" />
+        {/* Tabs Switcher Bar */}
+        <div className="flex items-center gap-2 px-6 pt-2 pb-2 border-b border-slate-200 bg-slate-50/70 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActiveTab('outcome')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'outcome'
+                ? 'bg-white text-[#1e3a8a] shadow-xs border border-slate-200 ring-1 ring-[#1e3a8a]/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+            }`}
+          >
+            <span>📋</span>
+            <span>Contact Outcome</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('source')}
+            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'source'
+                ? 'bg-white text-[#b91c1c] shadow-xs border border-slate-200 ring-1 ring-[#b91c1c]/20'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/80'
+            }`}
+          >
+            <span>✏️</span>
+            <span>Modify Lead Source Details</span>
+          </button>
+        </div>
 
         {/* Scrollable / Directly viewable Form Body */}
         <div className="overflow-y-auto flex-1 px-6 py-4 custom-scrollbar">
           <form id="update-lead-form" onSubmit={handleSubmit} className="space-y-3.5">
             
-            {/* ROW 1: Assigned ME (Input + Dropdown Combobox), ME mobile, Contacted date, Exporter name */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {activeTab === 'source' ? (
+              <div className="space-y-4 max-w-2xl py-1">
+                {/* Amber Warning Notice Box */}
+                <div className="flex items-start gap-3 bg-amber-50/90 border border-amber-200/90 rounded-lg p-3.5 text-amber-900 shadow-2xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs font-medium leading-relaxed">
+                    Only the four source fields below can be changed. Pincode and PO selection will automatically update the organizational mapping.
+                  </p>
+                </div>
+
+                {/* Exporter name */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                    Exporter name
+                  </label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.exporterName} 
+                    onChange={e => handleChange('exporterName', e.target.value)}
+                    placeholder="Business or Exporter Name"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-bold text-slate-900 uppercase focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs"
+                  />
+                </div>
+
+                {/* Exporter address */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                    Exporter address
+                  </label>
+                  <textarea 
+                    rows={3} 
+                    required
+                    value={formData.address} 
+                    onChange={e => handleChange('address', e.target.value)}
+                    placeholder="Full address, premises, street, city, state"
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-medium text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs resize-none"
+                  />
+                </div>
+
+                {/* Pincode */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-800">
+                      Pincode
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomPin(prev => !prev)}
+                      className="text-[11px] text-[#1e3a8a] hover:underline font-semibold cursor-pointer"
+                    >
+                      {isCustomPin ? "Select from list" : "Enter custom PIN"}
+                    </button>
+                  </div>
+
+                  {isCustomPin ? (
+                    <input 
+                      type="text" 
+                      maxLength={6}
+                      required
+                      value={formData.pincode} 
+                      onChange={e => handleChange('pincode', e.target.value.replace(/\D/g, ''))}
+                      placeholder="6-digit Pincode"
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-bold text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs"
+                    />
+                  ) : (
+                    <select
+                      value={formData.pincode}
+                      onChange={e => handlePincodeSelect(e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-bold text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
+                    >
+                      {Object.keys(PINCODE_TERRITORY_CATALOG).map(pin => {
+                        const entry = PINCODE_TERRITORY_CATALOG[pin];
+                        const firstOff = entry?.offices?.[0] ? ` — ${entry.offices[0].replace(/ (SO|BO|HO|GPO)$/, '')}` : '';
+                        return (
+                          <option key={pin} value={pin}>
+                            {pin} ({entry?.division || 'Division'}){firstOff}
+                          </option>
+                        );
+                      })}
+                      {!Object.keys(PINCODE_TERRITORY_CATALOG).includes(formData.pincode) && formData.pincode && (
+                        <option value={formData.pincode}>{formData.pincode} (Custom)</option>
+                      )}
+                    </select>
+                  )}
+                </div>
+
+                {/* PO Name */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                    PO Name
+                  </label>
+                  <select 
+                    value={formData.poName} 
+                    onChange={e => handleChange('poName', e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
+                  >
+                    {sourceTerritory.offices.map((off, idx) => (
+                      <option key={idx} value={off.label}>
+                        {off.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Dynamic Organizational Mapping Banner */}
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 flex items-center gap-2 shadow-2xs">
+                  <Building2 className="w-4 h-4 text-[#1e3a8a] shrink-0" />
+                  <p className="font-semibold text-slate-700 leading-snug">
+                    <span className="text-[#1e3a8a] font-bold">{sourceTerritory.divisionLabel}</span> • {sourceTerritory.region} • Karnataka. <span className="text-slate-500 font-normal">Saving will apply this organizational mapping.</span>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+            {/* ROW 1: Assigned ME (Input + Dropdown Combobox), ME mobile, Exporter name */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
               <div ref={meDropdownRef} className="relative">
                 <label className="block text-xs font-bold text-slate-800 mb-1">Assigned ME</label>
                 <div className="relative flex items-center">
@@ -643,16 +844,6 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Contacted date</label>
-                <input 
-                  type="date" 
-                  value={formData.dateOfMeeting} 
-                  onChange={e => handleChange('dateOfMeeting', e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer" 
-                />
-              </div>
-
-              <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1">Exporter name</label>
                 <input 
                   type="text" 
@@ -661,6 +852,119 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
                   placeholder="Exporter Business Name"
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-900 uppercase focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
                 />
+              </div>
+            </div>
+
+            {/* DEDICATED SECTION: Contact Timeline & Outreach (Contacted Date 1, 2, 3) */}
+            <div className="bg-slate-50/90 border border-slate-200 rounded-xl p-3 sm:p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#1e3a8a]" />
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                    Contact Timeline & Outreach Dates
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
+                    (3 Interaction Touchpoints)
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-semibold bg-white px-2 py-0.5 rounded border border-slate-200">
+                  Click calendar icon to pick
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Contacted Date 1 */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-2xs hover:border-slate-300 transition-all focus-within:border-[#1e3a8a] focus-within:ring-1 focus-within:ring-[#1e3a8a]">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                      Contacted Date 1
+                    </label>
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-[#1e3a8a] border border-blue-100">
+                      Initial Contact
+                    </span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input 
+                      ref={date1Ref}
+                      type="date" 
+                      value={formData.contactedDate1} 
+                      onChange={e => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, contactedDate1: val, dateOfMeeting: val }));
+                      }}
+                      className="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-9 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] outline-none cursor-pointer" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openDatePicker(date1Ref)}
+                      className="absolute right-2 p-1 text-slate-400 hover:text-[#1e3a8a] hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                      title="Open Calendar for Contacted Date 1"
+                    >
+                      <Calendar className="w-4 h-4 text-[#1e3a8a]" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">First contact / initial meeting</p>
+                </div>
+
+                {/* Contacted Date 2 */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-2xs hover:border-slate-300 transition-all focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                      Contacted Date 2
+                    </label>
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-100">
+                      Follow-Up 1
+                    </span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input 
+                      ref={date2Ref}
+                      type="date" 
+                      value={formData.contactedDate2} 
+                      onChange={e => handleChange('contactedDate2', e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-9 py-2 text-xs font-semibold text-slate-800 focus:border-amber-500 outline-none cursor-pointer" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openDatePicker(date2Ref)}
+                      className="absolute right-2 p-1 text-slate-400 hover:text-amber-700 hover:bg-amber-50 rounded transition-colors cursor-pointer"
+                      title="Open Calendar for Contacted Date 2"
+                    >
+                      <Calendar className="w-4 h-4 text-amber-700" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">Secondary follow-up discussion</p>
+                </div>
+
+                {/* Contacted Date 3 */}
+                <div className="bg-white border border-slate-200 rounded-lg p-3 shadow-2xs hover:border-slate-300 transition-all focus-within:border-emerald-600 focus-within:ring-1 focus-within:ring-emerald-600">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wide">
+                      Contacted Date 3
+                    </label>
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-100">
+                      Follow-Up 2
+                    </span>
+                  </div>
+                  <div className="relative flex items-center">
+                    <input 
+                      ref={date3Ref}
+                      type="date" 
+                      value={formData.contactedDate3} 
+                      onChange={e => handleChange('contactedDate3', e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-9 py-2 text-xs font-semibold text-slate-800 focus:border-emerald-600 outline-none cursor-pointer" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openDatePicker(date3Ref)}
+                      className="absolute right-2 p-1 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors cursor-pointer"
+                      title="Open Calendar for Contacted Date 3"
+                    >
+                      <Calendar className="w-4 h-4 text-emerald-700" />
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">Third touchpoint / final outcome</p>
+                </div>
               </div>
             </div>
 
@@ -900,6 +1204,8 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
                 className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs resize-none" 
               />
             </div>
+            </>
+            )}
 
           </form>
         </div>
@@ -908,7 +1214,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
         <div className="px-6 py-3 border-t border-slate-200 bg-white flex items-center justify-end gap-3 shrink-0">
           {saveSuccess && (
             <span className="text-xs font-bold text-emerald-600 mr-auto flex items-center gap-1">
-              <Check className="w-4 h-4" /> Lead saved successfully!
+              <Check className="w-4 h-4" /> {activeTab === 'source' ? 'Correction saved successfully!' : 'Lead saved successfully!'}
             </span>
           )}
 
@@ -925,7 +1231,9 @@ export default function UpdateLeadModal({ lead, onClose, onSave }: UpdateLeadMod
             disabled={saving} 
             className="px-6 py-2 bg-[#b91c1c] hover:bg-[#991b1b] text-white rounded-lg text-xs font-bold shadow-md shadow-red-700/20 transition-all flex items-center gap-1.5 disabled:opacity-60 cursor-pointer"
           >
-            {saving ? 'Saving...' : 'Save contact outcome →'}
+            {saving 
+              ? (activeTab === 'source' ? 'Saving correction...' : 'Saving...') 
+              : (activeTab === 'source' ? 'Save correction...' : 'Save contact outcome →')}
           </button>
         </div>
 

@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import UpdateLeadModal from './UpdateLeadModal';
-import { Edit, Trash2, MapPin, ChevronLeft, ChevronRight, CheckCircle2, Clock, XCircle, Award, PhoneCall, AlertCircle } from 'lucide-react';
+import ModifyLeadSourceModal from './ModifyLeadSourceModal';
+import { Edit, Trash2, MapPin, ChevronLeft, ChevronRight, CheckCircle2, Clock, XCircle, Award, PhoneCall, AlertCircle, PenLine } from 'lucide-react';
 import { apiFetch, safeJson } from '@/lib/api';
 
 export interface Lead {
@@ -16,6 +17,12 @@ export interface Lead {
   region?: string;
   assignedMeName?: string;
   dateOfMeeting?: string;
+  contactedDate1?: string;
+  contactedDate2?: string;
+  contactedDate3?: string;
+  contacted_date_1?: string;
+  contacted_date_2?: string;
+  contacted_date_3?: string;
   customerMet?: string;
   contactNumber?: string;
   email?: string;
@@ -31,12 +38,19 @@ export interface Lead {
 interface LeadsTableProps {
   data: Lead[];
   allowEdit?: boolean;
+  statusFilter?: string | null;
 }
 
-export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) {
+export default function LeadsTable({ data, allowEdit = true, statusFilter }: LeadsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [sourceModalLead, setSourceModalLead] = useState<Lead | null>(null);
+
+  // Features in sidebar that default to Authorized Data Correction (Modify Lead Source Details)
+  const isSourceCorrectionDefault = Boolean(
+    statusFilter && ['contacted', 'followup', 'interested', 'willing', 'onboarded'].includes(statusFilter.toLowerCase())
+  );
 
   const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
   
@@ -163,7 +177,14 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
               {currentData.map((lead, index) => (
                 <tr 
                   key={lead.id} 
-                  onClick={() => allowEdit && setSelectedLead(lead)}
+                  onClick={() => {
+                    if (!allowEdit) return;
+                    if (isSourceCorrectionDefault) {
+                      setSourceModalLead(lead);
+                    } else {
+                      setSelectedLead(lead);
+                    }
+                  }}
                   className="hover:bg-blue-50/50 cursor-pointer transition-colors duration-150 group"
                 >
                   <td className="px-5 py-3.5 text-center text-slate-400 font-semibold text-xs tabular-nums">
@@ -173,13 +194,22 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
                   <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1.5">
                       {allowEdit && (
-                        <button 
-                          onClick={() => setSelectedLead(lead)} 
-                          className="p-1.5 border border-blue-200 hover:bg-blue-100/60 text-blue-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
-                          title="Edit Lead"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </button>
+                        <>
+                          <button 
+                            onClick={() => setSourceModalLead(lead)} 
+                            className="p-1.5 border border-amber-200 hover:bg-amber-100/70 text-amber-700 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                            title="Modify lead source details"
+                          >
+                            <PenLine className="w-3.5 h-3.5" />
+                          </button>
+                          <button 
+                            onClick={() => setSelectedLead(lead)} 
+                            className="p-1.5 border border-blue-200 hover:bg-blue-100/60 text-blue-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
+                            title="Update Contact Outcome"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                        </>
                       )}
                       <button 
                         className="p-1.5 border border-rose-200 hover:bg-rose-100/60 text-rose-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs"
@@ -191,7 +221,15 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
                   </td>
                   
                   <td className="px-5 py-3.5">
-                    <div className="font-bold text-slate-900 group-hover:text-blue-600 text-sm tracking-tight transition-colors">
+                    <div 
+                      onClick={(e) => {
+                        if (isSourceCorrectionDefault && allowEdit) {
+                          e.stopPropagation();
+                          setSourceModalLead(lead);
+                        }
+                      }}
+                      className="font-bold text-slate-900 group-hover:text-blue-600 text-sm tracking-tight transition-colors"
+                    >
                       {lead.exporterName || 'Unknown Exporter'}
                     </div>
                     <div className="text-xs text-slate-500 font-normal mt-0.5 truncate max-w-md">
@@ -271,6 +309,15 @@ export default function LeadsTable({ data, allowEdit = true }: LeadsTableProps) 
         <UpdateLeadModal
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
+          onSave={handleUpdate}
+          initialTab={isSourceCorrectionDefault ? 'source' : 'outcome'}
+        />
+      )}
+
+      {sourceModalLead && (
+        <ModifyLeadSourceModal
+          lead={sourceModalLead}
+          onClose={() => setSourceModalLead(null)}
           onSave={handleUpdate}
         />
       )}

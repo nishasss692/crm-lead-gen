@@ -11,6 +11,73 @@ import {
 } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api';
 
+const KARNATAKA_DIVISIONS: Record<string, { region: string; aliases: string[] }> = {
+  // Bengaluru HQ Region
+  'BG East': { region: 'Bengaluru HQ Region', aliases: ['bg east', 'bgeast', 'bg_east', 'bengaluru east', 'bangalore east'] },
+  'BG South': { region: 'Bengaluru HQ Region', aliases: ['bg south', 'bgsouth', 'bg_south', 'bengaluru south', 'bangalore south'] },
+  'BG West': { region: 'Bengaluru HQ Region', aliases: ['bg west', 'bgwest', 'bg_west', 'bengaluru west', 'bangalore west'] },
+  'BG Central': { region: 'Bengaluru HQ Region', aliases: ['bg central', 'bgcentral', 'bg_central', 'bengaluru central', 'bangalore central'] },
+  'BG GPO': { region: 'Bengaluru HQ Region', aliases: ['bg gpo', 'bggpo', 'bg_gpo', 'bengaluru gpo', 'bangalore gpo', 'gpo'] },
+  'Channapatna': { region: 'Bengaluru HQ Region', aliases: ['channapatna', 'chanapatna', 'channapatana'] },
+
+  // South Karnataka Region
+  'Kolar': { region: 'South Karnataka Region', aliases: ['kolar', 'kolara'] },
+  'Mysuru': { region: 'South Karnataka Region', aliases: ['mysuru', 'mysore'] },
+  'Nanjangud': { region: 'South Karnataka Region', aliases: ['nanjangud', 'nanjanagudu'] },
+  'Mandya': { region: 'South Karnataka Region', aliases: ['mandya'] },
+  'Hassan': { region: 'South Karnataka Region', aliases: ['hassan', 'hasana'] },
+  'Kodagu': { region: 'South Karnataka Region', aliases: ['kodagu', 'coorg', 'madikeri'] },
+  'Mangaluru': { region: 'South Karnataka Region', aliases: ['mangaluru', 'mangalore'] },
+  'Puttur': { region: 'South Karnataka Region', aliases: ['puttur', 'putturu'] },
+  'Udupi': { region: 'South Karnataka Region', aliases: ['udupi', 'udapi'] },
+  'Shivamogga': { region: 'South Karnataka Region', aliases: ['shivamogga', 'shimoga'] },
+  'Chikkamagaluru': { region: 'South Karnataka Region', aliases: ['chikkamagaluru', 'chikmagalur', 'chikmagaluru'] },
+  'Chitradurga': { region: 'South Karnataka Region', aliases: ['chitradurga'] },
+  'Davangere': { region: 'South Karnataka Region', aliases: ['davangere', 'davanagere'] },
+  'Tumakuru': { region: 'South Karnataka Region', aliases: ['tumakuru', 'tumkur'] },
+
+  // North Karnataka Region
+  'Dharwad': { region: 'North Karnataka Region', aliases: ['dharwad', 'hubli', 'hubballi'] },
+  'Belagavi': { region: 'North Karnataka Region', aliases: ['belagavi', 'belgaum'] },
+  'Gokak': { region: 'North Karnataka Region', aliases: ['gokak'] },
+  'Chikodi': { region: 'North Karnataka Region', aliases: ['chikodi', 'chikkodi'] },
+  'Bagalkote': { region: 'North Karnataka Region', aliases: ['bagalkote', 'bagalkot'] },
+  'Vijayapura': { region: 'North Karnataka Region', aliases: ['vijayapura', 'vijayapur', 'bijapur'] },
+  'Gadag': { region: 'North Karnataka Region', aliases: ['gadag'] },
+  'Haveri': { region: 'North Karnataka Region', aliases: ['haveri'] },
+  'Ballari': { region: 'North Karnataka Region', aliases: ['ballari', 'bellary'] },
+  'Koppal': { region: 'North Karnataka Region', aliases: ['koppal'] },
+  'Kalaburagi': { region: 'North Karnataka Region', aliases: ['kalaburagi', 'gulbarga'] },
+  'Bidar': { region: 'North Karnataka Region', aliases: ['bidar'] },
+  'Raichur': { region: 'North Karnataka Region', aliases: ['raichur'] },
+  'Karwar': { region: 'North Karnataka Region', aliases: ['karwar', 'uttara kannada'] },
+  'Sirsi': { region: 'North Karnataka Region', aliases: ['sirsi'] },
+  'Yadgir': { region: 'North Karnataka Region', aliases: ['yadgir', 'yadagiri'] },
+};
+
+function findDivisionAccount(input: string): { division: string; region: string } | null {
+  if (!input) return null;
+  const clean = input.trim().toLowerCase();
+  const stripped = clean.replace(/^(do|div|division)[\s_-]+/, '').replace(/[\s_-]+division$/, '').trim();
+  const noSpaces = stripped.replace(/[\s_-]+/g, '');
+
+  for (const [canonical, info] of Object.entries(KARNATAKA_DIVISIONS)) {
+    const canClean = canonical.toLowerCase();
+    const canNoSpaces = canClean.replace(/[\s_-]+/g, '');
+    if (stripped === canClean || noSpaces === canNoSpaces || clean === canClean) {
+      return { division: canonical, region: info.region };
+    }
+    for (const alias of info.aliases) {
+      const aClean = alias.toLowerCase();
+      const aNoSpaces = aClean.replace(/[\s_-]+/g, '');
+      if (stripped === aClean || noSpaces === aNoSpaces || clean === aClean) {
+        return { division: canonical, region: info.region };
+      }
+    }
+  }
+  return null;
+}
+
 const DEMO_ACCOUNTS: Record<string, { role: string; assigned_region: string | null; assigned_division: string | null }> = {
   'CO_ADMIN': { role: 'CO', assigned_region: null, assigned_division: null },
   'CO_USER': { role: 'CO', assigned_region: null, assigned_division: null },
@@ -24,14 +91,22 @@ const DEMO_ACCOUNTS: Record<string, { role: string; assigned_region: string | nu
   'RO_USER': { role: 'RO', assigned_region: 'Bengaluru HQ Region', assigned_division: null },
   'RO_SK': { role: 'RO', assigned_region: 'South Karnataka Region', assigned_division: null },
   'RO_NK': { role: 'RO', assigned_region: 'North Karnataka Region', assigned_division: null },
-  'DIV_MYS': { role: 'DO', assigned_region: null, assigned_division: 'Mysuru' },
-  'DIV_USER': { role: 'DO', assigned_region: null, assigned_division: 'Mysuru' },
-  'DO_MYS': { role: 'DO', assigned_region: null, assigned_division: 'Mysuru' },
-  'DIV_BGE': { role: 'DO', assigned_region: null, assigned_division: 'BG East' },
-  'DIV_BGS': { role: 'DO', assigned_region: null, assigned_division: 'BG South' },
-  'ME_MYS_01': { role: 'ME', assigned_region: null, assigned_division: 'Mysuru' },
-  'ME_USER': { role: 'ME', assigned_region: null, assigned_division: 'Mysuru' },
+  'DIV_MYS': { role: 'DO', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
+  'DIV_USER': { role: 'DO', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
+  'DO_MYS': { role: 'DO', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
+  'DIV_BGE': { role: 'DO', assigned_region: 'Bengaluru HQ Region', assigned_division: 'BG East' },
+  'DIV_BGS': { role: 'DO', assigned_region: 'Bengaluru HQ Region', assigned_division: 'BG South' },
+  'ME_MYS_01': { role: 'ME', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
+  'ME_USER': { role: 'ME', assigned_region: 'South Karnataka Region', assigned_division: 'Mysuru' },
 };
+
+// Register all 36 Karnataka divisions in DEMO_ACCOUNTS in all casings
+for (const [divName, info] of Object.entries(KARNATAKA_DIVISIONS)) {
+  DEMO_ACCOUNTS[divName.toUpperCase()] = { role: 'DO', assigned_region: info.region, assigned_division: divName };
+  DEMO_ACCOUNTS[divName.toLowerCase()] = { role: 'DO', assigned_region: info.region, assigned_division: divName };
+  DEMO_ACCOUNTS[divName] = { role: 'DO', assigned_region: info.region, assigned_division: divName };
+  DEMO_ACCOUNTS[divName.toLowerCase().replace(/[\s_-]+/g, '')] = { role: 'DO', assigned_region: info.region, assigned_division: divName };
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -77,7 +152,8 @@ export default function LoginPage() {
     const targetId = (directId || employeeId).trim();
     const targetPass = directPass || password;
     const targetIdUpper = targetId.toUpperCase();
-    const isDemo = targetIdUpper in DEMO_ACCOUNTS;
+    const divMatch = findDivisionAccount(targetId);
+    const isDemo = targetIdUpper in DEMO_ACCOUNTS || (targetId in DEMO_ACCOUNTS) || (targetId.toLowerCase() in DEMO_ACCOUNTS) || !!divMatch;
     const isDemoPass = ['password123', 'Post@123'].includes(targetPass) || !targetPass;
 
     const activeApiUrl = getActiveBackend();
@@ -90,7 +166,7 @@ export default function LoginPage() {
         },
         body: JSON.stringify({
           employee_id: targetId,
-          password: targetPass || 'password123',
+          password: targetPass || 'Post@123',
         }),
       });
 
@@ -107,11 +183,16 @@ export default function LoginPage() {
         return;
       } else {
         // Demo accounts fallback
-        if (isDemo && (isDemoPass || targetPass === 'password123')) {
-          const info = DEMO_ACCOUNTS[targetIdUpper];
+        if (isDemo && (isDemoPass || targetPass === 'password123' || targetPass === 'Post@123')) {
+          const divInfo = findDivisionAccount(targetId);
+          const info = divInfo 
+            ? { role: 'DO', assigned_region: divInfo.region, assigned_division: divInfo.division }
+            : (DEMO_ACCOUNTS[targetIdUpper] || DEMO_ACCOUNTS[targetId] || DEMO_ACCOUNTS[targetId.toLowerCase()] || { role: 'DO', assigned_region: null, assigned_division: targetId });
+          const finalEmpId = divInfo ? divInfo.division : targetIdUpper;
           const demoUser = {
-            employee_id: targetIdUpper,
-            username: targetIdUpper,
+            employee_id: finalEmpId,
+            username: finalEmpId,
+            name: `DO ${finalEmpId}`,
             role: info.role,
             assigned_region: info.assigned_region,
             assigned_division: info.assigned_division,
@@ -119,7 +200,7 @@ export default function LoginPage() {
             division: info.assigned_division
           };
           if (typeof window !== 'undefined') {
-            localStorage.setItem('token', 'demo_access_token_' + targetIdUpper);
+            localStorage.setItem('token', 'demo_access_token_' + finalEmpId);
             localStorage.setItem('role', info.role);
             localStorage.setItem('user', JSON.stringify(demoUser));
           }
@@ -130,11 +211,16 @@ export default function LoginPage() {
         setError(errData?.detail || 'Invalid Employee ID or Password.');
       }
     } catch (err) {
-      if (isDemo && (isDemoPass || targetPass === 'password123')) {
-        const info = DEMO_ACCOUNTS[targetIdUpper];
+      if (isDemo && (isDemoPass || targetPass === 'password123' || targetPass === 'Post@123')) {
+        const divInfo = findDivisionAccount(targetId);
+        const info = divInfo 
+          ? { role: 'DO', assigned_region: divInfo.region, assigned_division: divInfo.division }
+          : (DEMO_ACCOUNTS[targetIdUpper] || DEMO_ACCOUNTS[targetId] || DEMO_ACCOUNTS[targetId.toLowerCase()] || { role: 'DO', assigned_region: null, assigned_division: targetId });
+        const finalEmpId = divInfo ? divInfo.division : targetIdUpper;
         const demoUser = {
-          employee_id: targetIdUpper,
-          username: targetIdUpper,
+          employee_id: finalEmpId,
+          username: finalEmpId,
+          name: `DO ${finalEmpId}`,
           role: info.role,
           assigned_region: info.assigned_region,
           assigned_division: info.assigned_division,
@@ -142,7 +228,7 @@ export default function LoginPage() {
           division: info.assigned_division
         };
         if (typeof window !== 'undefined') {
-          localStorage.setItem('token', 'demo_access_token_' + targetIdUpper);
+          localStorage.setItem('token', 'demo_access_token_' + finalEmpId);
           localStorage.setItem('role', info.role);
           localStorage.setItem('user', JSON.stringify(demoUser));
         }
@@ -225,7 +311,7 @@ export default function LoginPage() {
                 required
                 value={employeeId}
                 onChange={(e) => setEmployeeId(e.target.value)}
-                placeholder="Enter Employee ID (e.g. CO_ADMIN)"
+                placeholder="Enter Employee ID (e.g. Mysuru, CO_ADMIN, r001)"
                 className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all font-medium"
                 suppressHydrationWarning
               />
@@ -332,7 +418,7 @@ export default function LoginPage() {
             <button
               type="button"
               suppressHydrationWarning
-              onClick={() => handleQuickAccess('DIV_MYS', 'Post@123')}
+              onClick={() => handleQuickAccess('Mysuru', 'Post@123')}
               className="p-1.5 rounded-lg border border-gray-200 hover:border-[#114b79] bg-gray-50 hover:bg-blue-50/50 text-left transition-all cursor-pointer group"
             >
               <div className="font-bold text-gray-800 text-[11px] group-hover:text-[#114b79]">DO (Mysuru)</div>
