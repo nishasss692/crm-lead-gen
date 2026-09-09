@@ -177,14 +177,7 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
               {currentData.map((lead, index) => (
                 <tr 
                   key={lead.id} 
-                  onClick={() => {
-                    if (!allowEdit) return;
-                    if (isSourceCorrectionDefault) {
-                      setSourceModalLead(lead);
-                    } else {
-                      setSelectedLead(lead);
-                    }
-                  }}
+                  onClick={() => allowEdit && setSelectedLead(lead)}
                   className="hover:bg-blue-50/50 cursor-pointer transition-colors duration-150 group"
                 >
                   <td className="px-5 py-3.5 text-center text-slate-400 font-semibold text-xs tabular-nums">
@@ -221,20 +214,48 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                   </td>
                   
                   <td className="px-5 py-3.5">
-                    <div 
-                      onClick={(e) => {
-                        if (isSourceCorrectionDefault && allowEdit) {
-                          e.stopPropagation();
-                          setSourceModalLead(lead);
-                        }
-                      }}
-                      className="font-bold text-slate-900 group-hover:text-blue-600 text-sm tracking-tight transition-colors"
-                    >
+                    <div className="font-bold text-slate-900 group-hover:text-blue-600 text-sm tracking-tight transition-colors">
                       {lead.exporterName || 'Unknown Exporter'}
                     </div>
                     <div className="text-xs text-slate-500 font-normal mt-0.5 truncate max-w-md">
                       {lead.address || 'No address registered'}
                     </div>
+                    {(lead.customerMet || lead.contactNumber || lead.email) && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        {lead.customerMet && (
+                          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            👤 {lead.customerMet}
+                          </span>
+                        )}
+                        {lead.contactNumber && (
+                          <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-[10px] font-bold font-mono px-1.5 py-0.5 rounded border border-blue-100">
+                            📞 {lead.contactNumber}
+                          </span>
+                        )}
+                        {lead.email && (
+                          <span className="inline-flex items-center gap-1 bg-slate-50 text-slate-600 text-[10px] font-medium px-1.5 py-0.5 rounded border border-slate-200">
+                            ✉️ {lead.email}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {(lead.contactedDate1 || lead.dateOfMeeting || lead.remarks || lead.monthlyVolume) && (
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-slate-500">
+                        {(lead.contactedDate1 || lead.dateOfMeeting) && (
+                          <span className="bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded border border-amber-100 font-medium">
+                            📅 {lead.contactedDate1 || lead.dateOfMeeting}
+                          </span>
+                        )}
+                        {lead.monthlyVolume && (
+                          <span className="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-100 font-mono font-medium">
+                            ₹{lead.monthlyVolume}/mo
+                          </span>
+                        )}
+                        {lead.remarks && (
+                          <span className="truncate max-w-xs text-slate-400 italic">“{lead.remarks}”</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   
                   <td className="px-5 py-3.5 text-center">
@@ -310,7 +331,7 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
           lead={selectedLead}
           onClose={() => setSelectedLead(null)}
           onSave={handleUpdate}
-          initialTab={isSourceCorrectionDefault ? 'source' : 'outcome'}
+          initialTab="outcome"
         />
       )}
 

@@ -108,14 +108,14 @@ function LeadsPageContent() {
           const formattedData = data.map((item: any) => ({
             id: item.id, 
             slNo: item.sl_no, 
-            exporterName: item.exporter_name, 
-            address: item.address,
-            pincode: item.pincode, 
+            exporterName: item.exporter_name || item.exporterName || '', 
+            address: item.address || '',
+            pincode: item.pincode || '', 
             poName: item.po_name || item.poName || '',
-            divisionId: item.division_id, 
-            division: item.division,
-            region: item.region, 
-            assignedMeName: item.assigned_agent, 
+            divisionId: item.division_id || item.divisionId || '', 
+            division: item.division || '',
+            region: item.region || '', 
+            assignedMeName: item.assigned_agent || item.assignedAgent || item.assignedMeName || '', 
             dateOfMeeting: item.date_of_meeting || item.contactedDate1 || item.contacted_date_1 || '',
             contactedDate1: item.contactedDate1 || item.contacted_date_1 || item.date_of_meeting || '',
             contacted_date_1: item.contacted_date_1 || item.contactedDate1 || item.date_of_meeting || '',
@@ -123,14 +123,14 @@ function LeadsPageContent() {
             contacted_date_2: item.contacted_date_2 || item.contactedDate2 || '',
             contactedDate3: item.contactedDate3 || item.contacted_date_3 || '',
             contacted_date_3: item.contacted_date_3 || item.contactedDate3 || '',
-            customerMet: item.customer_met, 
-            contactNumber: item.contact_number, 
-            email: item.email,
-            serviceUsing: item.service_using, 
-            monthlyVolume: item.monthly_volume, 
-            meetingOutcome: item.meeting_outcome,
-            contractId: item.contract_id, 
-            remarks: item.remarks,
+            customerMet: item.customer_met || item.customerMet || '', 
+            contactNumber: item.contact_number || item.contactNumber || '', 
+            email: item.email || '',
+            serviceUsing: item.service_using || item.serviceUsing || '', 
+            monthlyVolume: item.monthly_volume || item.monthlyVolume || '', 
+            meetingOutcome: item.meeting_outcome || item.meetingOutcome || '',
+            contractId: item.contract_id || item.contractId || '', 
+            remarks: item.remarks || '',
             win_probability: item.win_probability ?? 0,
             winProbability: item.win_probability ?? 0
           }));
@@ -152,7 +152,7 @@ function LeadsPageContent() {
     }
     fetchDivisions(token);
     fetchLeads(token, selectedDivision);
-  }, [router, selectedDivision]);
+  }, [router, selectedDivision, statusFilter]);
 
   // Handle File Upload
   const handleFileUpload = async (e: React.FormEvent) => {
@@ -314,17 +314,17 @@ function LeadsPageContent() {
       const outcome = (lead.meetingOutcome || '').trim().toLowerCase();
       const hasContract = !!(lead.contractId || '').trim();
       
-      switch (statusFilter) {
+      switch (statusFilter.toLowerCase()) {
         case 'pending':
-          return outcome === '' || outcome === 'pending' || outcome === 'nan';
+          return !outcome || outcome === 'pending' || outcome === 'nan' || outcome === 'none' || outcome === 'new';
         case 'contacted':
-          return outcome !== '' && outcome !== 'pending' && outcome !== 'nan';
+          return outcome !== '' && outcome !== 'pending' && outcome !== 'nan' && outcome !== 'none' && outcome !== 'new';
         case 'followup':
           return outcome.includes('follow') || outcome.includes('warm');
         case 'interested':
           return outcome.includes('positive') || outcome.includes('interested');
         case 'willing':
-          return (outcome.includes('positive') || outcome.includes('interested')) && !hasContract;
+          return outcome.includes('willing') || (outcome.includes('interested') && !hasContract);
         case 'onboarded':
           return hasContract || outcome.includes('onboard');
         default:

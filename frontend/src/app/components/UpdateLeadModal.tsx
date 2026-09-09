@@ -257,7 +257,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
   const initialPin = (lead.pincode && lead.pincode.trim().length === 6) ? lead.pincode.trim() : defaultDivPin;
   const initialOffices = initialDivMap[initialPin] || ALL_PINCODE_OFFICES[initialPin] || [`Post Office - ${initialPin}`];
 
-  const [meOptions, setMeOptions] = useState<string[]>(['ME1', 'ME2', 'ME3', 'ME_MYS_01', 'me_user', 'Testing1']);
+  const [meOptions, setMeOptions] = useState<string[]>([]);
   const [meDropdownOpen, setMeDropdownOpen] = useState(false);
   const meDropdownRef = useRef<HTMLDivElement>(null);
   const date1Ref = useRef<HTMLInputElement>(null);
@@ -274,24 +274,19 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
     }
   };
 
-  const [meMobileMap, setMeMobileMap] = useState<Record<string, string>>({
-    'ME1': '9000000001',
-    'ME2': '9000000002',
-    'ME3': '9000000003',
-    'ME_MYS_01': '9880704082',
-    'me_user': '9000000001',
-    'Testing1': '9000000001'
-  });
-
+  const [meMobileMap, setMeMobileMap] = useState<Record<string, string>>({});
   const [availableOffices, setAvailableOffices] = useState<string[]>(initialOffices);
 
   const initialDate1 = lead.contactedDate1 || lead.contacted_date_1 || lead.dateOfMeeting || new Date().toISOString().split('T')[0];
   const initialDate2 = lead.contactedDate2 || lead.contacted_date_2 || '';
   const initialDate3 = lead.contactedDate3 || lead.contacted_date_3 || '';
 
+  const userMobile = currentUser?.mobile_number ? String(currentUser.mobile_number).replace(/\D/g, '').slice(0, 10) : '';
+  const initialContactNumber = lead.contactNumber ? String(lead.contactNumber).replace(/\D/g, '').slice(0, 10) : '';
+
   const [formData, setFormData] = useState({
-    assignedMeName: lead.assignedMeName || 'ME1',
-    meMobile: '9000000001',
+    assignedMeName: lead.assignedMeName || (currentUser?.role === 'ME' ? (currentUser.name || currentUser.username || '') : ''),
+    meMobile: userMobile,
     dateOfMeeting: initialDate1,
     contactedDate1: initialDate1,
     contactedDate2: initialDate2,
@@ -301,7 +296,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
     pincode: initialPin,
     poName: lead.poName || initialOffices[0] || '',
     customerMet: lead.customerMet || '',
-    contactNumber: lead.contactNumber || '',
+    contactNumber: initialContactNumber,
     alternativeNumber: '',
     email: lead.email || '',
     productType: '',
@@ -377,17 +372,19 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
         const u = JSON.parse(userStr);
         setCurrentUser(u);
         const name = u.name || u.username || u.employee_id;
-        const mobile = u.mobile_number || u.mobile || '9000000001';
+        const mobile = (u.mobile_number || u.mobile || '').replace(/\D/g, '').slice(0, 10);
 
         if (name) {
           setFormData(prev => ({
             ...prev,
-            assignedMeName: (!lead.assignedMeName || lead.assignedMeName === 'Testing1') ? name : lead.assignedMeName,
-            meMobile: mobile || prev.meMobile
+            assignedMeName: prev.assignedMeName || name,
+            meMobile: prev.meMobile || mobile
           }));
 
           setMeOptions(prev => Array.from(new Set([name, ...prev])));
-          setMeMobileMap(prev => ({ ...prev, [name]: mobile }));
+          if (mobile) {
+            setMeMobileMap(prev => ({ ...prev, [name]: mobile }));
+          }
         }
       }
     } catch (e) {
@@ -403,7 +400,9 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
           const mobiles: Record<string, string> = {};
           data.forEach((m: any) => {
             const n = m.name || m.employee_id;
-            if (n && m.mobile_number) mobiles[n] = m.mobile_number;
+            if (n && m.mobile_number) {
+              mobiles[n] = String(m.mobile_number).replace(/\D/g, '').slice(0, 10);
+            }
           });
           setMeOptions(prev => Array.from(new Set([...prev, ...names])));
           setMeMobileMap(prev => ({ ...prev, ...mobiles }));
@@ -506,11 +505,11 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
   };
 
   const handleMeChange = (selectedMe: string) => {
-    const mobile = meMobileMap[selectedMe] || formData.meMobile;
+    const mobile = meMobileMap[selectedMe] || '';
     setFormData(prev => ({
       ...prev,
       assignedMeName: selectedMe,
-      meMobile: mobile
+      meMobile: mobile || prev.meMobile
     }));
   };
 
@@ -523,6 +522,23 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
     e.preventDefault();
     setSaving(true);
     try {
+      // Validate 10-digit phone numbers
+      if (formData.contactNumber && formData.contactNumber.length !== 10) {
+        alert('Contact number must be exactly 10 digits.');
+        setSaving(false);
+        return;
+      }
+      if (formData.meMobile && formData.meMobile.length !== 10) {
+        alert('ME mobile number must be exactly 10 digits.');
+        setSaving(false);
+        return;
+      }
+      if (formData.alternativeNumber && formData.alternativeNumber.length !== 10) {
+        alert('Alternative number must be exactly 10 digits.');
+        setSaving(false);
+        return;
+      }
+
       if (activeTab === 'source') {
         const cleanPo = formData.poName.includes('[') ? formData.poName.split('[')[0].trim() : formData.poName.trim();
         const updates: Partial<Lead> = {
@@ -834,11 +850,20 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">ME mobile</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-800">ME mobile</label>
+                  <span className={`text-[10px] font-mono font-bold ${
+                    formData.meMobile.length === 10 ? 'text-emerald-600' : formData.meMobile.length > 0 ? 'text-amber-600' : 'text-slate-400'
+                  }`}>
+                    {formData.meMobile ? `${formData.meMobile.length}/10` : ''}
+                  </span>
+                </div>
                 <input 
                   type="text" 
+                  maxLength={10}
                   value={formData.meMobile} 
-                  onChange={e => handleChange('meMobile', e.target.value)}
+                  onChange={e => handleChange('meMobile', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="10-digit mobile"
                   className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 focus:border-[#1e3a8a] outline-none shadow-2xs font-mono" 
                 />
               </div>
@@ -1069,26 +1094,51 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Contact number</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-800">Contact number</label>
+                  <span className={`text-[10px] font-mono font-bold ${
+                    formData.contactNumber.length === 10 ? 'text-emerald-600' : formData.contactNumber.length > 0 ? 'text-amber-600' : 'text-slate-400'
+                  }`}>
+                    {formData.contactNumber.length}/10 digits
+                  </span>
+                </div>
                 <input 
                   type="text" 
+                  maxLength={10}
                   value={formData.contactNumber} 
-                  onChange={e => handleChange('contactNumber', e.target.value)}
-                  placeholder="Primary Phone Number"
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
+                  onChange={e => handleChange('contactNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="10-digit phone number"
+                  className={`w-full bg-white border rounded-lg px-3 py-2 text-xs font-medium text-slate-800 font-mono outline-none shadow-2xs ${
+                    formData.contactNumber && formData.contactNumber.length !== 10
+                      ? 'border-amber-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500'
+                      : 'border-slate-300 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a]'
+                  }`} 
                 />
+                {formData.contactNumber && formData.contactNumber.length !== 10 && (
+                  <span className="text-[10px] text-amber-600 font-semibold block mt-0.5">
+                    Must be exactly 10 digits
+                  </span>
+                )}
               </div>
             </div>
 
             {/* ROW 4: Alternative number, Email, Product type, Current provider */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">Alternative number</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-800">Alternative number</label>
+                  <span className={`text-[10px] font-mono font-bold ${
+                    formData.alternativeNumber.length === 10 ? 'text-emerald-600' : formData.alternativeNumber.length > 0 ? 'text-amber-600' : 'text-slate-400'
+                  }`}>
+                    {formData.alternativeNumber ? `${formData.alternativeNumber.length}/10 digits` : ''}
+                  </span>
+                </div>
                 <input 
                   type="text" 
+                  maxLength={10}
                   value={formData.alternativeNumber} 
-                  onChange={e => handleChange('alternativeNumber', e.target.value)}
-                  placeholder="Optional Alternate Phone"
+                  onChange={e => handleChange('alternativeNumber', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="Optional 10-digit phone"
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs" 
                 />
               </div>
@@ -1155,9 +1205,12 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                 >
                   <option value="Interested">Interested</option>
-                  <option value="Not Interested">Not Interested</option>
                   <option value="Follow-up Required">Follow-up Required</option>
-                  {formData.meetingOutcome && !['Interested', 'Not Interested', 'Follow-up Required'].includes(formData.meetingOutcome) && (
+                  <option value="Willing to Onboard">Willing to Onboard</option>
+                  <option value="Onboarded">Onboarded</option>
+                  <option value="Contacted">Contacted</option>
+                  <option value="Not Interested">Not Interested</option>
+                  {formData.meetingOutcome && !['Interested', 'Follow-up Required', 'Willing to Onboard', 'Onboarded', 'Contacted', 'Not Interested'].includes(formData.meetingOutcome) && (
                     <option value={formData.meetingOutcome}>{formData.meetingOutcome}</option>
                   )}
                 </select>
