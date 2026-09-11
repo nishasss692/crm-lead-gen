@@ -14,7 +14,8 @@ import {
   Briefcase, 
   KeyRound, 
   LogOut,
-  Sparkles
+  Sparkles,
+  XCircle
 } from 'lucide-react';
 
 function SidebarContent() {
@@ -119,6 +120,12 @@ function SidebarContent() {
               <Link href="/leads?status=onboarded" className={getLinkClass('/leads', 'onboarded')}>
                 <Briefcase className="w-4 h-4 mr-3 shrink-0 text-cyan-400" />
                 <span className="text-sm">Onboarded</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/leads?status=not_interested" className={getLinkClass('/leads', 'not_interested')}>
+                <XCircle className="w-4 h-4 mr-3 shrink-0 text-rose-400" />
+                <span className="text-sm">Not Interested</span>
               </Link>
             </li>
           </ul>

@@ -19,9 +19,11 @@ import {
   ShieldCheck,
   BadgeCheck,
   Server,
-  ChevronDown
+  ChevronDown,
+  PlusCircle
 } from 'lucide-react';
 import { apiFetch, safeJson, getApiBaseUrl } from '@/lib/api';
+import AddRowModal from '../components/AddRowModal';
 
 function LeadsPageContent() {
   const router = useRouter();
@@ -37,6 +39,8 @@ function LeadsPageContent() {
     assigned_region?: string;
     region?: string;
   } | null>(null);
+
+  const [isAddRowModalOpen, setIsAddRowModalOpen] = useState(false);
 
   const [selectedDivision, setSelectedDivision] = useState('');
   const [selectedPincode, setSelectedPincode] = useState('');
@@ -123,6 +127,8 @@ function LeadsPageContent() {
             division: item.division || '',
             region: item.region || '', 
             assignedMeName: item.assigned_agent || item.assignedAgent || item.assignedMeName || '', 
+            meMobile: item.me_mobile || item.meMobile || '',
+            me_mobile: item.me_mobile || item.meMobile || '',
             dateOfMeeting: item.date_of_meeting || item.contactedDate1 || item.contacted_date_1 || '',
             contactedDate1: item.contactedDate1 || item.contacted_date_1 || item.date_of_meeting || '',
             contacted_date_1: item.contacted_date_1 || item.contactedDate1 || item.date_of_meeting || '',
@@ -351,6 +357,12 @@ function LeadsPageContent() {
           return wVal === 'yes' || wVal === 'willing' || outcome.includes('willing') || (outcome.includes('interested') && !hasContract);
         case 'onboarded':
           return hasContract || (outcome.includes('onboard') && !outcome.includes('pending') && !outcome.includes('willing'));
+        case 'not_interested':
+        case 'not interested':
+          return outcome.includes('not interest') || outcome.includes('not willing') || outcome.includes('company not exist') || wVal === 'no' || wVal === 'not willing' || wVal === 'company not exist';
+        case 'company_not_exist':
+        case 'company not exist':
+          return outcome.includes('company not exist') || wVal === 'company not exist';
         default:
           return true;
       }
@@ -370,10 +382,11 @@ function LeadsPageContent() {
     filtered = filtered.filter(lead => {
       const out = (lead.meetingOutcome || '').toLowerCase();
       const wVal = (lead.willingToOnboard || lead.willing_to_onboard || '').toLowerCase();
-      if (sOut === 'interested') return out.includes('interest') || out.includes('positive') || wVal === 'yes';
+      if (sOut === 'interested') return out.includes('interest') || out.includes('positive') || wVal === 'yes' || wVal === 'willing';
       if (sOut === 'follow') return out.includes('follow') || out.includes('warm');
       if (sOut === 'contacted') return out !== '' && out !== 'pending';
-      if (sOut === 'not interested') return out.includes('not interest') || wVal === 'no';
+      if (sOut === 'not interested') return out.includes('not interest') || out.includes('not willing') || out.includes('company not exist') || wVal === 'no' || wVal === 'not willing' || wVal === 'company not exist';
+      if (sOut === 'company not exist') return out.includes('company not exist') || wVal === 'company not exist';
       if (sOut === 'willing') return wVal === 'yes' || wVal === 'willing' || out.includes('willing');
       if (sOut === 'onboarded') return Boolean(lead.contractId) || out.includes('onboard');
       return out.includes(sOut);
@@ -421,6 +434,10 @@ function LeadsPageContent() {
       case 'interested': return isRO ? `${regionName} — Interested Commercial Leads` : 'Interested Commercial Leads';
       case 'willing': return isRO ? `${regionName} — Willing to Onboard` : 'Willing to Onboard';
       case 'onboarded': return isRO ? `${regionName} — Onboarded Contracts` : 'Onboarded Contracts';
+      case 'not_interested':
+      case 'not interested': return isRO ? `${regionName} — Not Interested Leads` : 'Not Interested Leads';
+      case 'company_not_exist':
+      case 'company not exist': return isRO ? `${regionName} — Company Not Exist` : 'Company Not Exist';
       default: return isRO ? `${regionName} Leads Directory` : 'All Circle Leads Directory';
     }
   };
@@ -449,6 +466,17 @@ function LeadsPageContent() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Add Row Button - Prominently available for ME login and CO */}
+            {(isME || isCO) && (
+              <button
+                onClick={() => setIsAddRowModalOpen(true)}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-white" />
+                <span>Add Row</span>
+              </button>
+            )}
+
             {/* Deduplicate Clean Button - Hidden for ME */}
             {!isME && (
               <button
@@ -847,6 +875,21 @@ function LeadsPageContent() {
           </div>
         </div>
       )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL 3: ADD ROW (LEAD) MODAL - FOR ME LOGIN & OFFICERS
+         ═══════════════════════════════════════════════════════════ */}
+      <AddRowModal
+        isOpen={isAddRowModalOpen}
+        onClose={() => setIsAddRowModalOpen(false)}
+        onLeadAdded={() => {
+          const token = localStorage.getItem('token');
+          if (token) fetchLeads(token, selectedDivision);
+        }}
+        currentUser={user}
+        divisions={divisions}
+        activeDivision={selectedDivision}
+      />
     </main>
   );
 }

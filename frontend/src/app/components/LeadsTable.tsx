@@ -12,7 +12,8 @@ import {
   XCircle, 
   Award, 
   PhoneCall, 
-  AlertCircle 
+  AlertCircle,
+  Building2 
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 
@@ -192,6 +193,14 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
         </span>
       );
     }
+    if (out === 'company not exist' || willing === 'company not exist' || out.includes('company not exist')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-200 text-slate-700 rounded-full text-xs font-bold shadow-2xs border border-slate-300">
+          <Building2 className="w-3 h-3 text-slate-500" />
+          <span>Company Not Exist</span>
+        </span>
+      );
+    }
     if (willing === 'yes' || willing === 'willing' || out === 'willing to onboard' || out === 'willing') {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-xs font-bold shadow-2xs border border-teal-200">
@@ -208,7 +217,7 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
         </span>
       );
     }
-    if (out === 'not interested' || willing === 'no') {
+    if (out === 'not interested' || out.includes('not willing') || willing === 'no' || willing === 'not willing') {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold shadow-2xs">
           <XCircle className="w-3 h-3" />
@@ -244,11 +253,14 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
   const renderWillingText = (willing?: string, outcome?: string) => {
     const w = (willing || '').trim().toLowerCase();
     const out = (outcome || '').trim().toLowerCase();
-    if (w === 'yes' || w === 'willing' || out === 'willing to onboard' || out === 'willing' || out === 'interested') {
-      return <span className="text-emerald-700 font-bold text-xs">Yes</span>;
+    if (w === 'company not exist' || out === 'company not exist' || out.includes('company not exist')) {
+      return <span className="text-slate-600 font-bold text-xs">Company Not Exist</span>;
     }
-    if (w === 'no' || out === 'not interested' || out.includes('not willing')) {
-      return <span className="text-rose-600 font-bold text-xs">No</span>;
+    if (w === 'yes' || w === 'willing' || out === 'willing to onboard' || out === 'willing' || out === 'interested') {
+      return <span className="text-emerald-700 font-bold text-xs">Willing</span>;
+    }
+    if (w === 'no' || w === 'not willing' || out === 'not interested' || out.includes('not willing')) {
+      return <span className="text-rose-600 font-bold text-xs">Not Willing</span>;
     }
     return <span className="text-slate-400 font-medium text-xs">—</span>;
   };

@@ -350,11 +350,16 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
   const initialCustomerMet = sanitizeText(lead.customerMet || (lead as any).customer_met);
   const initialRemarks = sanitizeText(lead.remarks);
 
-  const initialWilling = (lead as any).willingToOnboard || (lead as any).willing_to_onboard || (
-    lead.meetingOutcome && ['willing to onboard', 'interested', 'willing', 'onboarded'].includes(lead.meetingOutcome.toLowerCase()) 
-      ? 'Yes' 
-      : (lead.meetingOutcome && ['not interested', 'not willing to onboard', 'rejected'].includes(lead.meetingOutcome.toLowerCase()) ? 'No' : 'Yes')
-  );
+  const rawW = String((lead as any).willingToOnboard || (lead as any).willing_to_onboard || '').trim().toLowerCase();
+  const rawM = String(lead.meetingOutcome || '').trim().toLowerCase();
+  let initialWilling = 'Willing';
+  if (rawW === 'company not exist' || rawM === 'company not exist') {
+    initialWilling = 'Company Not Exist';
+  } else if (rawW === 'no' || rawW === 'not willing' || rawM === 'not interested' || rawM.includes('not willing')) {
+    initialWilling = 'Not Willing';
+  } else if (rawW === 'yes' || rawW === 'willing' || rawM.includes('willing') || rawM.includes('interest')) {
+    initialWilling = 'Willing';
+  }
 
   const [formData, setFormData] = useState({
     assignedMeName: lead.assignedMeName || (lead as any).assigned_agent || (currentUser?.role === 'ME' ? (currentUser.name || currentUser.username || '') : ''),
@@ -683,8 +688,8 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
         serviceUsing: formData.serviceUsing,
         monthlyVolume: formData.monthlyVolume,
         meetingOutcome: formData.meetingOutcome || 'Interested',
-        willingToOnboard: formData.willingToOnboard || 'Yes',
-        willing_to_onboard: formData.willingToOnboard || 'Yes',
+        willingToOnboard: formData.willingToOnboard || 'Willing',
+        willing_to_onboard: formData.willingToOnboard || 'Willing',
         contractId: formData.contractId,
         remarks: formData.remarks,
         dateOfMeeting: formData.contactedDate1 || formData.dateOfMeeting,
@@ -1277,22 +1282,52 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                   onChange={e => {
                     const val = e.target.value;
                     handleChange('meetingOutcome', val);
-                    if (val === 'Interested' || val === 'Onboarded') {
-                      handleChange('willingToOnboard', 'Yes');
-                    } else if (val === 'Not Interested') {
-                      handleChange('willingToOnboard', 'No');
+                    if (val === 'Willing' || val === 'Willing to Onboard' || val === 'Interested' || val === 'Onboarded') {
+                      handleChange('willingToOnboard', 'Willing');
+                    } else if (val === 'Not Willing' || val === 'Not Interested') {
+                      handleChange('willingToOnboard', 'Not Willing');
+                    } else if (val === 'Company Not Exist') {
+                      handleChange('willingToOnboard', 'Company Not Exist');
                     }
                   }}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                 >
+                  <option value="Willing">Willing</option>
+                  <option value="Not Willing">Not Willing</option>
+                  <option value="Company Not Exist">Company Not Exist</option>
                   <option value="Interested">Interested</option>
                   <option value="Follow-up Required">Follow-up Required</option>
                   <option value="Onboarded">Onboarded</option>
                   <option value="Contacted">Contacted</option>
                   <option value="Not Interested">Not Interested</option>
-                  {formData.meetingOutcome && !['Interested', 'Follow-up Required', 'Onboarded', 'Contacted', 'Not Interested'].includes(formData.meetingOutcome) && (
+                  {formData.meetingOutcome && !['Willing', 'Not Willing', 'Company Not Exist', 'Interested', 'Follow-up Required', 'Onboarded', 'Contacted', 'Not Interested'].includes(formData.meetingOutcome) && (
                     <option value={formData.meetingOutcome}>{formData.meetingOutcome}</option>
                   )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">Willing to Onboard</label>
+                <select 
+                  value={formData.willingToOnboard} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    handleChange('willingToOnboard', val);
+                    if (val === 'Willing') {
+                      if (!formData.meetingOutcome || ['Not Interested', 'Not Willing', 'Company Not Exist'].includes(formData.meetingOutcome)) {
+                        handleChange('meetingOutcome', 'Willing');
+                      }
+                    } else if (val === 'Not Willing') {
+                      handleChange('meetingOutcome', 'Not Interested');
+                    } else if (val === 'Company Not Exist') {
+                      handleChange('meetingOutcome', 'Company Not Exist');
+                    }
+                  }}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
+                >
+                  <option value="Willing">Willing</option>
+                  <option value="Not Willing">Not Willing</option>
+                  <option value="Company Not Exist">Company Not Exist</option>
                 </select>
               </div>
             </div>

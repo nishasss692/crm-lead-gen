@@ -1682,23 +1682,6 @@ async def upload_excel(
             db.query(Lead).delete(synchronize_session=False)
             db.commit()
 
-        # Build set of existing keys to prevent duplicates against DB if not replacing
-        existing_keys = set()
-        if not clear_existing:
-            existing_db_leads = db.query(Lead).all()
-            for ex_lead in existing_db_leads:
-                ex_dict = {
-                    "exporter_name": ex_lead.exporter_name,
-                    "contact_number": ex_lead.contact_number,
-                    "email": ex_lead.email,
-                    "pincode": ex_lead.pincode,
-                    "division": ex_lead.division,
-                    "sl_no": ex_lead.sl_no
-                }
-                k = generate_lead_dedup_key(ex_dict, "composite")
-                if k:
-                    existing_keys.add(k)
-            
         leads_to_insert = []
         seen_batch_keys = set()
         skipped_invalid = 0
@@ -1747,7 +1730,7 @@ async def upload_excel(
             lead_data["region"] = inferred_reg
             
             if not lead_data.get("service_using"):
-                lead_data["service_using"] = ""
+                lead_data["service_using"] = "DHL"
 
             # Auto-resolve ME Mobile number according to Excel file (MEs DATA.xlsx or column in sheet)
             clean_me_mob = sanitize_contact_phone(lead_data.get("me_mobile"))
@@ -1755,10 +1738,10 @@ async def upload_excel(
                 clean_me_mob = get_me_mobile_from_registry(lead_data.get("assigned_agent"))
             lead_data["me_mobile"] = clean_me_mob
 
-            # Auto Deduplication check
+            # Auto Deduplication check within the batch itself to prevent internal duplicate rows
             dedup_key = generate_lead_dedup_key(lead_data, "composite")
             if dedup_key:
-                if dedup_key in seen_batch_keys or dedup_key in existing_keys:
+                if dedup_key in seen_batch_keys:
                     skipped_duplicates += 1
                     continue
                 seen_batch_keys.add(dedup_key)
@@ -1774,8 +1757,12 @@ async def upload_excel(
             )
             
         if leads_to_insert:
-            db.bulk_save_objects(leads_to_insert)
-            db.commit()
+            # Batch add into session and commit in chunks of 500 records
+            chunk_size = 500
+            for i in range(0, len(leads_to_insert), chunk_size):
+                chunk = leads_to_insert[i:i + chunk_size]
+                db.add_all(chunk)
+                db.commit()
         
         valid_count = len(leads_to_insert)
         total_rows = len(df)
@@ -2062,6 +2049,116 @@ def lead_to_dict(lead: Lead, win_prob: float = 0.0) -> dict:
     return res
 
 # 5. Lead Data Endpoints
+@app.post("/api/leads")
+async def create_lead(
+    data: dict = Body(...),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    user_role = str(current_user.get("role") or "").upper().strip()
+    
+    # Extract & clean fields
+    exporter_name = (data.get("exporterName") or data.get("exporter_name") or "").strip()
+    contact_number = sanitize_contact_phone(data.get("contactNumber") or data.get("contact_number"))
+    
+    if not exporter_name and not contact_number:
+        raise HTTPException(
+            status_code=400,
+            detail="Lead record must have at least an Exporter Name or Contact Number."
+        )
+
+    division = (data.get("division") or "").strip()
+    region = (data.get("region") or "").strip()
+    pincode = re.sub(r'\D', '', str(data.get("pincode") or "")).strip()
+    po_name = (data.get("poName") or data.get("po_name") or "").strip()
+    address = (data.get("address") or "").strip()
+    email = sanitize_lead_email(data.get("email"))
+    service_using = (data.get("serviceUsing") or data.get("service_using") or "DHL").strip()
+    monthly_volume = str(data.get("monthlyVolume") or data.get("monthly_volume") or "").strip()
+    customer_met = sanitize_customer_name(data.get("customerMet") or data.get("customer_met"))
+    remarks = sanitize_remarks_text(data.get("remarks"))
+    contract_id = (data.get("contractId") or data.get("contract_id") or "").strip()
+    date_of_meeting = (data.get("dateOfMeeting") or data.get("contactedDate1") or data.get("contacted_date_1") or "").strip()
+    contacted_date_1 = date_of_meeting
+    contacted_date_2 = (data.get("contactedDate2") or data.get("contacted_date_2") or "").strip()
+    contacted_date_3 = (data.get("contactedDate3") or data.get("contacted_date_3") or "").strip()
+    
+    assigned_agent = (data.get("assignedMeName") or data.get("assignedAgent") or data.get("assigned_agent") or "").strip()
+    me_mobile = sanitize_contact_phone(data.get("meMobile") or data.get("me_mobile"))
+
+    # If ME, auto-assign ME name, mobile, and division if not set
+    if user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
+        if not assigned_agent:
+            assigned_agent = current_user.get("name") or current_user.get("username") or ""
+        if not me_mobile:
+            me_mobile = sanitize_contact_phone(current_user.get("mobile_number") or current_user.get("mobile")) or get_me_mobile_from_registry(assigned_agent)
+        if not division:
+            division = current_user.get("assigned_division") or ""
+        if not region:
+            region = current_user.get("assigned_region") or ""
+
+    if not me_mobile and assigned_agent:
+        me_mobile = get_me_mobile_from_registry(assigned_agent)
+
+    # Inferred division / region if not set
+    if not division or not region:
+        lead_dict_temp = {"pincode": pincode, "division": division, "region": region}
+        inf_div, inf_reg = infer_territory_from_lead(lead_dict_temp, current_user)
+        division = division or inf_div
+        region = region or inf_reg
+
+    # Outcomes & Willingness
+    meeting_outcome = (data.get("meetingOutcome") or data.get("meeting_outcome") or "Interested").strip()
+    willing_to_onboard = (data.get("willingToOnboard") or data.get("willing_to_onboard") or "").strip()
+
+    w_lower = willing_to_onboard.lower()
+    m_lower = meeting_outcome.lower()
+
+    if w_lower in ["company not exist", "company_not_exist", "company does not exist"] or m_lower in ["company not exist", "company_not_exist", "company does not exist"]:
+        willing_to_onboard = "Company Not Exist"
+        meeting_outcome = "Company Not Exist"
+    elif w_lower in ["yes", "willing", "true"] or m_lower in ["willing", "willing to onboard"]:
+        willing_to_onboard = "Willing"
+        if not meeting_outcome or m_lower in ["nan", "none", "pending", "new", ""]:
+            meeting_outcome = "Willing to Onboard"
+    elif w_lower in ["no", "not willing", "not_willing", "false"] or m_lower in ["not willing", "not interested", "rejected"]:
+        willing_to_onboard = "Not Willing"
+        if not meeting_outcome or m_lower in ["nan", "none", "pending", "new", ""]:
+            meeting_outcome = "Not Interested"
+
+    new_lead = Lead(
+        exporter_name=exporter_name or f"Commercial Lead ({contact_number or 'New'})",
+        contact_number=contact_number,
+        address=address,
+        pincode=pincode,
+        po_name=po_name,
+        division=division,
+        region=region,
+        assigned_agent=assigned_agent,
+        me_mobile=me_mobile,
+        customer_met=customer_met,
+        email=email,
+        service_using=service_using,
+        monthly_volume=monthly_volume,
+        meeting_outcome=meeting_outcome,
+        willing_to_onboard=willing_to_onboard or "Willing",
+        contract_id=contract_id,
+        remarks=remarks,
+        date_of_meeting=date_of_meeting,
+        contacted_date_1=contacted_date_1,
+        contacted_date_2=contacted_date_2,
+        contacted_date_3=contacted_date_3,
+    )
+    db.add(new_lead)
+    db.commit()
+    db.refresh(new_lead)
+
+    return {
+        "success": True,
+        "message": "Lead added successfully",
+        "lead": lead_to_dict(new_lead)
+    }
+
 @app.get("/api/leads")
 def get_leads(
     division_name: str = "", 
@@ -2119,6 +2216,18 @@ def get_leads(
             leads_filtered = [
                 l for l in leads_filtered 
                 if l.contract_id or (l.meeting_outcome and 'onboard' in l.meeting_outcome.lower() and 'pending' not in l.meeting_outcome.lower() and 'willing' not in l.meeting_outcome.lower())
+            ]
+        elif stat in ["not_interested", "not interested", "not_willing", "not willing", "rejected"]:
+            leads_filtered = [
+                l for l in leads_filtered 
+                if (l.meeting_outcome and any(x in l.meeting_outcome.lower() for x in ['not interest', 'not willing', 'company not exist', 'negative', 'reject', 'declined']))
+                or (getattr(l, 'willing_to_onboard', None) and l.willing_to_onboard.lower() in ['no', 'not willing', 'company not exist', 'rejected'])
+            ]
+        elif stat in ["company_not_exist", "company not exist"]:
+            leads_filtered = [
+                l for l in leads_filtered 
+                if (l.meeting_outcome and 'company not exist' in l.meeting_outcome.lower())
+                or (getattr(l, 'willing_to_onboard', None) and 'company not exist' in l.willing_to_onboard.lower())
             ]
 
     # Filter by search string if present
@@ -2946,23 +3055,37 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
     if not lead.me_mobile and lead.assigned_agent:
         lead.me_mobile = get_me_mobile_from_registry(lead.assigned_agent)
 
-    # Synchronize willing_to_onboard and meeting_outcome
-    w_val = (lead.willing_to_onboard or "").strip().lower()
-    m_val = (lead.meeting_outcome or "").strip().lower()
-    
-    if w_val in ["yes", "willing", "true"]:
-        lead.willing_to_onboard = "Yes"
-        if not lead.meeting_outcome or m_val in ["nan", "none", "pending", "new", ""]:
-            lead.meeting_outcome = "Willing to Onboard"
-    elif w_val in ["no", "not willing", "false"]:
-        lead.willing_to_onboard = "No"
-        if not lead.meeting_outcome or m_val in ["nan", "none", "pending", "new", ""]:
-            lead.meeting_outcome = "Not Interested"
+    # Synchronize willing_to_onboard and meeting_outcome based on incoming data
+    incoming_willing = data.get("willingToOnboard") or data.get("willing_to_onboard")
+    incoming_outcome = data.get("meetingOutcome") or data.get("meeting_outcome")
 
-    if m_val in ["willing to onboard", "willing_to_onboard", "willing"]:
-        lead.willing_to_onboard = "Yes"
-    elif m_val in ["not willing to onboard", "not_willing_to_onboard", "not willing"]:
-        lead.willing_to_onboard = "No"
+    if incoming_willing is not None:
+        iw = str(incoming_willing).strip().lower()
+        if iw in ["company not exist", "company_not_exist", "company does not exist"]:
+            lead.willing_to_onboard = "Company Not Exist"
+            lead.meeting_outcome = "Company Not Exist"
+        elif iw in ["yes", "willing", "true"]:
+            lead.willing_to_onboard = "Willing"
+            if not incoming_outcome:
+                lead.meeting_outcome = "Willing to Onboard"
+        elif iw in ["no", "not willing", "not_willing", "false"]:
+            lead.willing_to_onboard = "Not Willing"
+            if not incoming_outcome:
+                lead.meeting_outcome = "Not Interested"
+
+    if incoming_outcome is not None:
+        io_val = str(incoming_outcome).strip().lower()
+        if io_val in ["company not exist", "company_not_exist"]:
+            lead.meeting_outcome = "Company Not Exist"
+            lead.willing_to_onboard = "Company Not Exist"
+        elif io_val in ["willing to onboard", "willing_to_onboard", "willing"]:
+            lead.meeting_outcome = "Willing to Onboard"
+            if incoming_willing is None:
+                lead.willing_to_onboard = "Willing"
+        elif io_val in ["not willing to onboard", "not_willing_to_onboard", "not willing", "not interested", "not_interested", "rejected"]:
+            lead.meeting_outcome = "Not Interested"
+            if incoming_willing is None:
+                lead.willing_to_onboard = "Not Willing"
 
     # For backward compatibility, keep date_of_meeting and contacted_date_1 in sync
     if lead.contacted_date_1:
