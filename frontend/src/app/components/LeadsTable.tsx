@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import UpdateLeadModal, { sanitizeIndianMobile, sanitizeText } from './UpdateLeadModal';
 import ModifyLeadSourceModal from './ModifyLeadSourceModal';
 import { 
@@ -64,6 +64,48 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
   const itemsPerPage = 20;
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sourceModalLead, setSourceModalLead] = useState<Lead | null>(null);
+  const [userRole, setUserRole] = useState<string>('');
+  const [meMobileMap, setMeMobileMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    try {
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        setUserRole(String(u.role || '').toUpperCase());
+      } else {
+        const r = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
+        if (r) setUserRole(r.toUpperCase());
+      }
+    } catch (e) {}
+
+    apiFetch('/api/mes')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mobiles: Record<string, string> = {};
+          data.forEach((m: any) => {
+            const n = m.name || m.employee_id;
+            const empId = m.employee_id;
+            const mob = sanitizeIndianMobile(m.mobile_number);
+            if (mob) {
+              if (n) {
+                mobiles[n] = mob;
+                mobiles[n.toLowerCase()] = mob;
+              }
+              if (empId) {
+                mobiles[empId] = mob;
+                mobiles[empId.toLowerCase()] = mob;
+              }
+            }
+          });
+          setMeMobileMap(mobiles);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const isME = userRole === 'ME' || userRole === 'MARKETING EXECUTIVE' || userRole === 'EXECUTIVE';
 
   const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
   
@@ -267,7 +309,7 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                 const { product, provider } = parseProductAndProvider(lead.serviceUsing, lead.customerMet);
                 const rawMeName = lead.assignedMeName || lead.assignedAgent || lead.assigned_me_name || lead.assigned_agent || '';
                 const meName = sanitizeText(rawMeName) || 'Unassigned';
-                const rawMeMob = lead.meMobile || lead.me_mobile || '';
+                const rawMeMob = lead.meMobile || lead.me_mobile || meMobileMap[rawMeName] || meMobileMap[rawMeName.toLowerCase()] || '';
                 const meMob = sanitizeIndianMobile(rawMeMob) || '—';
                 const contactPerson = sanitizeText(lead.customerMet) || '—';
                 const contactPhone = sanitizeIndianMobile(lead.contactNumber) || '—';
@@ -296,13 +338,15 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <button 
-                          onClick={() => handleDelete(lead.id, lead.exporterName)}
-                          className="p-1.5 border border-rose-200 hover:bg-rose-100/60 text-rose-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
-                          title="Delete Lead"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {!isME && (
+                          <button 
+                            onClick={() => handleDelete(lead.id, lead.exporterName)}
+                            className="p-1.5 border border-rose-200 hover:bg-rose-100/60 text-rose-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                     

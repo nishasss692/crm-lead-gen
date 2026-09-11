@@ -175,6 +175,7 @@ class Lead(Base):
     contacted_date_2: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     contacted_date_3: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     willing_to_onboard: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    me_mobile: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
 class User(Base):
     __tablename__ = "users"
@@ -209,16 +210,23 @@ class User(Base):
         return self.assigned_division
 
 Base.metadata.create_all(bind=engine)
-if not is_sqlite:
-    try:
-        with engine.connect() as _conn:
+try:
+    with engine.connect() as _conn:
+        if is_sqlite:
+            _col_rows = _conn.execute(text("PRAGMA table_info(leads)")).fetchall()
+            _col_names = [r[1] for r in _col_rows]
+            if "me_mobile" not in _col_names:
+                _conn.execute(text("ALTER TABLE leads ADD COLUMN me_mobile VARCHAR"))
+                _conn.commit()
+        else:
             _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS contacted_date_1 VARCHAR"))
             _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS contacted_date_2 VARCHAR"))
             _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS contacted_date_3 VARCHAR"))
             _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS willing_to_onboard VARCHAR"))
+            _conn.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS me_mobile VARCHAR"))
             _conn.commit()
-    except Exception as _e:
-        pass
+except Exception as _e:
+    pass
 SECRET_KEY = "india_post_crm_secret"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 8
@@ -603,20 +611,99 @@ def cleanup_and_standardize_database():
     except Exception as e:
         print(f"[DB Standardize] Notice: {e}")
 
-def seed_mes_from_excel(db: Session):
-    """Parses MEs DATA.xlsx and seeds all Marketing Executives with assigned division and default password Post@123."""
+def sanitize_contact_phone(phone_str: Optional[str]) -> str:
+    """Returns valid 10-digit Indian mobile number starting with 6-9, or empty string if invalid/dummy."""
+    if not phone_str:
+        return ""
+    digits = re.sub(r'\D', '', str(phone_str))
+    if len(digits) == 12 and digits.startswith("91"):
+        digits = digits[2:]
+    elif len(digits) == 11 and digits.startswith("0"):
+        digits = digits[1:]
+    if len(digits) != 10 or digits[0] not in '6789':
+        return ""
+    if len(set(digits)) == 1:
+        return ""
+    if digits in ['1234567890', '9876543210', '0123456789']:
+        return ""
+    return digits
+
+ME_MOBILE_REGISTRY: Dict[str, str] = {}
+
+def get_me_excel_path() -> Optional[str]:
     file_candidates = [
         os.path.join(BASE_DIR, "MEs DATA.xlsx"),
         os.path.join(BASE_DIR, "..", "MEs DATA.xlsx"),
         "MEs DATA.xlsx",
         os.path.join(os.getcwd(), "MEs DATA.xlsx")
     ]
-    me_file = None
-    for p in file_candidates:
-        if os.path.exists(p):
-            me_file = p
-            break
-            
+    return next((p for p in file_candidates if os.path.exists(p)), None)
+
+def load_me_mobile_registry():
+    """Preloads all ME employee IDs and names mapped to their verified mobile numbers from MEs DATA.xlsx"""
+    global ME_MOBILE_REGISTRY
+    me_file = get_me_excel_path()
+    if not me_file:
+        return
+    try:
+        df = pd.read_excel(me_file)
+        for _, row in df.iterrows():
+            emp_id_raw = row.get("Emp ID")
+            if bool(pd.isna(emp_id_raw)):
+                continue
+            emp_id = str(emp_id_raw).strip()
+            if emp_id.endswith(".0"):
+                emp_id = emp_id[:-2]
+            name_val = row.get("Name")
+            name = str(name_val).strip() if bool(pd.notna(name_val)) else ""
+            mob_val = row.get("Mobile Number")
+            mob = str(mob_val).strip() if bool(pd.notna(mob_val)) else ""
+            clean_mob = sanitize_contact_phone(mob)
+            if clean_mob:
+                if emp_id:
+                    ME_MOBILE_REGISTRY[emp_id] = clean_mob
+                    ME_MOBILE_REGISTRY[emp_id.lower()] = clean_mob
+                if name:
+                    ME_MOBILE_REGISTRY[name] = clean_mob
+                    ME_MOBILE_REGISTRY[name.lower()] = clean_mob
+                    clean_n = re.sub(r'[^a-z0-9]', '', name.lower())
+                    if clean_n:
+                        ME_MOBILE_REGISTRY[clean_n] = clean_mob
+    except Exception as e:
+        print(f"[ME Registry] Error loading initial ME mobile registry: {e}")
+
+load_me_mobile_registry()
+
+def get_me_mobile_from_registry(agent_name_or_id: Optional[str]) -> str:
+    """Automatically retrieves the ME's mobile number according to the Excel file (MEs DATA.xlsx)."""
+    if not agent_name_or_id:
+        return ""
+    s = str(agent_name_or_id).strip()
+    if not s or s.lower() in ["nan", "none", "unassigned", "unknown", "-", "--", ""]:
+        return ""
+    if s.endswith(".0"):
+        s = s[:-2]
+        
+    # 1. Check in-memory registry
+    if s in ME_MOBILE_REGISTRY:
+        return ME_MOBILE_REGISTRY[s]
+    s_low = s.lower()
+    if s_low in ME_MOBILE_REGISTRY:
+        return ME_MOBILE_REGISTRY[s_low]
+    clean_s = re.sub(r'[^a-z0-9]', '', s_low)
+    if clean_s and clean_s in ME_MOBILE_REGISTRY:
+        return ME_MOBILE_REGISTRY[clean_s]
+
+    # Partial / substring match in registry (e.g. initial variants)
+    for reg_key, mob in ME_MOBILE_REGISTRY.items():
+        if len(clean_s) >= 4 and (clean_s in reg_key or reg_key in clean_s):
+            return mob
+
+    return ""
+
+def seed_mes_from_excel(db: Session):
+    """Parses MEs DATA.xlsx and seeds all Marketing Executives with assigned division and default password Post@123."""
+    me_file = get_me_excel_path()
     if not me_file:
         print("[User Auth] Note: MEs DATA.xlsx not found on disk, skipping bulk ME seeding.")
         return
@@ -645,6 +732,19 @@ def seed_mes_from_excel(db: Session):
                 reg_name = get_region_for_division(div_name) or ""
             mob_val = row.get("Mobile Number")
             mobile = str(mob_val).strip() if bool(pd.notna(mob_val)) else ""
+            clean_mob = sanitize_contact_phone(mobile)
+
+            # Record in fast registry
+            if clean_mob:
+                if emp_id:
+                    ME_MOBILE_REGISTRY[emp_id] = clean_mob
+                    ME_MOBILE_REGISTRY[emp_id.lower()] = clean_mob
+                if name:
+                    ME_MOBILE_REGISTRY[name] = clean_mob
+                    ME_MOBILE_REGISTRY[name.lower()] = clean_mob
+                    cn = re.sub(r'[^a-z0-9]', '', name.lower())
+                    if cn:
+                        ME_MOBILE_REGISTRY[cn] = clean_mob
 
             existing = db.query(User).filter(
                 or_(
@@ -658,7 +758,7 @@ def seed_mes_from_excel(db: Session):
                 existing.role = "ME"
                 existing.assigned_division = div_name or existing.assigned_division
                 existing.assigned_region = reg_name or existing.assigned_region
-                existing.mobile_number = mobile or existing.mobile_number
+                existing.mobile_number = clean_mob or existing.mobile_number
                 if not existing.password:
                     existing.password = default_pwd_hash
             else:
@@ -669,7 +769,7 @@ def seed_mes_from_excel(db: Session):
                     role="ME",
                     assigned_division=div_name,
                     assigned_region=reg_name,
-                    mobile_number=mobile
+                    mobile_number=clean_mob
                 )
                 db.add(new_me)
             count += 1
@@ -1051,6 +1151,14 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
         
+    user_mobile = sanitize_contact_phone(user.mobile_number) or get_me_mobile_from_registry(user.employee_id) or get_me_mobile_from_registry(user.name) or ""
+    if not user.mobile_number and user_mobile:
+        try:
+            user.mobile_number = user_mobile
+            db.commit()
+        except Exception:
+            db.rollback()
+
     access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     token = create_access_token(
         data={
@@ -1058,7 +1166,8 @@ async def login(
             "role": user.role,
             "name": user.name or user.employee_id,
             "assigned_region": user.assigned_region,
-            "assigned_division": user.assigned_division
+            "assigned_division": user.assigned_division,
+            "mobile_number": user_mobile
         },
         expires_delta=access_token_expires
     )
@@ -1068,6 +1177,7 @@ async def login(
         "token_type": "bearer", 
         "role": user.role,
         "name": user.name or user.employee_id,
+        "mobile_number": user_mobile,
         "user": {
             "employee_id": user.employee_id,
             "username": user.employee_id,
@@ -1076,7 +1186,9 @@ async def login(
             "assigned_region": user.assigned_region, 
             "assigned_division": user.assigned_division,
             "region": user.assigned_region,
-            "division": user.assigned_division
+            "division": user.assigned_division,
+            "mobile_number": user_mobile,
+            "mobile": user_mobile
         }
     }
 
@@ -1156,6 +1268,12 @@ COLUMN_SYNONYMS = {
         "assigned_agent", "assigned_to", "assigned_me", "assigned_me_name", "me_name", 
         "me", "me_id", "marketing_executive", "marketing_executive_name", "assigned_marketing_executive",
         "executive_name", "sales_executive", "sales_exec", "agent", "officer", "assigned_officer", "owner"
+    ],
+    "me_mobile": [
+        "me_mobile", "me_mobile_number", "me_phone", "me_phone_number", "me_contact", 
+        "me_contact_number", "marketing_executive_mobile", "marketing_executive_phone", 
+        "me_contact_no", "me_mobile_no", "agent_mobile", "assigned_me_mobile", 
+        "me_ph_no", "me_mob", "executive_mobile"
     ],
     "date_of_meeting": [
         "date_of_meeting", "meeting_date", "contact_date", "visit_date", "scheduled_date", 
@@ -1275,23 +1393,6 @@ def map_dataframe_columns(df: pd.DataFrame) -> Dict[str, str]:
                 break
                 
     return mapping
-
-def sanitize_contact_phone(phone_str: Optional[str]) -> str:
-    """Returns valid 10-digit Indian mobile number starting with 6-9, or empty string if invalid/dummy."""
-    if not phone_str:
-        return ""
-    digits = re.sub(r'\D', '', str(phone_str))
-    if len(digits) == 12 and digits.startswith("91"):
-        digits = digits[2:]
-    elif len(digits) == 11 and digits.startswith("0"):
-        digits = digits[1:]
-    if len(digits) != 10 or digits[0] not in '6789':
-        return ""
-    if len(set(digits)) == 1:
-        return ""
-    if digits in ['1234567890', '9876543210', '0123456789']:
-        return ""
-    return digits
 
 def sanitize_lead_email(email_str: Optional[str]) -> str:
     """Returns valid email, or empty string if dummy/placeholder or malformed."""
@@ -1510,6 +1611,13 @@ async def upload_excel(
     db: Session = Depends(get_db), 
     current_user: dict = Depends(get_current_user)
 ):
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Only Circle Office (CO) administrators are authorized to upload lead files."
+        )
+
     filename = (file.filename or "").lower()
     if not (filename.endswith('.xls') or filename.endswith('.xlsx') or filename.endswith('.csv')):
         raise HTTPException(
@@ -1641,6 +1749,12 @@ async def upload_excel(
             if not lead_data.get("service_using"):
                 lead_data["service_using"] = ""
 
+            # Auto-resolve ME Mobile number according to Excel file (MEs DATA.xlsx or column in sheet)
+            clean_me_mob = sanitize_contact_phone(lead_data.get("me_mobile"))
+            if not clean_me_mob and lead_data.get("assigned_agent"):
+                clean_me_mob = get_me_mobile_from_registry(lead_data.get("assigned_agent"))
+            lead_data["me_mobile"] = clean_me_mob
+
             # Auto Deduplication check
             dedup_key = generate_lead_dedup_key(lead_data, "composite")
             if dedup_key:
@@ -1689,6 +1803,12 @@ async def upload_excel(
 @app.delete("/api/leads/clear-all")
 @app.post("/api/leads/clear-all")
 def clear_all_leads(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Marketing Executives (ME) cannot delete or clear leads."
+        )
     try:
         query = db.query(Lead)
         query = apply_rbac_filter(query, current_user)
@@ -1917,6 +2037,11 @@ def lead_to_dict(lead: Lead, win_prob: float = 0.0) -> dict:
     res["willing_to_onboard"] = willing_val
     res["assignedMeName"] = lead.assigned_agent or ""
     res["assigned_me_name"] = lead.assigned_agent or ""
+    me_phone = sanitize_contact_phone(getattr(lead, "me_mobile", None))
+    if not me_phone and lead.assigned_agent:
+        me_phone = get_me_mobile_from_registry(lead.assigned_agent)
+    res["meMobile"] = me_phone
+    res["me_mobile"] = me_phone
     res["contractId"] = lead.contract_id or ""
     res["exporterName"] = lead.exporter_name or ""
     clean_cust = sanitize_customer_name(lead.customer_met)
@@ -2678,6 +2803,12 @@ class DeduplicateRequest(BaseModel):
 
 @app.post("/api/leads/deduplicate")
 def deduplicate_leads(req: DeduplicateRequest = Body(default=DeduplicateRequest()), db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Marketing Executives (ME) cannot perform deletion operations."
+        )
     from collections import defaultdict
     query = db.query(Lead)
     query = apply_rbac_filter(query, current_user)
@@ -2767,6 +2898,8 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
         "contactedDate3": "contacted_date_3",
         "contacted_date_3": "contacted_date_3",
         "contactNumber": "contact_number",
+        "meMobile": "me_mobile",
+        "me_mobile": "me_mobile",
         "serviceUsing": "service_using",
         "monthlyVolume": "monthly_volume",
         "meetingOutcome": "meeting_outcome",
@@ -2794,6 +2927,8 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
             val_str = str(value).strip() if value is not None else ""
             if db_key == "contact_number":
                 val_str = sanitize_contact_phone(val_str)
+            elif db_key == "me_mobile":
+                val_str = sanitize_contact_phone(val_str)
             elif db_key == "email":
                 val_str = sanitize_lead_email(val_str)
             elif db_key == "customer_met":
@@ -2806,6 +2941,10 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
     user_role = str(current_user.get("role", "")).upper()
     if not lead.assigned_agent and user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
         lead.assigned_agent = current_user.get("name") or current_user.get("employee_id") or ""
+
+    # Auto-resolve ME mobile if still empty and assigned_agent is known
+    if not lead.me_mobile and lead.assigned_agent:
+        lead.me_mobile = get_me_mobile_from_registry(lead.assigned_agent)
 
     # Synchronize willing_to_onboard and meeting_outcome
     w_val = (lead.willing_to_onboard or "").strip().lower()
@@ -2833,6 +2972,22 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
 
     db.commit()
     return {"success": True, "message": "Lead updated successfully", "lead": lead_to_dict(lead)}
+
+@app.delete("/api/leads/{lead_id}")
+def delete_lead(lead_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Marketing Executives (ME) cannot delete leads."
+        )
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    db.delete(lead)
+    db.commit()
+    return {"success": True, "message": f"Lead #{lead_id} deleted successfully."}
 
 # 9. Pincode Post Offices Helper Endpoint
 @app.get("/api/pincode-offices/{pincode}")
@@ -3127,15 +3282,16 @@ def get_marketing_executives(db: Session = Depends(get_db), current_user: dict =
             )
         )
     elif role in ["DO", "DIVISION", "DIV", "ME"] and assigned_div:
-        query = query.filter(User.assigned_division == assigned_div)
+        query = query.filter(func.lower(func.trim(User.assigned_division)) == assigned_div.strip().lower())
 
     me_users = query.all()
     results = []
     for u in me_users:
+        u_mob = sanitize_contact_phone(u.mobile_number) or get_me_mobile_from_registry(u.employee_id) or get_me_mobile_from_registry(u.name) or ""
         results.append({
             "employee_id": u.employee_id,
             "name": u.name or u.employee_id,
-            "mobile_number": u.mobile_number,
+            "mobile_number": u_mob,
             "division": u.assigned_division,
             "region": u.assigned_region
         })

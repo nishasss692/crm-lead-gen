@@ -343,6 +343,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
 
   // Clean and sanitize all initial lead fields to eliminate dummy data
   const userMobile = sanitizeIndianMobile(currentUser?.mobile_number || currentUser?.mobile);
+  const initialMeMobile = sanitizeIndianMobile(lead.meMobile || (lead as any).me_mobile || userMobile);
   const initialContactNumber = sanitizeIndianMobile(lead.contactNumber || (lead as any).contact_number);
   const initialAltNumber = sanitizeIndianMobile((lead as any).alternativeNumber || (lead as any).alternative_number);
   const initialEmail = sanitizeEmail(lead.email);
@@ -357,7 +358,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
 
   const [formData, setFormData] = useState({
     assignedMeName: lead.assignedMeName || (lead as any).assigned_agent || (currentUser?.role === 'ME' ? (currentUser.name || currentUser.username || '') : ''),
-    meMobile: userMobile,
+    meMobile: initialMeMobile,
     dateOfMeeting: initialDate1,
     contactedDate1: initialDate1,
     contactedDate2: initialDate2,
@@ -471,13 +472,33 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
           const mobiles: Record<string, string> = {};
           data.forEach((m: any) => {
             const n = m.name || m.employee_id;
+            const empId = m.employee_id;
             const mob = sanitizeIndianMobile(m.mobile_number);
-            if (n && mob) {
-              mobiles[n] = mob;
+            if (mob) {
+              if (n) {
+                mobiles[n] = mob;
+                mobiles[n.toLowerCase()] = mob;
+              }
+              if (empId) {
+                mobiles[empId] = mob;
+                mobiles[empId.toLowerCase()] = mob;
+              }
             }
           });
           setMeOptions(prev => Array.from(new Set([...prev, ...names])));
           setMeMobileMap(prev => ({ ...prev, ...mobiles }));
+
+          // Auto-fill meMobile if missing or if lead has an assigned ME
+          setFormData(prev => {
+            const targetMe = prev.assignedMeName || lead.assignedMeName || (lead as any).assigned_agent;
+            if (!prev.meMobile && targetMe) {
+              const matchedMob = mobiles[targetMe] || mobiles[targetMe.toLowerCase()];
+              if (matchedMob) {
+                return { ...prev, meMobile: matchedMob };
+              }
+            }
+            return prev;
+          });
         }
       })
       .catch(() => {});
@@ -577,7 +598,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
   };
 
   const handleMeChange = (selectedMe: string) => {
-    const mobile = sanitizeIndianMobile(meMobileMap[selectedMe] || '');
+    const mobile = sanitizeIndianMobile(meMobileMap[selectedMe] || meMobileMap[selectedMe.toLowerCase()] || '');
     setFormData(prev => ({
       ...prev,
       assignedMeName: selectedMe,
@@ -644,6 +665,8 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
         contacted_date_3?: string;
         willingToOnboard?: string;
         willing_to_onboard?: string;
+        meMobile?: string;
+        me_mobile?: string;
       } = {
         exporterName: formData.exporterName,
         address: formData.address,
@@ -652,6 +675,8 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
         division: formData.division,
         region: formData.region,
         assignedMeName: formData.assignedMeName,
+        meMobile: formData.meMobile,
+        me_mobile: formData.meMobile,
         customerMet: formData.customerMet,
         contactNumber: formData.contactNumber,
         email: formData.email,
@@ -888,7 +913,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                     value={formData.assignedMeName} 
                     onChange={e => {
                       const val = e.target.value;
-                      const mobile = meMobileMap[val] || formData.meMobile;
+                      const mobile = meMobileMap[val] || meMobileMap[val.trim().toLowerCase()] || formData.meMobile;
                       setFormData(prev => ({ ...prev, assignedMeName: val, meMobile: mobile }));
                       setMeDropdownOpen(true);
                     }}

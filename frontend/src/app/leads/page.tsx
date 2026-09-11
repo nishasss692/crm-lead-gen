@@ -406,10 +406,13 @@ function LeadsPageContent() {
     setSearchTerm('');
   };
 
+  const roleUpper = (user?.role || '').toUpperCase();
+  const isCO = roleUpper === 'CO' || roleUpper === 'ADMIN' || roleUpper === 'CO_ADMIN';
+  const isME = roleUpper === 'ME' || roleUpper === 'MARKETING EXECUTIVE' || roleUpper === 'EXECUTIVE';
+  const isRO = roleUpper === 'RO';
+
   const getTitle = () => {
-    const roleUpper = (user?.role || '').toUpperCase();
     const regionName = user?.assigned_region || 'Regional';
-    const isRO = roleUpper === 'RO';
 
     switch (statusFilter) {
       case 'pending': return isRO ? `${regionName} — Contact Pending Leads` : 'Contact Pending Leads';
@@ -446,33 +449,39 @@ function LeadsPageContent() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Deduplicate Clean Button */}
-            <button
-              onClick={handleOpenDedupModal}
-              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-            >
-              <CopyX className="w-3.5 h-3.5 text-amber-700" />
-              <span>Clean Duplicates</span>
-            </button>
+            {/* Deduplicate Clean Button - Hidden for ME */}
+            {!isME && (
+              <button
+                onClick={handleOpenDedupModal}
+                className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+              >
+                <CopyX className="w-3.5 h-3.5 text-amber-700" />
+                <span>Clean Duplicates</span>
+              </button>
+            )}
 
-            {/* Clear All Data Button */}
-            <button
-              onClick={handleClearAllLeads}
-              title="Remove all leads to start fresh with a clean upload"
-              className="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 px-3 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-              <span>Clear All</span>
-            </button>
+            {/* Clear All Data Button - Only in CO login */}
+            {isCO && (
+              <button
+                onClick={handleClearAllLeads}
+                title="Remove all leads to start fresh with a clean upload"
+                className="flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 px-3 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                <span>Clear All</span>
+              </button>
+            )}
 
-            {/* Upload File Button */}
-            <button
-              onClick={() => setIsUploadModalOpen(true)}
-              className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-            >
-              <Upload className="w-3.5 h-3.5 text-[#FAB52C]" />
-              <span>Upload File</span>
-            </button>
+            {/* Upload File Button - Only in CO login */}
+            {isCO && (
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5 text-[#FAB52C]" />
+                <span>Upload File</span>
+              </button>
+            )}
 
             {/* Export CSV Button */}
             <button 
@@ -573,7 +582,7 @@ function LeadsPageContent() {
       {/* ═══════════════════════════════════════════════════════════
           MODAL 1: UPLOAD DATA FILE (.xlsx, .xls, .csv)
          ═══════════════════════════════════════════════════════════ */}
-      {isUploadModalOpen && (
+      {isCO && isUploadModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -739,7 +748,7 @@ function LeadsPageContent() {
       {/* ═══════════════════════════════════════════════════════════
           MODAL 2: DEDUPLICATE LEADS CLEANUP
          ═══════════════════════════════════════════════════════════ */}
-      {isDedupModalOpen && (
+      {!isME && isDedupModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in-up">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
