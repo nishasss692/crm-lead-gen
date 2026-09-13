@@ -367,7 +367,7 @@ export default function MarketingExecutiveDashboard() {
 
     const rows = recordsToExport.map(p => [
       `"${p.pincode}"`,
-      `"${(p.office_name || '#N/A').replace(/"/g, '""')}"`,
+      `"${(p.office_name || 'Post Office').replace(/"/g, '""')}"`,
       p.total ?? p.total_leads ?? 0,
       p.pending ?? 0,
       p.contacted ?? 0,
@@ -974,8 +974,8 @@ export default function MarketingExecutiveDashboard() {
                       <div className="font-bold text-gray-900 text-sm font-mono leading-tight">
                         {item.pincode}
                       </div>
-                      <div className="text-xs text-gray-400 mt-0.5 font-sans">
-                        {item.office_name || '#N/A'}
+                      <div className="text-xs font-semibold text-slate-700 mt-0.5 font-sans truncate max-w-[220px]" title={item.office_name || ''}>
+                        {item.office_name || 'Post Office'}
                       </div>
                     </td>
 

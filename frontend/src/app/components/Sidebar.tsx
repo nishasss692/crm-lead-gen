@@ -3,7 +3,6 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import ChangePasswordModal from './ChangePasswordModal';
-import IndiaPostLogo from './IndiaPostLogo';
 import { 
   LayoutDashboard, 
   Users, 
@@ -14,7 +13,6 @@ import {
   Briefcase, 
   KeyRound, 
   LogOut,
-  Sparkles,
   XCircle
 } from 'lucide-react';
 

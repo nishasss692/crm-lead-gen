@@ -209,6 +209,15 @@ class User(Base):
     def division(self) -> Optional[str]:
         return self.assigned_division
 
+class PincodeMaster(Base):
+    __tablename__ = "pincode_master"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement=True)
+    pincode: Mapped[int] = mapped_column(Integer, index=True)
+    office_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    division: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    region: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+
 Base.metadata.create_all(bind=engine)
 try:
     with engine.connect() as _conn:
@@ -615,7 +624,7 @@ def sanitize_contact_phone(phone_str: Optional[str]) -> str:
     """Returns valid 10-digit Indian mobile number starting with 6-9, or empty string if invalid/dummy."""
     if not phone_str:
         return ""
-    digits = re.sub(r'\D', '', str(phone_str))
+    digits = re.sub(r'\D', '', phone_str)
     if len(digits) == 12 and digits.startswith("91"):
         digits = digits[2:]
     elif len(digits) == 11 and digits.startswith("0"):
@@ -678,7 +687,7 @@ def get_me_mobile_from_registry(agent_name_or_id: Optional[str]) -> str:
     """Automatically retrieves the ME's mobile number according to the Excel file (MEs DATA.xlsx)."""
     if not agent_name_or_id:
         return ""
-    s = str(agent_name_or_id).strip()
+    s = agent_name_or_id.strip()
     if not s or s.lower() in ["nan", "none", "unassigned", "unknown", "-", "--", ""]:
         return ""
     if s.endswith(".0"):
@@ -1398,7 +1407,7 @@ def sanitize_lead_email(email_str: Optional[str]) -> str:
     """Returns valid email, or empty string if dummy/placeholder or malformed."""
     if not email_str:
         return ""
-    clean = str(email_str).strip().replace(" ", "").lower()
+    clean = email_str.strip().replace(" ", "").lower()
     if clean in ["nan", "none", "null", "nil", "na", "n/a", "-", "--", "no", "noemail", "test", "dummy"]:
         return ""
     if any(clean.startswith(p) for p in ["dummy", "test@", "fake", "sample", "na@", "none@", "null@", "temp@"]):
@@ -1407,13 +1416,13 @@ def sanitize_lead_email(email_str: Optional[str]) -> str:
         return ""
     if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', clean):
         return ""
-    return str(email_str).strip().replace(" ", "")
+    return email_str.strip().replace(" ", "")
 
 def sanitize_customer_name(name_str: Optional[str]) -> str:
     """Returns clean customer name, stripping dummy/placeholder values."""
     if not name_str:
         return ""
-    clean = str(name_str).strip()
+    clean = name_str.strip()
     if clean.lower() in ["nan", "none", "null", "nil", "na", "n/a", "-", "--", "unknown", "dummy", "test", "not met", "not available"]:
         return ""
     return clean
@@ -1422,7 +1431,7 @@ def sanitize_remarks_text(remarks_str: Optional[str]) -> str:
     """Returns clean remarks, stripping dummy/placeholder values."""
     if not remarks_str:
         return ""
-    clean = str(remarks_str).strip()
+    clean = remarks_str.strip()
     if clean.lower() in ["nan", "none", "null", "nil", "na", "n/a", "-", "--"]:
         return ""
     return clean
@@ -2760,6 +2769,7 @@ def get_pincode_performance(
 ):
     query = db.query(
         Lead.pincode,
+        func.min(PincodeMaster.office_name).label("office_name"),
         func.count(Lead.id).label("total"),
         func.count(
             case(
@@ -2833,6 +2843,15 @@ def get_pincode_performance(
         ).label("onboarded")
     )
     
+    # Outer join Lead with PincodeMaster
+    query = query.outerjoin(
+        PincodeMaster,
+        or_(
+            Lead.pincode == func.cast(PincodeMaster.pincode, String),
+            Lead.pincode == PincodeMaster.pincode
+        )
+    )
+
     query = apply_rbac_filter(query, current_user, division_name)
         
     # Group by pincode, filter empty pincodes, and order by total leads descending
@@ -2853,7 +2872,9 @@ def get_pincode_performance(
         if not pin or pin.lower() in ['nan', 'none', 'null', '0', '000000', '']:
             continue
             
-        office = PINCODE_OFFICE_MAP.get(pin, f"Post Office - {pin}")
+        office = (r.office_name or "").strip()
+        if not office or office.lower() in ['nan', 'none', 'null', '']:
+            office = PINCODE_OFFICE_MAP.get(pin, f"Post Office - {pin}")
         
         pincode_list.append({
             "pincode": pin,
@@ -2873,6 +2894,38 @@ def get_pincode_performance(
         })
 
     return pincode_list
+
+@app.get("/api/pincodes/{pincode}/offices")
+def get_pincode_offices(pincode: str, db: Session = Depends(get_db)):
+    """Returns a list of all post office names for a 6-digit pincode from PincodeMaster."""
+    clean_pin = re.sub(r'\D', '', str(pincode).strip())
+    if len(clean_pin) != 6:
+        return []
+    
+    try:
+        pin_int = int(clean_pin)
+    except ValueError:
+        return []
+
+    records = db.query(PincodeMaster).filter(
+        or_(
+            PincodeMaster.pincode == pin_int,
+            func.cast(PincodeMaster.pincode, String) == clean_pin
+        )
+    ).all()
+
+    offices: List[str] = []
+    seen = set()
+    for rec in records:
+        name = (rec.office_name or "").strip()
+        if name and name not in seen:
+            seen.add(name)
+            offices.append(name)
+
+    if not offices and clean_pin in PINCODE_OFFICE_MAP:
+        offices.append(PINCODE_OFFICE_MAP[clean_pin])
+
+    return offices
 
 # 7. Deduplication Endpoints
 @app.get("/api/leads/duplicates-summary")

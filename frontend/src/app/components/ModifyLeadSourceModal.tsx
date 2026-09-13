@@ -98,6 +98,7 @@ export default function ModifyLeadSourceModal({ lead, onClose, onSave }: ModifyL
 
       return () => controller.abort();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pincode, lead.division]);
 
   // Catalog pincode options for quick selection

@@ -177,6 +177,7 @@ function LeadsPageContent() {
     }
     fetchDivisions(token);
     fetchLeads(token, selectedDivision);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, selectedDivision, statusFilter]);
 
   // Handle File Upload

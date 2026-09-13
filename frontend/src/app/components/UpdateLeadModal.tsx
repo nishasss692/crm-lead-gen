@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Lead } from './LeadsTable';
 import { X, Check, ChevronDown, Calendar, AlertTriangle, Building2 } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, safeJson } from '@/lib/api';
 import { resolvePincodeTerritory, PINCODE_TERRITORY_CATALOG } from '@/lib/karnatakaTerritory';
 
 interface UpdateLeadModalProps {
@@ -428,6 +428,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
       .catch(() => {});
 
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cleanActiveDiv]);
 
   // Close ME combobox dropdown on outside click
@@ -507,6 +508,7 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
         }
       })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead.assignedMeName]);
 
   // Handle selection of a pincode
@@ -521,60 +523,62 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
     }));
   };
 
+  const [isOfficesLoading, setIsOfficesLoading] = useState<boolean>(false);
+
   // Fetch or lookup post offices when pincode changes
   useEffect(() => {
     const cleanPin = (formData.pincode || '').trim().replace(/\D/g, '');
     if (!cleanPin) {
       setAvailableOffices([]);
+      setFormData(prev => ({ ...prev, poName: '' }));
       return;
     }
 
-    // 1. Initial lookup from division map or pre-defined map
-    let currentOffices = divisionPinsMap[cleanPin] || ALL_PINCODE_OFFICES[cleanPin] || [`Post Office - ${cleanPin}`];
-    setAvailableOffices(currentOffices);
-    
-    // Auto-select first office if poName is empty or not in new offices
-    setFormData(prev => ({
-      ...prev,
-      poName: currentOffices.includes(prev.poName) ? prev.poName : (currentOffices[0] || '')
-    }));
-
-    // 2. Dynamic fetch if 6 digits
+    // Dynamic fetch if exactly 6 digits
     if (cleanPin.length === 6) {
       const controller = new AbortController();
-      
-      apiFetch(`/api/pincode-offices/${cleanPin}`, { signal: controller.signal })
-        .then(res => res.ok ? res.json() : null)
+      setIsOfficesLoading(true);
+
+      apiFetch(`/api/pincodes/${cleanPin}/offices`, { signal: controller.signal })
+        .then(res => res.ok ? safeJson(res) : null)
         .then(data => {
-          if (data && Array.isArray(data.offices) && data.offices.length > 0) {
-            setAvailableOffices(data.offices);
+          const list: string[] = Array.isArray(data) 
+            ? data 
+            : (data?.offices && Array.isArray(data.offices) ? data.offices : []);
+
+          if (list.length > 0) {
+            setAvailableOffices(list);
             setFormData(prev => ({
               ...prev,
-              poName: data.offices.includes(prev.poName) ? prev.poName : (data.offices[0] || '')
+              poName: list.includes(prev.poName) ? prev.poName : (list[0] || '')
+            }));
+          } else {
+            // Fallback to local map if backend returns empty
+            const fallback = divisionPinsMap[cleanPin] || ALL_PINCODE_OFFICES[cleanPin] || [];
+            setAvailableOffices(fallback);
+            setFormData(prev => ({
+              ...prev,
+              poName: fallback.includes(prev.poName) ? prev.poName : (fallback[0] || '')
             }));
           }
         })
         .catch(() => {
-          fetch(`https://api.postalpincode.in/pincode/${cleanPin}`, { signal: controller.signal })
-            .then(r => r.json())
-            .then(res => {
-              if (Array.isArray(res) && res[0]?.Status === 'Success' && Array.isArray(res[0]?.PostOffice)) {
-                const fetched = res[0].PostOffice.map((p: any) => 
-                  `${p.Name} ${p.BranchType === 'Sub Post Office' ? 'SO' : p.BranchType === 'Branch Post Office' ? 'BO' : p.BranchType === 'Head Post Office' ? 'HO' : ''}`.trim()
-                );
-                if (fetched.length > 0) {
-                  setAvailableOffices(fetched);
-                  setFormData(prev => ({
-                    ...prev,
-                    poName: fetched.includes(prev.poName) ? prev.poName : (fetched[0] || '')
-                  }));
-                }
-              }
-            })
-            .catch(() => {});
+          const fallback = divisionPinsMap[cleanPin] || ALL_PINCODE_OFFICES[cleanPin] || [];
+          setAvailableOffices(fallback);
+          setFormData(prev => ({
+            ...prev,
+            poName: fallback.includes(prev.poName) ? prev.poName : (fallback[0] || '')
+          }));
+        })
+        .finally(() => {
+          setIsOfficesLoading(false);
         });
 
       return () => controller.abort();
+    } else {
+      // Keep dropdown disabled when pincode is not 6 digits
+      setAvailableOffices([]);
+      setFormData(prev => ({ ...prev, poName: '' }));
     }
   }, [formData.pincode, divisionPinsMap]);
 
@@ -883,18 +887,25 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                 {/* PO Name */}
                 <div>
                   <label className="block text-xs font-bold text-slate-800 mb-1.5">
-                    PO Name
+                    Post Office (PO Name)
                   </label>
                   <select 
                     value={formData.poName} 
                     onChange={e => handleChange('poName', e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
+                    disabled={availableOffices.length === 0 || isOfficesLoading}
+                    className={`w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs ${availableOffices.length === 0 || isOfficesLoading ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
-                    {sourceTerritory.offices.map((off, idx) => (
-                      <option key={idx} value={off.label}>
-                        {off.label}
-                      </option>
-                    ))}
+                    {isOfficesLoading ? (
+                      <option value="">Fetching post offices...</option>
+                    ) : availableOffices.length === 0 ? (
+                      <option value="">{formData.pincode?.length === 6 ? "No offices found" : "Enter 6-digit PIN to select PO"}</option>
+                    ) : (
+                      availableOffices.map((off, idx) => (
+                        <option key={idx} value={off}>
+                          {off}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
@@ -1170,26 +1181,33 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-slate-800">
-                    PO Name
+                    Post Office (PO Name)
                   </label>
                   <span className="text-[10px] text-slate-400 font-medium">
-                    {availableOffices.length} office{availableOffices.length === 1 ? '' : 's'}
+                    {isOfficesLoading ? "Fetching..." : `${availableOffices.length} office${availableOffices.length === 1 ? '' : 's'}`}
                   </span>
                 </div>
                 <div className="relative">
                   <select 
                     value={formData.poName} 
                     onChange={e => handleChange('poName', e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer appearance-none"
+                    disabled={availableOffices.length === 0 || isOfficesLoading}
+                    className={`w-full bg-white border border-slate-300 rounded-lg pl-3 pr-7 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs appearance-none ${availableOffices.length === 0 || isOfficesLoading ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
-                    {availableOffices.map((office, i) => (
-                      <option key={i} value={office}>{office}</option>
-                    ))}
+                    {isOfficesLoading ? (
+                      <option value="">Fetching post offices...</option>
+                    ) : availableOffices.length === 0 ? (
+                      <option value="">{formData.pincode?.length === 6 ? "No offices found" : "Enter 6-digit PIN to select PO"}</option>
+                    ) : (
+                      availableOffices.map((office, i) => (
+                        <option key={i} value={office}>{office}</option>
+                      ))
+                    )}
                   </select>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
                 <span className="text-[10px] text-slate-400 font-medium block mt-1 leading-tight">
-                  Offices in {cleanActiveDiv} for PIN {formData.pincode}
+                  {availableOffices.length > 0 ? `Select official Post Office for PIN ${formData.pincode}` : "Strict PO selection enforced from Master Data"}
                 </span>
               </div>
 

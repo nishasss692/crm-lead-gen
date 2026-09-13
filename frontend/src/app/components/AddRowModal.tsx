@@ -15,7 +15,7 @@ import {
   Truck,
   DollarSign
 } from 'lucide-react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, safeJson } from '@/lib/api';
 import { resolvePincodeTerritory, PINCODE_TERRITORY_CATALOG, KARNATAKA_TERRITORY_DIRECTORY } from '@/lib/karnatakaTerritory';
 
 interface AddRowModalProps {
@@ -97,9 +97,49 @@ export default function AddRowModal({
   }, [isOpen, currentUser, activeDivision, isME, todayStr]);
 
   // Dynamic PO offices based on Pincode
+  const [dbOffices, setDbOffices] = useState<string[]>([]);
+  const [isOfficesLoading, setIsOfficesLoading] = useState<boolean>(false);
+
   const sourceTerritory = useMemo(() => {
     return resolvePincodeTerritory(formData.pincode);
   }, [formData.pincode]);
+
+  useEffect(() => {
+    const cleanPin = (formData.pincode || '').trim().replace(/\D/g, '');
+    if (cleanPin.length === 6) {
+      const controller = new AbortController();
+      setIsOfficesLoading(true);
+
+      apiFetch(`/api/pincodes/${cleanPin}/offices`, { signal: controller.signal })
+        .then(res => res.ok ? safeJson(res) : null)
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            setDbOffices(data);
+            setFormData(prev => ({
+              ...prev,
+              poName: data.includes(prev.poName) ? prev.poName : data[0]
+            }));
+          } else {
+            setDbOffices([]);
+          }
+        })
+        .catch(() => {
+          setDbOffices([]);
+        })
+        .finally(() => {
+          setIsOfficesLoading(false);
+        });
+
+      return () => controller.abort();
+    } else {
+      setDbOffices([]);
+    }
+  }, [formData.pincode]);
+
+  const allAvailableOffices = useMemo(() => {
+    if (dbOffices.length > 0) return dbOffices;
+    return sourceTerritory.offices.map(o => o.label);
+  }, [dbOffices, sourceTerritory]);
 
   const handlePincodeSelect = (pin: string) => {
     const territory = resolvePincodeTerritory(pin);
@@ -407,15 +447,19 @@ export default function AddRowModal({
                   <select 
                     value={formData.poName}
                     onChange={e => handleChange('poName', e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
+                    disabled={allAvailableOffices.length === 0 || isOfficesLoading}
+                    className={`w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-xs font-semibold text-slate-800 focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs ${allAvailableOffices.length === 0 || isOfficesLoading ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
-                    {sourceTerritory.offices.map((off, idx) => (
-                      <option key={idx} value={off.label}>
-                        {off.label}
-                      </option>
-                    ))}
-                    {formData.poName && !sourceTerritory.offices.some(o => o.label === formData.poName) && (
-                      <option value={formData.poName}>{formData.poName}</option>
+                    {isOfficesLoading ? (
+                      <option value="">Fetching post offices...</option>
+                    ) : allAvailableOffices.length === 0 ? (
+                      <option value="">{formData.pincode?.length === 6 ? "No offices found" : "Enter 6-digit PIN to select PO"}</option>
+                    ) : (
+                      allAvailableOffices.map((off, idx) => (
+                        <option key={idx} value={off}>
+                          {off}
+                        </option>
+                      ))
                     )}
                   </select>
                 </div>
