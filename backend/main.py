@@ -2896,9 +2896,9 @@ def get_pincode_performance(
     return pincode_list
 
 @app.get("/api/pincodes/{pincode}/offices")
-def get_pincode_offices(pincode: str, db: Session = Depends(get_db)):
+def get_pincode_offices_master(pincode: str, db: Session = Depends(get_db)):
     """Returns a list of all post office names for a 6-digit pincode from PincodeMaster."""
-    clean_pin = re.sub(r'\D', '', str(pincode).strip())
+    clean_pin = re.sub(r'\D', '', pincode.strip())
     if len(clean_pin) != 6:
         return []
     

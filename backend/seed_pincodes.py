@@ -14,7 +14,7 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
 from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session
 
 # -------------------------------------------------------------------------
 # 1. Database Connection & Model Setup
@@ -26,11 +26,14 @@ SQLITE_DATABASE_URL = f"sqlite:///{SQLITE_DB_PATH}"
 sqlite_engine = create_engine(SQLITE_DATABASE_URL, connect_args={"check_same_thread": False})
 SQLiteSession = sessionmaker(autocommit=False, autoflush=False, bind=sqlite_engine)
 
-# Try importing existing Base and SessionLocal from main.py if available
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
 try:
-    from main import Base, SessionLocal as MainSessionLocal, engine as main_engine
+    from main import SessionLocal as MainSessionLocal, engine as main_engine
 except Exception:
-    Base = declarative_base()
     MainSessionLocal = None
     main_engine = None
 
@@ -303,9 +306,10 @@ def seed_pincodes(
 # 4. Main Execution Block
 # -------------------------------------------------------------------------
 if __name__ == "__main__":
-    if hasattr(sys.stdout, "reconfigure"):
+    reconfigure_fn = getattr(sys.stdout, "reconfigure", None)
+    if callable(reconfigure_fn):
         try:
-            sys.stdout.reconfigure(encoding="utf-8")
+            reconfigure_fn(encoding="utf-8")
         except Exception:
             pass
 
