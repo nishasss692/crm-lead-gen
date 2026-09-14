@@ -141,6 +141,24 @@ export default function AddRowModal({
     return sourceTerritory.offices.map(o => o.label);
   }, [dbOffices, sourceTerritory]);
 
+  const { divisionPincodesList, otherPincodesList } = useMemo(() => {
+    const activeDiv = (formData.division || '').trim().toLowerCase();
+    const divPins: string[] = [];
+    const otherPins: string[] = [];
+    for (const [pin, entry] of Object.entries(PINCODE_TERRITORY_CATALOG)) {
+      const entryDiv = (entry.division || '').trim().toLowerCase();
+      if (activeDiv && (entryDiv === activeDiv || entryDiv.includes(activeDiv) || activeDiv.includes(entryDiv))) {
+        divPins.push(pin);
+      } else {
+        otherPins.push(pin);
+      }
+    }
+    return {
+      divisionPincodesList: divPins.sort(),
+      otherPincodesList: otherPins.sort()
+    };
+  }, [formData.division]);
+
   const handlePincodeSelect = (pin: string) => {
     const territory = resolvePincodeTerritory(pin);
     setFormData(prev => ({
@@ -430,14 +448,31 @@ export default function AddRowModal({
                       onChange={e => handlePincodeSelect(e.target.value)}
                       className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-xs font-bold text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                     >
-                      {Object.keys(PINCODE_TERRITORY_CATALOG).map(pin => {
-                        const entry = PINCODE_TERRITORY_CATALOG[pin];
-                        return (
-                          <option key={pin} value={pin}>
-                            {pin} — {entry.division}
-                          </option>
-                        );
-                      })}
+                      <option value="">-- Select Post Office --</option>
+                      {divisionPincodesList.length > 0 && (
+                        <optgroup label={`${formData.division || 'Division'} Post Offices (${divisionPincodesList.length})`}>
+                          {divisionPincodesList.map(pin => {
+                            const entry = PINCODE_TERRITORY_CATALOG[pin];
+                            const displayName = entry?.offices?.[0] || `Post Office (${entry?.division || pin})`;
+                            return (
+                              <option key={pin} value={pin}>
+                                {displayName}
+                              </option>
+                            );
+                          })}
+                        </optgroup>
+                      )}
+                      <optgroup label={divisionPincodesList.length > 0 ? `Other Karnataka Circle Post Offices (${otherPincodesList.length})` : `All Karnataka Post Offices (${otherPincodesList.length})`}>
+                        {otherPincodesList.map(pin => {
+                          const entry = PINCODE_TERRITORY_CATALOG[pin];
+                          const displayName = entry?.offices?.[0] || `Post Office (${entry?.division || pin})`;
+                          return (
+                            <option key={pin} value={pin}>
+                              {displayName}
+                            </option>
+                          );
+                        })}
+                      </optgroup>
                     </select>
                   )}
                 </div>

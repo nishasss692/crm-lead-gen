@@ -1,5 +1,6 @@
 // Karnataka Territory & Pincode Registry for India Post CRM
 // Defines complete 36-division hierarchical mapping and postal office resolver.
+import MASTER_PINCODE_CATALOG from './karnatakaPincodesCatalog.json';
 
 export interface TerritoryMapping {
   division: string;
@@ -52,11 +53,19 @@ export const KARNATAKA_TERRITORY_DIRECTORY: Record<string, { region: string; ali
   'Yadgir': { region: 'North Karnataka Region', aliases: ['yadgir', 'yadagiri', 'yadgir division'] },
 };
 
-// Known Pincode -> Division & Post Offices Registry
-export const PINCODE_TERRITORY_CATALOG: Record<string, { division: string; offices: string[] }> = {
-  // BG East Division (560092, 560001, 560005, 560008, 560016, 560017, 560024, 560025, 560032, 560033, 560038, 560042, 560043, 560045, 560048, 560064, 560066, 560071, 560075, 560077, 560080, 560094)
+export interface PincodeEntry {
+  division: string;
+  region?: string;
+  offices: string[];
+}
+
+// Known Pincode -> Division & Post Offices Registry (Full 1,345 Karnataka Circle Dataset)
+export const PINCODE_TERRITORY_CATALOG: Record<string, PincodeEntry> = {
+  ...(MASTER_PINCODE_CATALOG as Record<string, PincodeEntry>),
+  // Specific known multi-office mappings
   "560092": {
     division: "BG East",
+    region: "Bengaluru HQ Region",
     offices: [
       "Amruthahalli B.O",
       "Sahakarnagar S.O",
@@ -67,431 +76,44 @@ export const PINCODE_TERRITORY_CATALOG: Record<string, { division: string; offic
   },
   "560001": {
     division: "BG East",
+    region: "Bengaluru HQ Region",
     offices: ["Bengaluru GPO", "Raj Bhavan S.O", "Vidhana Soudha S.O"]
   },
   "560005": {
     division: "BG East",
+    region: "Bengaluru HQ Region",
     offices: ["Frazer Town S.O", "Cox Town S.O"]
   },
   "560008": {
     division: "BG East",
+    region: "Bengaluru HQ Region",
     offices: ["HAL II Stage S.O", "Indiranagar S.O", "Domlur S.O"]
-  },
-  "560016": {
-    division: "BG East",
-    offices: ["Doorvaninagar S.O", "Ramamurthy Nagar S.O"]
-  },
-  "560017": {
-    division: "BG East",
-    offices: ["HAL Old Airport Road S.O", "Vimanapura S.O"]
-  },
-  "560024": {
-    division: "BG East",
-    offices: ["Hebbal S.O", "Anandnagar S.O"]
-  },
-  "560025": {
-    division: "BG East",
-    offices: ["Museum Road S.O", "Ashoknagar S.O", "Richmond Town S.O"]
-  },
-  "560032": {
-    division: "BG East",
-    offices: ["RT Nagar S.O", "Ganganagar S.O"]
-  },
-  "560033": {
-    division: "BG East",
-    offices: ["Maruthi Seva Nagar S.O", "Cooke Town S.O"]
-  },
-  "560038": {
-    division: "BG East",
-    offices: ["Indiranagar S.O", "Defence Colony S.O"]
-  },
-  "560042": {
-    division: "BG East",
-    offices: ["St. Thomas Town S.O", "Lingarajapuram S.O"]
-  },
-  "560043": {
-    division: "BG East",
-    offices: ["Banaswadi S.O", "Kalyan Nagar S.O"]
-  },
-  "560045": {
-    division: "BG East",
-    offices: ["Manyata Tech Park S.O", "Nagawara S.O"]
-  },
-  "560048": {
-    division: "BG East",
-    offices: ["Hoodi S.O", "Mahadevapura S.O"]
-  },
-  "560064": {
-    division: "BG East",
-    offices: ["Yelahanka Satellite Town S.O", "Attur B.O"]
-  },
-  "560066": {
-    division: "BG East",
-    offices: ["Whitefield S.O", "Kadugodi S.O", "Immadihalli B.O"]
-  },
-  "560071": {
-    division: "BG East",
-    offices: ["Domlur S.O", "Airport Road S.O"]
-  },
-  "560075": {
-    division: "BG East",
-    offices: ["HAL III Stage S.O", "New Thippasandra S.O"]
-  },
-  "560077": {
-    division: "BG East",
-    offices: ["Kothanur S.O", "Hennur S.O"]
-  },
-  "560080": {
-    division: "BG East",
-    offices: ["Sadashivanagar S.O", "Palace Guttahalli S.O"]
-  },
-  "560094": {
-    division: "BG East",
-    offices: ["RMV Extension II Stage S.O", "Sanjaynagar S.O"]
-  },
-
-  // BG South Division
-  "560002": {
-    division: "BG South",
-    offices: ["Bengaluru City S.O", "Dharmaram College S.O", "Town Hall S.O"]
-  },
-  "560004": {
-    division: "BG South",
-    offices: ["Basavanagudi S.O", "Pampa Mahakavi Road S.O", "N R Colony S.O"]
-  },
-  "560009": {
-    division: "BG South",
-    offices: ["K.G. Road S.O", "Majestic S.O"]
-  },
-  "560011": {
-    division: "BG South",
-    offices: ["Jayanagar S.O", "Tilaknagar S.O"]
-  },
-  "560026": {
-    division: "BG South",
-    offices: ["Mysore Road S.O", "Kasturba Nagar S.O"]
-  },
-  "560027": {
-    division: "BG South",
-    offices: ["Lalbagh West S.O", "Sudhamanagar S.O"]
-  },
-  "560029": {
-    division: "BG South",
-    offices: ["Dharmaram College S.O", "Taverekere S.O"]
-  },
-  "560034": {
-    division: "BG South",
-    offices: ["Koramangala S.O", "St. Johns Medical College S.O", "Agara S.O"]
-  },
-  "560053": {
-    division: "BG South",
-    offices: ["Chickpet S.O", "City Market S.O"]
-  },
-  "560068": {
-    division: "BG South",
-    offices: ["Madivala S.O", "Bommanahalli S.O"]
-  },
-  "560070": {
-    division: "BG South",
-    offices: ["Banashankari II Stage S.O", "Padmanabhanagar S.O"]
-  },
-  "560076": {
-    division: "BG South",
-    offices: ["BTM 2nd Stage S.O", "Bannerghatta Road S.O"]
-  },
-  "560078": {
-    division: "BG South",
-    offices: ["JP Nagar S.O", "Sarakki S.O"]
-  },
-  "560082": {
-    division: "BG South",
-    offices: ["Jayanagar East S.O", "Yediyur S.O"]
-  },
-  "560085": {
-    division: "BG South",
-    offices: ["Banashankari 3rd Stage S.O", "Kathriguppe S.O"]
-  },
-  "560095": {
-    division: "BG South",
-    offices: ["Koramangala 4th Block S.O", "ST Bed S.O"]
-  },
-  "560099": {
-    division: "BG South",
-    offices: ["Bommasandra Industrial Estate S.O", "Hebbagodi B.O"]
-  },
-  "560100": {
-    division: "BG South",
-    offices: ["Electronic City S.O", "Konappana Agrahara S.O"]
-  },
-  "560105": {
-    division: "BG South",
-    offices: ["Austin Town S.O", "Viveknagar S.O"]
-  },
-
-  // BG West Division
-  "560003": {
-    division: "BG West",
-    offices: ["Malleswaram S.O", "Vyalikaval S.O"]
-  },
-  "560010": {
-    division: "BG West",
-    offices: ["Rajajinagar S.O", "Industrial Estate S.O", "Prakash Nagar S.O"]
-  },
-  "560013": {
-    division: "BG West",
-    offices: ["Jalahalli S.O", "MS Ramaiah S.O"]
-  },
-  "560020": {
-    division: "BG West",
-    offices: ["Seshadripuram S.O", "Palace Guttahalli S.O"]
-  },
-  "560021": {
-    division: "BG West",
-    offices: ["Srirampuram S.O", "Dayananda Nagar S.O"]
-  },
-  "560022": {
-    division: "BG West",
-    offices: ["Yeshwanthpur Industrial Suburb S.O", "Yeshwantpur S.O"]
-  },
-  "560023": {
-    division: "BG West",
-    offices: ["Magadi Road S.O", "Binnypet S.O"]
-  },
-  "560040": {
-    division: "BG West",
-    offices: ["Vijayanagar Bengaluru S.O", "RPC Layout S.O"]
-  },
-  "560054": {
-    division: "BG West",
-    offices: ["Mathikere S.O", "Gokula S.O"]
-  },
-  "560057": {
-    division: "BG West",
-    offices: ["Peenya Dasarahalli S.O", "Jalahalli West S.O"]
-  },
-  "560058": {
-    division: "BG West",
-    offices: ["Peenya 1st Stage S.O", "Peenya Small Industries S.O"]
-  },
-  "560079": {
-    division: "BG West",
-    offices: ["Basaveshwaranagar S.O", "Kamakshipalya S.O"]
-  },
-  "560086": {
-    division: "BG West",
-    offices: ["Mahalakshmi Layout S.O", "West of Chord Road S.O"]
-  },
-  "560091": {
-    division: "BG West",
-    offices: ["Viswaneedam S.O", "Magadi Main Road S.O"]
-  },
-  "560097": {
-    division: "BG West",
-    offices: ["Vidyaranyapura S.O", "Tindlu B.O"]
-  },
-  "561203": {
-    division: "BG West",
-    offices: ["Doddaballapur S.O", "KIADB S.O"]
-  },
-  "562107": {
-    division: "BG West",
-    offices: ["Nelamangala S.O", "Arishinakunte B.O"]
-  },
-
-  // Mysuru Division
-  "570001": {
-    division: "Mysuru",
-    offices: ["Mysuru Head Post Office", "Mysuru Fort S.O", "K R Circle S.O", "Lakshmipuram S.O"]
-  },
-  "570002": {
-    division: "Mysuru",
-    offices: ["Mysuru Fort S.O", "Agrahara S.O", "Vani Vilas Market S.O"]
-  },
-  "570004": {
-    division: "Mysuru",
-    offices: ["Nazarbad S.O", "Ittigegud S.O", "Mysuru Palace S.O"]
-  },
-  "570008": {
-    division: "Mysuru",
-    offices: ["Chamundipuram S.O", "Vidyaranyapuram S.O", "Jayanagar Mysuru S.O"]
-  },
-  "570009": {
-    division: "Mysuru",
-    offices: ["Tilaknagar S.O", "Mandi Mohalla S.O"]
-  },
-  "570016": {
-    division: "Mysuru",
-    offices: ["Belagola Industrial Area S.O", "Metagalli S.O", "Hebbal S.O"]
-  },
-  "570017": {
-    division: "Mysuru",
-    offices: ["Bannimantap S.O", "Bamboo Bazar S.O"]
-  },
-  "570018": {
-    division: "Mysuru",
-    offices: ["Hootagalli Industrial Area S.O", "Koorgalli B.O", "Belavadi S.O"]
-  },
-  "570019": {
-    division: "Mysuru",
-    offices: ["Vijayanagar S.O", "Gokulam S.O"]
-  },
-  "570020": {
-    division: "Mysuru",
-    offices: ["Kuvempunagar S.O", "Vivekanandanagar S.O"]
-  },
-  "570022": {
-    division: "Mysuru",
-    offices: ["Ramakrishnanagar S.O", "Bogadi S.O"]
-  },
-  "570023": {
-    division: "Mysuru",
-    offices: ["Saraswathipuram S.O", "Tonachikoppal S.O", "Jayalakshmipuram S.O"]
-  },
-  "570025": {
-    division: "Mysuru",
-    offices: ["Srirampura S.O", "JP Nagar Mysuru S.O"]
-  },
-  "570026": {
-    division: "Mysuru",
-    offices: ["Dattagalli S.O", "Roopa Nagar S.O"]
-  },
-  "570027": {
-    division: "Mysuru",
-    offices: ["Hebbal Industrial Area S.O", "Kumbarakoppal S.O"]
-  },
-  "570028": {
-    division: "Mysuru",
-    offices: ["Siddartha Nagar S.O", "Alanahalli S.O"]
-  },
-  "571114": {
-    division: "Mysuru",
-    offices: ["Kadakola S.O", "Thandavapura S.O"]
-  },
-  "571301": {
-    division: "Mysuru",
-    offices: ["Nanjangud S.O", "Industrial Estate Nanjangud S.O"]
-  },
-  "571311": {
-    division: "Mysuru",
-    offices: ["T Narasipura S.O", "Bannur S.O"]
-  },
-  "571313": {
-    division: "Mysuru",
-    offices: ["Chamarajanagar S.O", "Ramasamudra S.O"]
-  },
-
-  // Tumakuru Division
-  "572101": {
-    division: "Tumakuru",
-    offices: ["Tumakuru Head Post Office", "Ashoka Road S.O"]
-  },
-  "572102": {
-    division: "Tumakuru",
-    offices: ["Siddaganga Mutt S.O", "Kyathsandra S.O"]
-  },
-  "572103": {
-    division: "Tumakuru",
-    offices: ["B H Road S.O", "Mandipet S.O"]
-  },
-  "572104": {
-    division: "Tumakuru",
-    offices: ["SSIT S.O", "Maralur S.O"]
-  },
-  "572106": {
-    division: "Tumakuru",
-    offices: ["Antharasanahalli Industrial Area S.O", "Batwadi S.O"]
-  },
-
-  // Mangaluru Division
-  "575001": {
-    division: "Mangaluru",
-    offices: ["Mangaluru Head Post Office", "Hampankatta S.O", "Bunder S.O"]
-  },
-  "575002": {
-    division: "Mangaluru",
-    offices: ["Kankanady S.O", "Falnir S.O"]
-  },
-  "575003": {
-    division: "Mangaluru",
-    offices: ["Kodialbail S.O", "Ashoknagar Mangaluru S.O"]
-  },
-  "575011": {
-    division: "Mangaluru",
-    offices: ["Baikampady Industrial Estate S.O", "Panambur S.O"]
-  },
-  "575018": {
-    division: "Mangaluru",
-    offices: ["Surathkal S.O", "NITK S.O"]
-  },
-
-  // Udupi Division
-  "576101": {
-    division: "Udupi",
-    offices: ["Udupi Head Post Office", "Court Road S.O"]
-  },
-  "574118": {
-    division: "Udupi",
-    offices: ["Manipal S.O", "Endpoint B.O"]
-  },
-
-  // Shivamogga Division
-  "577201": {
-    division: "Shivamogga",
-    offices: ["Shivamogga Head Post Office", "Durgigudi S.O"]
-  },
-  "577204": {
-    division: "Shivamogga",
-    offices: ["Kallahalli S.O", "Industrial Estate Shivamogga S.O"]
-  },
-
-  // Dharwad Division
-  "580001": {
-    division: "Dharwad",
-    offices: ["Dharwad Head Post Office", "Station Road S.O"]
-  },
-  "580020": {
-    division: "Dharwad",
-    offices: ["Hubballi Main S.O", "Durgad Bail S.O"]
-  },
-  "580030": {
-    division: "Dharwad",
-    offices: ["Vidyanagar Hubballi S.O", "Shirur Park S.O"]
-  },
-
-  // Belagavi Division
-  "590001": {
-    division: "Belagavi",
-    offices: ["Belagavi Head Post Office", "Camp Belagavi S.O", "Khade Bazar S.O"]
-  },
-  "590014": {
-    division: "Belagavi",
-    offices: ["Machhe Industrial Area S.O", "Vadgaon S.O"]
-  },
-  "590016": {
-    division: "Belagavi",
-    offices: ["Udyambag S.O", "KIADB Belagavi S.O"]
-  },
-
-  // Kalaburagi Division
-  "585101": {
-    division: "Kalaburagi",
-    offices: ["Kalaburagi Head Post Office", "Main Road S.O"]
-  },
-  "585102": {
-    division: "Kalaburagi",
-    offices: ["Super Market S.O", "Station Road S.O"]
-  },
-
-  // Ballari Division
-  "583101": {
-    division: "Ballari",
-    offices: ["Ballari Head Post Office", "Brucepet S.O"]
-  },
-  "583104": {
-    division: "Ballari",
-    offices: ["Gandhi Nagar Ballari S.O", "Satyanarayanapet S.O"]
   }
 };
+
+/**
+ * Returns all pincodes belonging to a division from the full 1,345 dataset.
+ */
+export function getPincodesForDivision(divisionName?: string | null): string[] {
+  if (!divisionName) return Object.keys(PINCODE_TERRITORY_CATALOG).sort();
+  const canon = normalizeDivision(divisionName).toLowerCase();
+  const raw = divisionName.toLowerCase().replace(/ division/i, '').trim();
+  const pins: string[] = [];
+  for (const [pin, entry] of Object.entries(PINCODE_TERRITORY_CATALOG)) {
+    const entryDiv = (entry.division || '').toLowerCase();
+    if (entryDiv === canon || entryDiv === raw || entryDiv.includes(raw) || raw.includes(entryDiv)) {
+      pins.push(pin);
+    }
+  }
+  return pins.sort();
+}
+
+/**
+ * Returns all 1,345 pincodes sorted.
+ */
+export function getAllCatalogPincodes(): string[] {
+  return Object.keys(PINCODE_TERRITORY_CATALOG).sort();
+}
 
 /**
  * Normalizes any variation of a division name to canonical (e.g. "bg east" -> "BG East").
@@ -545,7 +167,7 @@ export function resolvePincodeTerritory(pincode: string, fallbackDiv?: string): 
   const catalogEntry = PINCODE_TERRITORY_CATALOG[cleanPin];
 
   let division = catalogEntry?.division || normalizeDivision(fallbackDiv) || "BG East";
-  const region = getRegionForDivision(division);
+  const region = catalogEntry?.region || getRegionForDivision(division);
   const divisionLabel = `${division} Division`;
 
   let officeNames = catalogEntry?.offices || [];

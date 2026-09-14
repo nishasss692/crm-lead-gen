@@ -204,21 +204,46 @@ DIVISION_PINCODES_MAP["bagalkot"] = DIVISION_PINCODES_MAP["Bagalkote"] || {};
 DIVISION_PINCODES_MAP["channapatna"] = DIVISION_PINCODES_MAP["Channapatna"] || {};
 
 export const getDivisionPincodesMap = (divName: string): Record<string, string[]> => {
-  if (!divName) return DIVISION_PINCODES_MAP["Mysuru"] || {};
-  const clean = divName.replace(/ division/i, '').trim();
-  if (DIVISION_PINCODES_MAP[clean]) return DIVISION_PINCODES_MAP[clean];
-  if (DIVISION_PINCODES_MAP[divName]) return DIVISION_PINCODES_MAP[divName];
-  const lower = clean.toLowerCase();
-  for (const [key, val] of Object.entries(DIVISION_PINCODES_MAP)) {
-    if (key.toLowerCase() === lower || key.toLowerCase().replace(/ division/i, '').trim() === lower) {
-      return val;
+  const result: Record<string, string[]> = {};
+  if (!divName) return result;
+  const clean = divName.replace(/ division/i, '').trim().toLowerCase();
+
+  // 1. Populate from complete 1,345 PINCODE_TERRITORY_CATALOG
+  for (const [pin, entry] of Object.entries(PINCODE_TERRITORY_CATALOG)) {
+    const entryDiv = (entry.division || '').trim().toLowerCase();
+    if (entryDiv === clean || entryDiv.includes(clean) || clean.includes(entryDiv)) {
+      result[pin] = entry.offices || [];
     }
   }
-  return DIVISION_PINCODES_MAP["Mysuru"] || {};
+
+  // 2. Merge any customized offices from DIVISION_PINCODES_MAP
+  for (const [key, val] of Object.entries(DIVISION_PINCODES_MAP)) {
+    const k = key.toLowerCase().replace(/ division/i, '').trim();
+    if (k === clean || k.includes(clean) || clean.includes(k)) {
+      for (const [pin, offices] of Object.entries(val)) {
+        if (!result[pin]) {
+          result[pin] = offices;
+        } else {
+          offices.forEach(o => {
+            if (!result[pin].includes(o)) result[pin].push(o);
+          });
+        }
+      }
+      break;
+    }
+  }
+
+  if (Object.keys(result).length === 0) {
+    return DIVISION_PINCODES_MAP["Mysuru"] || {};
+  }
+  return result;
 };
 
 // Flattened fallback lookup
 const ALL_PINCODE_OFFICES: Record<string, string[]> = {};
+Object.entries(PINCODE_TERRITORY_CATALOG).forEach(([pin, entry]) => {
+  ALL_PINCODE_OFFICES[pin] = entry.offices || [];
+});
 Object.values(DIVISION_PINCODES_MAP).forEach(divPins => {
   Object.entries(divPins).forEach(([pin, offices]) => {
     if (!ALL_PINCODE_OFFICES[pin]) ALL_PINCODE_OFFICES[pin] = offices;
@@ -870,15 +895,15 @@ export default function UpdateLeadModal({ lead, onClose, onSave, initialTab = 'o
                     >
                       {Object.keys(PINCODE_TERRITORY_CATALOG).map(pin => {
                         const entry = PINCODE_TERRITORY_CATALOG[pin];
-                        const firstOff = entry?.offices?.[0] ? ` — ${entry.offices[0].replace(/ (SO|BO|HO|GPO)$/, '')}` : '';
+                        const displayName = entry?.offices?.[0] || `Post Office (${entry?.division || pin})`;
                         return (
                           <option key={pin} value={pin}>
-                            {pin} ({entry?.division || 'Division'}){firstOff}
+                            {displayName} ({entry?.division || 'Division'})
                           </option>
                         );
                       })}
                       {!Object.keys(PINCODE_TERRITORY_CATALOG).includes(formData.pincode) && formData.pincode && (
-                        <option value={formData.pincode}>{formData.pincode} (Custom)</option>
+                        <option value={formData.pincode}>Custom Post Office</option>
                       )}
                     </select>
                   )}

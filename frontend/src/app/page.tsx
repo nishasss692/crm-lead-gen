@@ -21,6 +21,7 @@ import {
   Layers
 } from 'lucide-react';
 import { apiFetch, safeJson } from '@/lib/api';
+import { PINCODE_TERRITORY_CATALOG } from '@/lib/karnatakaTerritory';
 import {
   ResponsiveContainer,
   BarChart,
@@ -334,13 +335,19 @@ export default function MarketingExecutiveDashboard() {
     }));
   }, [chartViewMode, analytics, totalLeadsCount]);
 
-  // Top 10 Unique Pincodes for BarChart Visualization
+  // Top 10 Unique Post Offices for BarChart Visualization
   const topPincodesChartData = useMemo(() => {
-    return pincodes.slice(0, 10).map(p => ({
-      pincode: p.pincode,
-      total: p.total ?? p.total_leads ?? 0,
-      office_name: p.office_name || ''
-    }));
+    return pincodes.slice(0, 10).map(p => {
+      const resolved = p.office_name && !p.office_name.toLowerCase().startsWith('post office')
+        ? p.office_name
+        : (PINCODE_TERRITORY_CATALOG[p.pincode]?.offices?.[0] || p.office_name || `PO ${p.pincode}`);
+      const cleanOfficeName = resolved.replace(/ (SO|BO|HO|GPO)$/i, '');
+      return {
+        pincode: p.pincode,
+        office_name: cleanOfficeName,
+        total: p.total ?? p.total_leads ?? 0
+      };
+    });
   }, [pincodes]);
 
   // Filtered Pincodes for the bottom table based on search
@@ -349,7 +356,8 @@ export default function MarketingExecutiveDashboard() {
     const q = tableSearchQuery.toLowerCase().trim();
     return pincodes.filter(item => {
       const pinMatch = (item.pincode || '').toLowerCase().includes(q);
-      const nameMatch = (item.office_name || '').toLowerCase().includes(q);
+      const officeName = (item.office_name || PINCODE_TERRITORY_CATALOG[item.pincode]?.offices?.[0] || '').toLowerCase();
+      const nameMatch = officeName.includes(q);
       return pinMatch || nameMatch;
     });
   }, [pincodes, tableSearchQuery]);
@@ -365,19 +373,24 @@ export default function MarketingExecutiveDashboard() {
       "WILLING TO ONBOARD", "NOT WILLING TO ONBOARD", "ONBOARDED"
     ].join(',');
 
-    const rows = recordsToExport.map(p => [
-      `"${p.pincode}"`,
-      `"${(p.office_name || 'Post Office').replace(/"/g, '""')}"`,
-      p.total ?? p.total_leads ?? 0,
-      p.pending ?? 0,
-      p.contacted ?? 0,
-      p.interested ?? 0,
-      p.not_interested ?? 0,
-      p.follow_up_required ?? 0,
-      p.willing_to_onboard ?? 0,
-      p.not_willing_to_onboard ?? 0,
-      p.onboarded ?? 0
-    ].join(',')).join('\n');
+    const rows = recordsToExport.map(p => {
+      const resolved = p.office_name && !p.office_name.toLowerCase().startsWith('post office')
+        ? p.office_name
+        : (PINCODE_TERRITORY_CATALOG[p.pincode]?.offices?.[0] || p.office_name || 'Post Office');
+      return [
+        `"${p.pincode}"`,
+        `"${resolved.replace(/"/g, '""')}"`,
+        p.total ?? p.total_leads ?? 0,
+        p.pending ?? 0,
+        p.contacted ?? 0,
+        p.interested ?? 0,
+        p.not_interested ?? 0,
+        p.follow_up_required ?? 0,
+        p.willing_to_onboard ?? 0,
+        p.not_willing_to_onboard ?? 0,
+        p.onboarded ?? 0
+      ].join(',');
+    }).join('\n');
 
     const csv = `${headers}\n${rows}`;
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -669,15 +682,15 @@ export default function MarketingExecutiveDashboard() {
               </div>
               <div>
                 <h2 className="text-base font-bold text-[#1e3a8a]">
-                  Top Pincodes by Lead Volume
+                  Top Post Offices by Lead Volume
                 </h2>
                 <p className="text-xs text-slate-500 font-medium">
-                  Highest commercial volume territories {selectedDivision !== 'All Divisions' ? `in ${selectedDivision}` : 'across Circle'}
+                  Highest commercial volume post offices {selectedDivision !== 'All Divisions' ? `in ${selectedDivision}` : 'across Circle'}
                 </p>
               </div>
             </div>
             <span className="bg-blue-50 text-[#1e3a8a] text-xs font-bold px-3 py-1 rounded-full border border-blue-100 shrink-0">
-              Top {topPincodesChartData.length} PINs
+              Top {topPincodesChartData.length} POs
             </span>
           </div>
 
@@ -689,19 +702,23 @@ export default function MarketingExecutiveDashboard() {
               </div>
             ) : topPincodesChartData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 text-xs font-medium">
-                No pincode volume records available for the selected territory.
+                No post office volume records available for the selected territory.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topPincodesChartData} margin={{ top: 10, right: 15, left: -10, bottom: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis 
-                    dataKey="pincode" 
+                    dataKey="office_name" 
                     stroke="#64748b" 
-                    fontSize={11} 
+                    fontSize={10} 
                     tickLine={false}
                     axisLine={{ stroke: '#e2e8f0' }}
                     dy={8}
+                    interval={0}
+                    angle={-20}
+                    textAnchor="end"
+                    height={45}
                   />
                   <YAxis 
                     stroke="#64748b" 
@@ -723,7 +740,7 @@ export default function MarketingExecutiveDashboard() {
                       `${Number(value).toLocaleString()} leads`, 
                       item?.payload?.office_name ? item.payload.office_name : 'Volume'
                     ]}
-                    labelFormatter={(label) => `PIN: ${label}`}
+                    labelFormatter={(label) => `PO: ${label}`}
                   />
                   <Bar 
                     dataKey="total" 
@@ -737,8 +754,8 @@ export default function MarketingExecutiveDashboard() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span className="font-medium">Unique Territories Indexed: <strong className="text-slate-800 font-bold">{pincodes.length}</strong></span>
-            <span className="text-[11px] text-slate-400">Pincode Leaderboard</span>
+            <span className="font-medium">Unique Post Offices Indexed: <strong className="text-slate-800 font-bold">{pincodes.length}</strong></span>
+            <span className="text-[11px] text-slate-400">Post Office Leaderboard</span>
           </div>
         </div>
 
@@ -895,7 +912,7 @@ export default function MarketingExecutiveDashboard() {
               GEOGRAPHY LEADERBOARD
             </span>
             <h2 className="text-2xl font-bold font-serif text-[#1e3a8a] mt-0.5">
-              Pincode Performance
+              Post Office Performance
             </h2>
           </div>
 
@@ -906,7 +923,7 @@ export default function MarketingExecutiveDashboard() {
                 type="text"
                 value={tableSearchQuery}
                 onChange={(e) => setTableSearchQuery(e.target.value)}
-                placeholder="Search PIN or Post Office..."
+                placeholder="Search Post Office..."
                 className="w-full bg-slate-50 border border-slate-300 focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 placeholder-slate-400 outline-none transition-all shadow-2xs"
               />
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -935,7 +952,7 @@ export default function MarketingExecutiveDashboard() {
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead className="bg-[#114b79] text-white text-xs font-bold uppercase tracking-wider sticky top-0 z-10 shadow-xs">
               <tr>
-                <th scope="col" className="py-3.5 px-6 whitespace-nowrap">PINCODE / PO</th>
+                <th scope="col" className="py-3.5 px-6 whitespace-nowrap">POST OFFICE</th>
                 <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">TOTAL</th>
                 <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">PENDING</th>
                 <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">CONTACTED</th>
@@ -969,14 +986,18 @@ export default function MarketingExecutiveDashboard() {
                     key={item.pincode || idx} 
                     className="border-b border-gray-100 odd:bg-white even:bg-gray-50/60 hover:bg-blue-50/20 transition-colors"
                   >
-                    {/* Pincode & Post Office Name underneath */}
+                    {/* Post Office Name (Pincode hidden as requested, PO Name visible) */}
                     <td className="py-3.5 px-6 whitespace-nowrap">
-                      <div className="font-bold text-gray-900 text-sm font-mono leading-tight">
-                        {item.pincode}
-                      </div>
-                      <div className="text-xs font-semibold text-slate-700 mt-0.5 font-sans truncate max-w-[220px]" title={item.office_name || ''}>
-                        {item.office_name || 'Post Office'}
-                      </div>
+                      {(() => {
+                        const resolvedOffice = item.office_name && !item.office_name.toLowerCase().startsWith('post office')
+                          ? item.office_name
+                          : (PINCODE_TERRITORY_CATALOG[item.pincode]?.offices?.[0] || item.office_name || 'Post Office');
+                        return (
+                          <div className="font-bold text-slate-900 text-sm font-sans leading-tight truncate max-w-[260px]" title={resolvedOffice}>
+                            {resolvedOffice}
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     {/* TOTAL */}

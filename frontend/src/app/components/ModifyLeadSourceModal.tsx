@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Lead } from './LeadsTable';
 import { X, Check, AlertTriangle, Building2, MapPin } from 'lucide-react';
@@ -101,8 +101,24 @@ export default function ModifyLeadSourceModal({ lead, onClose, onSave }: ModifyL
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pincode, lead.division]);
 
-  // Catalog pincode options for quick selection
-  const catalogPincodes = Object.keys(PINCODE_TERRITORY_CATALOG);
+  // Categorized pincode options for quick selection from full 1,345 catalog
+  const { divisionPincodesList, otherPincodesList } = useMemo(() => {
+    const activeDiv = (lead.division || resolvedTerritory.division || '').trim().toLowerCase();
+    const divPins: string[] = [];
+    const otherPins: string[] = [];
+    for (const [pin, entry] of Object.entries(PINCODE_TERRITORY_CATALOG)) {
+      const entryDiv = (entry.division || '').trim().toLowerCase();
+      if (activeDiv && (entryDiv === activeDiv || entryDiv.includes(activeDiv) || activeDiv.includes(entryDiv))) {
+        divPins.push(pin);
+      } else {
+        otherPins.push(pin);
+      }
+    }
+    return {
+      divisionPincodesList: divPins.sort(),
+      otherPincodesList: otherPins.sort()
+    };
+  }, [lead.division, resolvedTerritory.division]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,17 +261,33 @@ export default function ModifyLeadSourceModal({ lead, onClose, onSave }: ModifyL
                   onChange={e => setPincode(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-bold text-slate-800 font-mono focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] outline-none shadow-2xs cursor-pointer"
                 >
-                  {catalogPincodes.map(pin => {
-                    const entry = PINCODE_TERRITORY_CATALOG[pin];
-                    const firstOff = entry?.offices?.[0] ? ` — ${entry.offices[0].replace(/ (SO|BO|HO|GPO)$/, '')}` : '';
-                    return (
-                      <option key={pin} value={pin}>
-                        {pin} ({entry?.division || 'Division'}){firstOff}
-                      </option>
-                    );
-                  })}
-                  {!catalogPincodes.includes(pincode) && pincode && (
-                    <option value={pincode}>{pincode} (Custom)</option>
+                  <option value="">-- Select Post Office --</option>
+                  {divisionPincodesList.length > 0 && (
+                    <optgroup label={`${lead.division || resolvedTerritory.division || 'Division'} Post Offices (${divisionPincodesList.length})`}>
+                      {divisionPincodesList.map(pin => {
+                        const entry = PINCODE_TERRITORY_CATALOG[pin];
+                        const poName = entry?.offices?.[0] || `Post Office (${entry?.division || pin})`;
+                        return (
+                          <option key={pin} value={pin}>
+                            {poName} ({entry?.division || 'Division'})
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  )}
+                  <optgroup label={divisionPincodesList.length > 0 ? `Other Karnataka Post Offices (${otherPincodesList.length})` : `All Karnataka Post Offices (${otherPincodesList.length})`}>
+                    {otherPincodesList.map(pin => {
+                      const entry = PINCODE_TERRITORY_CATALOG[pin];
+                      const poName = entry?.offices?.[0] || `Post Office (${entry?.division || pin})`;
+                      return (
+                        <option key={pin} value={pin}>
+                          {poName} ({entry?.division || 'Division'})
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                  {!PINCODE_TERRITORY_CATALOG[pincode] && pincode && (
+                    <option value={pincode}>Custom Post Office</option>
                   )}
                 </select>
               )}

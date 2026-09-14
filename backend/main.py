@@ -48,6 +48,7 @@ async def lifespan(app: FastAPI):
     load_ml_model()
     seed_test_users()
     cleanup_and_standardize_database()
+    sync_pincode_master_data()
     yield
 
 # 1. Setup & Config
@@ -619,6 +620,62 @@ def cleanup_and_standardize_database():
             db.commit()
     except Exception as e:
         print(f"[DB Standardize] Notice: {e}")
+
+def sync_pincode_master_data():
+    """Ensures all 1,345 Karnataka pincodes are present in the PincodeMaster table."""
+    try:
+        with SessionLocal() as db:
+            count = db.query(PincodeMaster).count()
+            if count < 1345:
+                csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "karnataka_pincodes_master.csv")
+                if not os.path.exists(csv_path):
+                    csv_path = "backend/karnataka_pincodes_master.csv"
+                if os.path.exists(csv_path):
+                    import csv
+                    print(f"[Pincode Master] Auto-syncing full dataset ({count} existing < 1345)...")
+                    canonical_div_map = {
+                        'bg east': 'BG East',
+                        'bg south': 'BG South',
+                        'bg west': 'BG West',
+                        'bg gpo': 'BG GPO',
+                        'bagalkot': 'Bagalkote',
+                        'shimoga': 'Shivamogga',
+                        'tumkur': 'Tumakuru',
+                        'davanagere': 'Davangere',
+                        'chikmagalur': 'Chikkamagaluru',
+                        'vijayapur': 'Vijayapura',
+                        'yadagiri': 'Yadgir',
+                        'kolar': 'Kolar'
+                    }
+                    with open(csv_path, "r", encoding="utf-8", errors="ignore") as f:
+                        reader = csv.DictReader(f)
+                        added = 0
+                        for row in reader:
+                            raw_pin = re.sub(r'\D', '', row.get("Pincode", ""))
+                            if len(raw_pin) != 6:
+                                continue
+                            pin = int(raw_pin)
+                            office_name = row.get("Office Name", "").strip()
+                            raw_div = row.get("Division", "").strip()
+                            region = row.get("Region", "").strip()
+                            division = canonical_div_map.get(raw_div.lower(), raw_div)
+                            existing = db.query(PincodeMaster).filter_by(pincode=pin).first()
+                            if existing:
+                                existing.office_name = office_name
+                                existing.division = division
+                                existing.region = region
+                            else:
+                                db.add(PincodeMaster(
+                                    pincode=pin,
+                                    office_name=office_name,
+                                    division=division,
+                                    region=region
+                                ))
+                                added += 1
+                        db.commit()
+                        print(f"[Pincode Master] Auto-sync completed. Added {added} pincodes. Total: {db.query(PincodeMaster).count()}")
+    except Exception as e:
+        print(f"[Pincode Master] Startup sync notice: {e}")
 
 def sanitize_contact_phone(phone_str: Optional[str]) -> str:
     """Returns valid 10-digit Indian mobile number starting with 6-9, or empty string if invalid/dummy."""
@@ -2699,66 +2756,22 @@ def get_analytics(
     }
 
 # 6.5 Pincode Performance Endpoint (Detailed Breakdown by Pincode with SQLAlchemy Aggregations)
-PINCODE_OFFICE_MAP = {
-    "560001": "Bengaluru GPO / Raj Bhavan",
-    "560002": "Bengaluru City / Town Hall",
-    "560003": "Malleswaram",
-    "560004": "Basavanagudi",
-    "560005": "Frazer Town",
-    "560008": "HAL 2nd Stage / Indiranagar",
-    "560009": "K.G. Road / Majestic",
-    "560010": "Rajajinagar",
-    "560011": "Jayanagar",
-    "560017": "HAL Old Airport Road",
-    "560020": "Seshadripuram",
-    "560022": "Yeshwanthpur Industrial Suburb",
-    "560025": "Richmond Town",
-    "560027": "Lalbagh / Sudhamanagar",
-    "560034": "Koramangala",
-    "560038": "Indiranagar 100ft Road",
-    "560058": "Peenya Industrial Area Phase I-IV",
-    "560066": "Whitefield",
-    "560068": "Madivala",
-    "560076": "BTM Layout 2nd Stage",
-    "560078": "JP Nagar",
-    "560085": "Banashankari 3rd Stage",
-    "560092": "Yelahanka / Byatarayanapura",
-    "560099": "Bommasandra Industrial Area",
-    "560100": "Electronic City Phase I & II",
-    "561203": "Doddaballapur KIADB",
-    "570001": "Mysuru Head Post Office",
-    "570002": "Mysuru Fort",
-    "570004": "Nazarbad / Mysuru",
-    "570008": "Chamundipuram / Mysuru South",
-    "570016": "Belagola Industrial Area / Metagalli",
-    "570018": "Hootagalli Industrial Area",
-    "570020": "Kuvempunagar",
-    "570023": "Saraswathipuram",
-    "570027": "Hebbal Industrial Area",
-    "571301": "Nanjangud Industrial Area",
-    "571313": "Chamarajanagar",
-    "572101": "Tumakuru Head Post Office",
-    "572106": "Antharasanahalli / Tumakuru",
-    "573201": "Hassan Head Post Office",
-    "574118": "Manipal",
-    "575001": "Mangaluru Head Post Office",
-    "575003": "Kodialbail / Mangaluru",
-    "576101": "Udupi Head Post Office",
-    "577001": "Davanagere Head Post Office",
-    "577002": "Davanagere City",
-    "577201": "Shivamogga Head Post Office",
-    "580001": "Dharwad Head Post Office",
-    "580020": "Hubballi Main",
-    "580030": "Vidyanagar / Hubballi",
-    "581110": "Haveri",
-    "583101": "Ballari Head Post Office",
-    "585101": "Kalaburagi Head Post Office",
-    "586101": "Vijayapura Head Post Office",
-    "587101": "Bagalkote Head Post Office",
-    "590001": "Belagavi Head Post Office",
-    "590014": "Machhe Industrial Area / Belagavi",
-    "591304": "Gokak Falls"
-}
+PINCODE_OFFICE_MAP: Dict[str, str] = {}
+try:
+    _csv_file = os.path.join(BASE_DIR, "karnataka_pincodes_master.csv")
+    if not os.path.exists(_csv_file):
+        _csv_file = os.path.join(os.path.dirname(BASE_DIR), "backend", "karnataka_pincodes_master.csv")
+    if os.path.exists(_csv_file):
+        import csv as _csv
+        with open(_csv_file, "r", encoding="utf-8", errors="ignore") as _f:
+            for _row in _csv.DictReader(_f):
+                _raw_pin = re.sub(r'\D', '', _row.get("Pincode", ""))
+                _off_name = _row.get("Office Name", "").strip()
+                if len(_raw_pin) == 6 and _off_name:
+                    PINCODE_OFFICE_MAP[_raw_pin] = _off_name
+except Exception as _e:
+    print(f"[PINCODE_OFFICE_MAP] Initialization notice: {_e}")
+
 
 @app.get("/api/analytics/pincodes")
 def get_pincode_performance(
@@ -2873,8 +2886,8 @@ def get_pincode_performance(
             continue
             
         office = (r.office_name or "").strip()
-        if not office or office.lower() in ['nan', 'none', 'null', '']:
-            office = PINCODE_OFFICE_MAP.get(pin, f"Post Office - {pin}")
+        if not office or office.lower() in ['nan', 'none', 'null', ''] or office.lower().startswith('post office'):
+            office = PINCODE_OFFICE_MAP.get(pin, PINCODE_OFFICE_MAP.get(clean_pin, f"PO {pin}"))
         
         pincode_list.append({
             "pincode": pin,
@@ -3167,14 +3180,30 @@ def delete_lead(lead_id: int, db: Session = Depends(get_db), current_user: dict 
 
 # 9. Pincode Post Offices Helper Endpoint
 @app.get("/api/pincode-offices/{pincode}")
-def get_pincode_offices(pincode: str):
+def get_pincode_offices(pincode: str, db: Session = Depends(get_db)):
     clean_pin = re.sub(r'\D', '', pincode.strip())
     if not clean_pin or len(clean_pin) != 6:
         return {"pincode": pincode, "offices": []}
 
-    # First check pre-mapped office names
     offices = []
-    if clean_pin in PINCODE_OFFICE_MAP:
+    # 1. Query PincodeMaster directly from DB (all 1,345 records)
+    try:
+        pin_int = int(clean_pin)
+        records = db.query(PincodeMaster).filter(
+            or_(
+                PincodeMaster.pincode == pin_int,
+                func.cast(PincodeMaster.pincode, String) == clean_pin
+            )
+        ).all()
+        for r in records:
+            name = (r.office_name or "").strip()
+            if name and name not in offices:
+                offices.append(name)
+    except Exception:
+        pass
+
+    # 2. Check pre-mapped office names if DB had no matches
+    if not offices and clean_pin in PINCODE_OFFICE_MAP:
         mapped = PINCODE_OFFICE_MAP[clean_pin]
         # split combined labels like "Bengaluru GPO / Raj Bhavan"
         for part in mapped.split("/"):
@@ -3182,25 +3211,26 @@ def get_pincode_offices(pincode: str):
             if p and p not in offices:
                 offices.append(f"{p} SO" if not p.endswith(("SO", "BO", "HO", "GPO")) else p)
 
-    # If external request is possible, fetch from India Post API with timeout
-    try:
-        import urllib.request
-        req = urllib.request.Request(
-            f"https://api.postalpincode.in/pincode/{clean_pin}",
-            headers={"User-Agent": "Mozilla/5.0"}
-        )
-        with urllib.request.urlopen(req, timeout=2.5) as resp:
-            data = json.loads(resp.read().decode())
-            if isinstance(data, list) and len(data) > 0 and data[0].get("Status") == "Success":
-                po_list = data[0].get("PostOffice", [])
-                api_offices = [
-                    f"{po.get('Name')} {'SO' if po.get('BranchType') == 'Sub Post Office' else 'BO' if po.get('BranchType') == 'Branch Post Office' else 'HO' if po.get('BranchType') == 'Head Post Office' else ''}".strip()
-                    for po in po_list if po.get("Name")
-                ]
-                if api_offices:
-                    return {"pincode": clean_pin, "offices": api_offices}
-    except Exception:
-        pass
+    # 3. If external request is possible, fetch from India Post API with timeout
+    if not offices:
+        try:
+            import urllib.request
+            req = urllib.request.Request(
+                f"https://api.postalpincode.in/pincode/{clean_pin}",
+                headers={"User-Agent": "Mozilla/5.0"}
+            )
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                data = json.loads(resp.read().decode())
+                if isinstance(data, list) and len(data) > 0 and data[0].get("Status") == "Success":
+                    po_list = data[0].get("PostOffice", [])
+                    api_offices = [
+                        f"{po.get('Name')} {'SO' if po.get('BranchType') == 'Sub Post Office' else 'BO' if po.get('BranchType') == 'Branch Post Office' else 'HO' if po.get('BranchType') == 'Head Post Office' else ''}".strip()
+                        for po in po_list if po.get("Name")
+                    ]
+                    if api_offices:
+                        return {"pincode": clean_pin, "offices": api_offices}
+        except Exception:
+            pass
 
     if not offices:
         offices = [f"Post Office - {clean_pin}"]
@@ -3396,22 +3426,49 @@ def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
     """
     canonical_div = normalize_division_name(division_name)
     clean_div = canonical_div or division_name.replace(" Division", "").strip()
-    
-    # 1. Match from pre-configured division pincode mapping
-    matched_data = DIVISION_PINCODES_DATA.get(canonical_div) or DIVISION_PINCODES_DATA.get(clean_div) or DIVISION_PINCODES_DATA.get(division_name)
-    if not matched_data:
-        for k, v in DIVISION_PINCODES_DATA.items():
-            if k.lower() == clean_div.lower() or k.lower() in clean_div.lower() or clean_div.lower() in k.lower():
-                matched_data = v
-                clean_div = k
-                break
+    aliases = get_division_aliases(division_name)
+    alias_set = set(a.lower() for a in aliases)
+    if clean_div.lower():
+        alias_set.add(clean_div.lower())
+    if canonical_div:
+        alias_set.add(canonical_div.lower())
 
-    pins_dict: Dict[str, List[str]] = dict(matched_data) if matched_data else {}
+    pins_dict: Dict[str, List[str]] = {}
 
-    # 2. Augment with any unique pincodes present in database for this division
+    # 1. Query PincodeMaster dynamically from DB (all 1,345 records)
     try:
-        aliases = get_division_aliases(division_name)
-        div_conds = [func.lower(func.trim(Lead.division)) == a for a in aliases]
+        conditions = [func.lower(func.trim(PincodeMaster.division)) == a for a in alias_set]
+        if clean_div:
+            conditions.append(func.lower(func.trim(PincodeMaster.division)).like(f"%{clean_div.lower()}%"))
+        
+        records = db.query(PincodeMaster).filter(
+            or_(*conditions)
+        ).order_by(PincodeMaster.pincode).all()
+
+        for rec in records:
+            pin_str = str(rec.pincode).zfill(6)
+            off = (rec.office_name or "").strip()
+            if pin_str not in pins_dict:
+                pins_dict[pin_str] = []
+            if off and off not in pins_dict[pin_str]:
+                pins_dict[pin_str].append(off)
+    except Exception as e:
+        print(f"[Division Pincodes] DB query note: {e}")
+
+    # 2. Augment with pre-configured division pincode mapping if present
+    matched_data = DIVISION_PINCODES_DATA.get(canonical_div) or DIVISION_PINCODES_DATA.get(clean_div) or DIVISION_PINCODES_DATA.get(division_name)
+    if matched_data:
+        for pin, offices in matched_data.items():
+            if pin not in pins_dict:
+                pins_dict[pin] = list(offices)
+            else:
+                for off in offices:
+                    if off not in pins_dict[pin]:
+                        pins_dict[pin].append(off)
+
+    # 3. Augment with unique pincodes in database for this division from leads
+    try:
+        div_conds = [func.lower(func.trim(Lead.division)) == a for a in alias_set]
         if clean_div:
             div_conds.append(func.lower(func.trim(Lead.division)).like(f"%{clean_div.lower()}%"))
         db_records = db.query(Lead.pincode).filter(
@@ -3426,7 +3483,6 @@ def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"[Division Pincodes] DB augmentation note: {e}")
 
-
     # Fallback to Mysuru if division not found
     if not pins_dict:
         pins_dict = DIVISION_PINCODES_DATA.get("Mysuru", {})
@@ -3437,6 +3493,52 @@ def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
         "pincodes": items,
         "pincode_list": [item["pincode"] for item in items]
     }
+
+@app.get("/api/pincodes")
+def get_all_pincodes(
+    division: Optional[str] = None,
+    region: Optional[str] = None,
+    search: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Returns full master catalog of Karnataka pincodes (all 1,345 records),
+    optionally filtered by division, region, or search keyword.
+    """
+    query = db.query(PincodeMaster)
+    if division and division.lower() not in ["all", "all divisions", ""]:
+        canon_div = normalize_division_name(division)
+        clean = canon_div or division.replace(" Division", "").strip()
+        aliases = get_division_aliases(division)
+        alias_set = set(a.lower() for a in aliases)
+        alias_set.add(clean.lower())
+        query = query.filter(
+            or_(
+                func.lower(func.trim(PincodeMaster.division)).in_(list(alias_set)),
+                func.lower(func.trim(PincodeMaster.division)).like(f"%{clean.lower()}%")
+            )
+        )
+    if region and region.lower() not in ["all", "all regions", ""]:
+        query = query.filter(func.lower(func.trim(PincodeMaster.region)).like(f"%{region.lower()}%"))
+    if search:
+        s = search.strip().lower()
+        query = query.filter(
+            or_(
+                func.cast(PincodeMaster.pincode, String).like(f"%{s}%"),
+                func.lower(PincodeMaster.office_name).like(f"%{s}%"),
+                func.lower(PincodeMaster.division).like(f"%{s}%")
+            )
+        )
+    records = query.order_by(PincodeMaster.pincode).all()
+    return [
+        {
+            "pincode": str(r.pincode).zfill(6),
+            "office_name": r.office_name,
+            "division": r.division,
+            "region": r.region
+        }
+        for r in records
+    ]
 
 # 10. List Marketing Executives Endpoint
 @app.get("/api/mes")

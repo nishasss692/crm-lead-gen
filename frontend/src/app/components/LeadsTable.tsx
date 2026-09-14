@@ -16,6 +16,7 @@ import {
   Building2 
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { PINCODE_TERRITORY_CATALOG } from '@/lib/karnatakaTerritory';
 
 export interface Lead {
   id: number;
@@ -307,7 +308,7 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                 <th className="px-4 py-3.5 font-semibold text-center w-12">#</th>
                 <th className="px-4 py-3.5 font-semibold text-center w-24">Actions</th>
                 <th className="px-5 py-3.5 font-semibold min-w-[240px]">Lead / Exporter</th>
-                <th className="px-4 py-3.5 font-semibold min-w-[140px]">Location & Pincode</th>
+                <th className="px-4 py-3.5 font-semibold min-w-[140px]">Post Office</th>
                 <th className="px-4 py-3.5 font-semibold min-w-[130px]">Contact Person</th>
                 <th className="px-4 py-3.5 font-semibold min-w-[140px]">Product / Provider</th>
                 <th className="px-4 py-3.5 font-semibold min-w-[130px]">ME Name / Mobile</th>
@@ -325,7 +326,14 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                 const meMob = sanitizeIndianMobile(rawMeMob) || '—';
                 const contactPerson = sanitizeText(lead.customerMet) || '—';
                 const contactPhone = sanitizeIndianMobile(lead.contactNumber) || '—';
-                const locationPo = lead.poName || lead.po_name || (lead.pincode ? `Post Office - ${lead.pincode}` : (lead.division || '—'));
+                const cleanPin = (lead.pincode || '').trim();
+                const resolvedEntry = cleanPin ? PINCODE_TERRITORY_CATALOG[cleanPin] : null;
+                const resolvedOfficeName = resolvedEntry?.offices?.[0];
+                const locationPo = (lead.poName && !lead.poName.toLowerCase().startsWith('post office'))
+                  ? lead.poName
+                  : (lead.po_name && !lead.po_name.toLowerCase().startsWith('post office'))
+                  ? lead.po_name
+                  : resolvedOfficeName || lead.division || '—';
 
                 return (
                   <tr 
@@ -372,13 +380,10 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                       </div>
                     </td>
                     
-                    {/* 4. Location & Pincode */}
+                    {/* 4. Post Office (Pincode hidden as requested, PO Name visible) */}
                     <td className="px-4 py-3.5 text-left">
-                      <div className="text-xs font-medium text-slate-800 leading-tight">
+                      <div className="text-xs font-semibold text-slate-800 leading-tight">
                         {locationPo}
-                      </div>
-                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                        {lead.pincode || '—'}
                       </div>
                     </td>
 

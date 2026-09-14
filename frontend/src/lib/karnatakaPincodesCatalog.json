@@ -1,0 +1,9417 @@
+{
+  "560001": {
+    "division": "BG GPO",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bengaluru G.P.O."
+    ]
+  },
+  "560005": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Fraser Town S.O"
+    ]
+  },
+  "560006": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "J C Nagar S.O"
+    ]
+  },
+  "560007": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Agram S.O"
+    ]
+  },
+  "560008": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "H A L II Stage H.O"
+    ]
+  },
+  "560016": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Doorvaninagar S.O"
+    ]
+  },
+  "560017": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Vimanapura S.O"
+    ]
+  },
+  "560024": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "H A Farm S.O"
+    ]
+  },
+  "560025": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Museum Road S.O"
+    ]
+  },
+  "560032": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "R T Nagar H.O"
+    ]
+  },
+  "560033": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Maruthi Sevanagar S.O"
+    ]
+  },
+  "560036": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Krishnarajapuram S.O"
+    ]
+  },
+  "560037": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Marathahalli Colony S.O"
+    ]
+  },
+  "560038": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Indiranagar S.O (Bengaluru)"
+    ]
+  },
+  "560042": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Sivan Chetty Gardens S.O"
+    ]
+  },
+  "560043": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kalyananagar S.O"
+    ]
+  },
+  "560045": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Arabic College S.O"
+    ]
+  },
+  "560046": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Benson Town S.O"
+    ]
+  },
+  "560047": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Viveknagar S.O (Bengaluru)"
+    ]
+  },
+  "560048": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Mahadevapura S.O"
+    ]
+  },
+  "560049": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Virgonagar S.O"
+    ]
+  },
+  "560051": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "H K P Road S.O"
+    ]
+  },
+  "560063": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "A F Station Yelahanka S.O"
+    ]
+  },
+  "560064": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Yelahanka S.O"
+    ]
+  },
+  "560065": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "G K V K S.O"
+    ]
+  },
+  "560066": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Whitefield S.O"
+    ]
+  },
+  "560067": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kadugodi S.O"
+    ]
+  },
+  "560071": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Domlur S.O"
+    ]
+  },
+  "560075": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "New Thippasandra S.O"
+    ]
+  },
+  "560077": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Dr. Shivarama Karanth Nagar S.O"
+    ]
+  },
+  "560080": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Sadashivanagar S.O"
+    ]
+  },
+  "560084": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "St. Thomas Town S.O"
+    ]
+  },
+  "560087": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Vartur S.O"
+    ]
+  },
+  "560092": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Sahakaranagar S.O"
+    ]
+  },
+  "560093": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "C V Raman Nagar S.O"
+    ]
+  },
+  "560094": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "R M V Extension II Stage S.O"
+    ]
+  },
+  "560103": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bellandur S.O"
+    ]
+  },
+  "560113": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Horamavu S.O"
+    ]
+  },
+  "560115": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kannamangala S.O"
+    ]
+  },
+  "560117": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Doddadunnasandra S.O"
+    ]
+  },
+  "560300": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bengaluru International Airport S.O"
+    ]
+  },
+  "560004": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Basavanagudi H.O"
+    ]
+  },
+  "560011": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Jayangar III Block S.O"
+    ]
+  },
+  "560018": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Chamrajpet S.O (Bengaluru)"
+    ]
+  },
+  "560026": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Governmemnt Electric Factory S.O"
+    ]
+  },
+  "560027": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Wilson Garden S.O"
+    ]
+  },
+  "560029": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Dharmaram College S.O"
+    ]
+  },
+  "560030": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Adugodi S.O"
+    ]
+  },
+  "560034": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Koramangala S.O"
+    ]
+  },
+  "560035": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Carmelram S.O"
+    ]
+  },
+  "560041": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Jayanagar H.O"
+    ]
+  },
+  "560050": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Banashankari S.O"
+    ]
+  },
+  "560053": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Chickpet S.O"
+    ]
+  },
+  "560056": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bnagalore Viswavidalaya S.O"
+    ]
+  },
+  "560059": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Rv Niketan S.O"
+    ]
+  },
+  "560060": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kengeri S.O"
+    ]
+  },
+  "560061": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Subramanyapura S.O"
+    ]
+  },
+  "560062": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Doddakallasandra S.O"
+    ]
+  },
+  "560068": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bommanahalli S.O (Bengaluru)"
+    ]
+  },
+  "560070": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "B Sk II Stage S.O"
+    ]
+  },
+  "560074": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kumbalagodu S.O"
+    ]
+  },
+  "560076": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bannerghatta Road S.O"
+    ]
+  },
+  "560078": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "J P Nagar S.O"
+    ]
+  },
+  "560081": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Chandapura S.O"
+    ]
+  },
+  "560082": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Udaypura S.O"
+    ]
+  },
+  "560083": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bannerghatta S.O"
+    ]
+  },
+  "560085": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Banashankari III Stage S.O"
+    ]
+  },
+  "560095": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Koramangala VI Bk S.O"
+    ]
+  },
+  "560098": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Rajarajeshwarinagar S.O"
+    ]
+  },
+  "560099": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bommasandra Industrial Estate S.O"
+    ]
+  },
+  "560100": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Electronics City S.O"
+    ]
+  },
+  "560102": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "HSR Layout S.O"
+    ]
+  },
+  "560105": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Jigani S.O"
+    ]
+  },
+  "560108": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Anjanapura S.O"
+    ]
+  },
+  "560109": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Thalaghattapura S.O"
+    ]
+  },
+  "560110": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Ullalu Upanagar S.O"
+    ]
+  },
+  "560111": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kumaraswamy Layout S.O"
+    ]
+  },
+  "560114": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Begur"
+    ]
+  },
+  "560116": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kaggalipura P.O"
+    ]
+  },
+  "560500": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "CPC ITD BNPL booking HUB"
+    ]
+  },
+  "560002": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bengaluru City S.O"
+    ]
+  },
+  "560003": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Malleswaram S.O"
+    ]
+  },
+  "560009": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "K. G. Road S.O"
+    ]
+  },
+  "560010": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Rajajinagar H.O"
+    ]
+  },
+  "560012": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Science Institute S.O"
+    ]
+  },
+  "560013": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Jalahalli H.O"
+    ]
+  },
+  "560015": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Jalahalli West S.O"
+    ]
+  },
+  "560020": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Seshadripuram S.O"
+    ]
+  },
+  "560021": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Srirampuram S.O"
+    ]
+  },
+  "560022": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Yeswanthpura S.O"
+    ]
+  },
+  "560023": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Magadi Road S.O"
+    ]
+  },
+  "560040": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Vijayanagar S.O (Bengaluru)"
+    ]
+  },
+  "560054": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Msrit S.O"
+    ]
+  },
+  "560055": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Malleswaram West S.O"
+    ]
+  },
+  "560057": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Peenya Dasarahalli S.O"
+    ]
+  },
+  "560058": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Peenya Small Industries S.O"
+    ]
+  },
+  "560072": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Nagarbhavi S.O"
+    ]
+  },
+  "560073": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Nagasandra S.O (Bengaluru)"
+    ]
+  },
+  "560079": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Basaveshwaranagar S.O"
+    ]
+  },
+  "560086": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Mahalakshmipuram Layout S.O"
+    ]
+  },
+  "560088": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Hessarghatta S.O"
+    ]
+  },
+  "560089": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Hessarghatta Lake S.O"
+    ]
+  },
+  "560090": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Chikkabanavara S.O"
+    ]
+  },
+  "560091": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Viswaneedam S.O"
+    ]
+  },
+  "560096": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Nandinilayout S.O"
+    ]
+  },
+  "560097": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Vidyaranyapura S.O"
+    ]
+  },
+  "560104": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Hampinagar S.O"
+    ]
+  },
+  "560107": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Achitnagar S.O"
+    ]
+  },
+  "560112": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kodigehalli S.O"
+    ]
+  },
+  "561101": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kudur S.O"
+    ]
+  },
+  "561201": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Veeregowdanadoddi S.O"
+    ]
+  },
+  "561203": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Dodballapura S.O"
+    ]
+  },
+  "561204": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Doddabelavangala S.O"
+    ]
+  },
+  "561205": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Melekote S.O"
+    ]
+  },
+  "562106": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Anekal S.O"
+    ]
+  },
+  "562107": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Attibele S.O"
+    ]
+  },
+  "562108": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bevur S.O (Ramanagar)"
+    ]
+  },
+  "562109": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bidadi S.O"
+    ]
+  },
+  "562110": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Devanahalli S.O"
+    ]
+  },
+  "562111": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Dobbespet S.O"
+    ]
+  },
+  "562112": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Harohalli S.O"
+    ]
+  },
+  "562114": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Hoskote S.O"
+    ]
+  },
+  "562117": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kanakapura S.O"
+    ]
+  },
+  "562119": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kodihalli S.O"
+    ]
+  },
+  "562120": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Magadi S.O"
+    ]
+  },
+  "562121": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Maralavadi S.O"
+    ]
+  },
+  "562122": {
+    "division": "Kolar",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Nandagudi S.O"
+    ]
+  },
+  "562123": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Nelamangala S.O"
+    ]
+  },
+  "562125": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Sarjapura S.O"
+    ]
+  },
+  "562126": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Sathanur S.O"
+    ]
+  },
+  "562127": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Solur S.O"
+    ]
+  },
+  "562128": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Sugganahalli S.O"
+    ]
+  },
+  "562129": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Sulebele S.O"
+    ]
+  },
+  "562130": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Tavarekere S.O (Bengaluru)"
+    ]
+  },
+  "562131": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Thippasandra S.O"
+    ]
+  },
+  "562132": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Tyamagondlu S.O"
+    ]
+  },
+  "562135": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Vijayapura S.O"
+    ]
+  },
+  "562138": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Honganur S.O"
+    ]
+  },
+  "562149": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bagalur S.O (Bengaluru)"
+    ]
+  },
+  "562157": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Bettahalsur S.O"
+    ]
+  },
+  "562159": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Ramanagaram S.O"
+    ]
+  },
+  "562160": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Channapatna H.O"
+    ]
+  },
+  "562161": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Government Silk Farm S.O"
+    ]
+  },
+  "562162": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Madanayakanahalli S.O"
+    ]
+  },
+  "562163": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Nagadenahalli S.O"
+    ]
+  },
+  "562164": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Avathi S.O"
+    ]
+  },
+  "562165": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Budigere S.O"
+    ]
+  },
+  "587101": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bagalkot H.O"
+    ]
+  },
+  "587102": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gaddankeri Cross S.O"
+    ]
+  },
+  "587103": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bagalkot Navanagar S.O"
+    ]
+  },
+  "587104": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bagalkot UHS Campus S.O"
+    ]
+  },
+  "587111": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bagalkot Alokudyog S.O"
+    ]
+  },
+  "587112": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Amingad S.O"
+    ]
+  },
+  "587113": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagali S.O"
+    ]
+  },
+  "587114": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belur S.O (Bagalkot)"
+    ]
+  },
+  "587115": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bevur S.O (Bagalkot)"
+    ]
+  },
+  "587116": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bilgi S.O (Bagalkot)"
+    ]
+  },
+  "587117": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Galagali S.O"
+    ]
+  },
+  "587118": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hungund S.O"
+    ]
+  },
+  "587119": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hunnur S.O"
+    ]
+  },
+  "587120": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kamatgi S.O"
+    ]
+  },
+  "587121": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Konnur S.O (Bagalkot)"
+    ]
+  },
+  "587122": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Lokapur S.O"
+    ]
+  },
+  "587124": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sulebhavi S.O"
+    ]
+  },
+  "587125": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ilkal S.O"
+    ]
+  },
+  "587154": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ilkal  Alampurpet S.O"
+    ]
+  },
+  "587155": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kulgeri Cross S.O"
+    ]
+  },
+  "587156": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shirur S.O"
+    ]
+  },
+  "587201": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Badami S.O"
+    ]
+  },
+  "587202": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gudur S.O (Bagalkot)"
+    ]
+  },
+  "587203": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Guledgudd S.O"
+    ]
+  },
+  "587204": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kaladgi S.O"
+    ]
+  },
+  "587205": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Katageri S.O"
+    ]
+  },
+  "587206": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kerur S.O"
+    ]
+  },
+  "587207": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Rampur S.O (Bagalkot)"
+    ]
+  },
+  "587301": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Jamkhandi H.O"
+    ]
+  },
+  "587311": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Banahatti S.O"
+    ]
+  },
+  "587312": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mahalingpur S.O"
+    ]
+  },
+  "587313": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mudhol (Bagalkot) S.O"
+    ]
+  },
+  "587314": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Rabkavi S.O"
+    ]
+  },
+  "587315": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Terdal S.O"
+    ]
+  },
+  "587316": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sameerwadi S.O"
+    ]
+  },
+  "587330": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Savalagi S.O"
+    ]
+  },
+  "587331": {
+    "division": "Bagalkote",
+    "region": "North Karnataka Region",
+    "offices": [
+      "HIPPARGI SO"
+    ]
+  },
+  "583101": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ballari H.O"
+    ]
+  },
+  "583102": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ballari Cowl Bazar S.O"
+    ]
+  },
+  "583103": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ballari Gandhinagar S.O"
+    ]
+  },
+  "583104": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ballari Cantonment S.O"
+    ]
+  },
+  "583105": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ballari Jnanasagara S.O"
+    ]
+  },
+  "583111": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chellakurki S.O"
+    ]
+  },
+  "583112": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Deogiri S.O"
+    ]
+  },
+  "583113": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Emmiganur S.O"
+    ]
+  },
+  "583114": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hatcholi S.O"
+    ]
+  },
+  "583115": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kudathini S.O"
+    ]
+  },
+  "583116": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kurugodu S.O"
+    ]
+  },
+  "583117": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Moka S.O"
+    ]
+  },
+  "583118": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "D T Ship S.O"
+    ]
+  },
+  "583119": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sandur S.O"
+    ]
+  },
+  "583120": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sirigere S.O(Ballari)"
+    ]
+  },
+  "583121": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Siruguppa S.O"
+    ]
+  },
+  "583122": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tekkalakota S.O"
+    ]
+  },
+  "583123": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Toranagallu S.O"
+    ]
+  },
+  "583124": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yeshwantnagar S.O(Ballari)"
+    ]
+  },
+  "583125": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Arasikere S.O"
+    ]
+  },
+  "583126": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chikkajogihalli S.O"
+    ]
+  },
+  "583127": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chigatere S.O"
+    ]
+  },
+  "583128": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Choranur S.O"
+    ]
+  },
+  "583129": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Devalapura S.O(Ballari)"
+    ]
+  },
+  "583130": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gudekota S.O"
+    ]
+  },
+  "583131": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Harapanahalli S.O"
+    ]
+  },
+  "583132": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kampli S.O"
+    ]
+  },
+  "583134": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kottur S.O(Ballari)"
+    ]
+  },
+  "583135": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kudligi S.O"
+    ]
+  },
+  "583136": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Oojein S.O"
+    ]
+  },
+  "583137": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Teligi S.O"
+    ]
+  },
+  "583152": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ballari Thermal Power Station S.O"
+    ]
+  },
+  "583153": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shankar Hill Town Colony S.O."
+    ]
+  },
+  "583154": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Karur SO"
+    ]
+  },
+  "583155": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kolur S.O"
+    ]
+  },
+  "583201": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hosapete H.O"
+    ]
+  },
+  "583203": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hosapete N C C S.O"
+    ]
+  },
+  "583211": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chitwadgi S.O"
+    ]
+  },
+  "583212": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hagaribommanahalli S.O"
+    ]
+  },
+  "583213": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Halavagalu S.O"
+    ]
+  },
+  "583214": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hampasagara S.O"
+    ]
+  },
+  "583215": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hampi Power House S.O"
+    ]
+  },
+  "583216": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hirehadagali S.O"
+    ]
+  },
+  "583217": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Holalu S.O"
+    ]
+  },
+  "583218": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hosahalli S.O"
+    ]
+  },
+  "583219": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Huvinahadagali S.O"
+    ]
+  },
+  "583220": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ittigi S.O"
+    ]
+  },
+  "583221": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kamalapura S.O"
+    ]
+  },
+  "583222": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mariammanahalli S.O"
+    ]
+  },
+  "583223": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Papinayakanahalli S.O"
+    ]
+  },
+  "583224": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Thambrahalli S.O"
+    ]
+  },
+  "583225": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "T B Dam S.O"
+    ]
+  },
+  "583239": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hampi S.O"
+    ]
+  },
+  "583275": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Vidyanagar S.O(Ballari)"
+    ]
+  },
+  "583276": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "K U Campus S.O"
+    ]
+  },
+  "590001": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagavi H.O"
+    ]
+  },
+  "590003": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagavi Shahapur S.O"
+    ]
+  },
+  "590005": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagavi M. Vadgaon S.O"
+    ]
+  },
+  "590006": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tilakwadi S.O"
+    ]
+  },
+  "590008": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Udyambag S.O"
+    ]
+  },
+  "590009": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagavi Records MLI S.O"
+    ]
+  },
+  "590010": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagavi Nehru Nagar S.O"
+    ]
+  },
+  "590011": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hindawadi S.O"
+    ]
+  },
+  "590014": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Peeranwadi S.O"
+    ]
+  },
+  "590015": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kanabargi S.O"
+    ]
+  },
+  "590016": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagavi Shivaji Nagar S.O"
+    ]
+  },
+  "590017": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagavi MalMaruti Extension S.O"
+    ]
+  },
+  "590018": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "VTU Campus Belagavi S.O"
+    ]
+  },
+  "590019": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagavi Doordarshan Nagar S.O"
+    ]
+  },
+  "590020": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Suvarna Soudha Belagavi S.O"
+    ]
+  },
+  "591102": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bailhongal H.O"
+    ]
+  },
+  "591103": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Balekundri S.O"
+    ]
+  },
+  "591104": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belvadi S.O"
+    ]
+  },
+  "591106": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bidi S.O"
+    ]
+  },
+  "591108": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hindalga S.O"
+    ]
+  },
+  "591109": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hirebagewadi S.O"
+    ]
+  },
+  "591110": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hirekumbi S.O"
+    ]
+  },
+  "591111": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hosur S.O (Belagavi)"
+    ]
+  },
+  "591112": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Itagi S.O"
+    ]
+  },
+  "591113": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kakati S.O"
+    ]
+  },
+  "591114": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Katkol S.O"
+    ]
+  },
+  "591115": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kittur S.O"
+    ]
+  },
+  "591117": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Manoli S.O"
+    ]
+  },
+  "591118": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "M.K.Hubballi S.O"
+    ]
+  },
+  "591119": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Murgod S.O"
+    ]
+  },
+  "591120": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nandgad S.O"
+    ]
+  },
+  "591121": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nesargi S.O"
+    ]
+  },
+  "591123": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ramdurg H.O"
+    ]
+  },
+  "591124": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sambra S.O"
+    ]
+  },
+  "591125": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sampgaon S.O"
+    ]
+  },
+  "591126": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Saundatti S.O"
+    ]
+  },
+  "591127": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sureban S.O"
+    ]
+  },
+  "591128": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Uchgaon S.O"
+    ]
+  },
+  "591129": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yargatti S.O"
+    ]
+  },
+  "591130": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Salahalli S.O"
+    ]
+  },
+  "591131": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Pariswad S.O"
+    ]
+  },
+  "591143": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kadoli S.O"
+    ]
+  },
+  "591147": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Deshnur S.O"
+    ]
+  },
+  "591153": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "M.K.Hubballi S.F. S.O"
+    ]
+  },
+  "591156": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bhutaramanahatti S.O"
+    ]
+  },
+  "591173": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yallammahill S.O"
+    ]
+  },
+  "591301": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Londa S.O"
+    ]
+  },
+  "591302": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Khanapur SO Belagavi"
+    ]
+  },
+  "591345": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Jamboti S.O"
+    ]
+  },
+  "591346": {
+    "division": "Belagavi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hudli"
+    ]
+  },
+  "585226": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kamthana S.O"
+    ]
+  },
+  "585227": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mannakhelli S.O"
+    ]
+  },
+  "585326": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Aurad (B) S.O"
+    ]
+  },
+  "585327": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Basavakalyan S.O"
+    ]
+  },
+  "585328": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bhalki S.O"
+    ]
+  },
+  "585329": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hoodgi S.O"
+    ]
+  },
+  "585330": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Humnabad S.O"
+    ]
+  },
+  "585331": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Rajeshwar S.O"
+    ]
+  },
+  "585353": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Maniknagar S.O"
+    ]
+  },
+  "585401": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bidar H.O"
+    ]
+  },
+  "585402": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bidar G.N.Jhira S.O"
+    ]
+  },
+  "585403": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bidar Gandhi Gunj S.O"
+    ]
+  },
+  "585404": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Naubad SO"
+    ]
+  },
+  "585411": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bhatambra S.O"
+    ]
+  },
+  "585412": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chitguppa S.O"
+    ]
+  },
+  "585413": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Halbarga S.O"
+    ]
+  },
+  "585414": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hallikhed (B) S.O"
+    ]
+  },
+  "585415": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hallikhed SF S.O"
+    ]
+  },
+  "585416": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hulsoor S.O"
+    ]
+  },
+  "585417": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kamalnagar S.O"
+    ]
+  },
+  "585418": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dubalgundi S.O"
+    ]
+  },
+  "585419": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Matala S.O"
+    ]
+  },
+  "585421": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Santhpur S.O"
+    ]
+  },
+  "585436": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Thanna Kushnoor S.O"
+    ]
+  },
+  "585437": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mudbi S.O"
+    ]
+  },
+  "585443": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mudhol (B) S.O"
+    ]
+  },
+  "585444": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nittur S.O"
+    ]
+  },
+  "585445": {
+    "division": "Bidar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "KOHINOOR SO"
+    ]
+  },
+  "591201": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chikodi H.O"
+    ]
+  },
+  "591211": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Akol S.O"
+    ]
+  },
+  "591212": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Anantpur S.O"
+    ]
+  },
+  "591213": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ankali S.O"
+    ]
+  },
+  "591214": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bedkihal S.O"
+    ]
+  },
+  "591215": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Benadi S.O"
+    ]
+  },
+  "591216": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Borgaon S.O (Belagavi)"
+    ]
+  },
+  "591217": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chinchali S.O"
+    ]
+  },
+  "591219": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Galataga S.O"
+    ]
+  },
+  "591220": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Harugeri S.O"
+    ]
+  },
+  "591222": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kabbur S.O"
+    ]
+  },
+  "591223": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kagvad S.O"
+    ]
+  },
+  "591226": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Karoshi S.O"
+    ]
+  },
+  "591228": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Khadaklat S.O"
+    ]
+  },
+  "591229": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kognoli S.O"
+    ]
+  },
+  "591230": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kokatnur S.O"
+    ]
+  },
+  "591232": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Madbhavi S.O"
+    ]
+  },
+  "591234": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mangsuli S.O"
+    ]
+  },
+  "591235": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mugalkhod S.O"
+    ]
+  },
+  "591237": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nipani S.O"
+    ]
+  },
+  "591238": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Pattankudi S.O"
+    ]
+  },
+  "591239": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sadalga S.O"
+    ]
+  },
+  "591240": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Satti S.O"
+    ]
+  },
+  "591241": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Saundalga S.O"
+    ]
+  },
+  "591242": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shirguppi S.O"
+    ]
+  },
+  "591244": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yaksamba S.O"
+    ]
+  },
+  "591247": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chikodi Sugar Factory S.O"
+    ]
+  },
+  "591248": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Aigali S.O"
+    ]
+  },
+  "591263": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bhoj S.O"
+    ]
+  },
+  "591265": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Telsang S.O"
+    ]
+  },
+  "591287": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kothali S.O"
+    ]
+  },
+  "591303": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ainapur S.O"
+    ]
+  },
+  "591304": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Athani H.O"
+    ]
+  },
+  "591311": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kudchi S.O"
+    ]
+  },
+  "591315": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shedbal S.O"
+    ]
+  },
+  "591316": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ugarkhurd S.O"
+    ]
+  },
+  "591317": {
+    "division": "Chikodi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Raibag S.O"
+    ]
+  },
+  "580001": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad H.O"
+    ]
+  },
+  "580002": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad Saraswatpur S.O"
+    ]
+  },
+  "580003": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad K V V S.O"
+    ]
+  },
+  "580004": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad Vidyagiri S.O"
+    ]
+  },
+  "580005": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad U A S S.O"
+    ]
+  },
+  "580006": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad M J Nagar S.O"
+    ]
+  },
+  "580007": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad R S S.O"
+    ]
+  },
+  "580008": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad K.C.Park S.O"
+    ]
+  },
+  "580009": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad Sattur S.O"
+    ]
+  },
+  "580011": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad High Court S.O"
+    ]
+  },
+  "580020": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi H.O"
+    ]
+  },
+  "580021": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi Vidyanagar S.O"
+    ]
+  },
+  "580023": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi Keshwapur S.O"
+    ]
+  },
+  "580024": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Old Hubballi S.O"
+    ]
+  },
+  "580025": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi Navanagar S.O"
+    ]
+  },
+  "580026": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi Tarihal Indl. Estate S.O"
+    ]
+  },
+  "580027": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gokul S.O"
+    ]
+  },
+  "580028": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi Mv Galli S.O"
+    ]
+  },
+  "580029": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballii Traffic Island S.O"
+    ]
+  },
+  "580030": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi Udyamnagar S.O"
+    ]
+  },
+  "580031": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi Eng College S.O"
+    ]
+  },
+  "580032": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hubballi Vijayanagar S.O"
+    ]
+  },
+  "580112": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Morab S.O"
+    ]
+  },
+  "580114": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dhumwad S.O"
+    ]
+  },
+  "580118": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hulkoppa S.O"
+    ]
+  },
+  "581103": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Alnavar S.O"
+    ]
+  },
+  "581105": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Garag S.O"
+    ]
+  },
+  "581107": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gudgeri S.O"
+    ]
+  },
+  "581113": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kundgol S.O"
+    ]
+  },
+  "581117": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Saunshi S.O"
+    ]
+  },
+  "581195": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Koliwad S.O"
+    ]
+  },
+  "581196": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mishrikoti S.O"
+    ]
+  },
+  "581201": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Amminabhavi S.O"
+    ]
+  },
+  "581204": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kalghatagi S.O"
+    ]
+  },
+  "581206": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Uppinabetageri S.O"
+    ]
+  },
+  "581207": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Aralikatti S.O"
+    ]
+  },
+  "581209": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hebsur S.O"
+    ]
+  },
+  "582201": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Annigeri S.O"
+    ]
+  },
+  "582208": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Navalgund S.O"
+    ]
+  },
+  "582101": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gadag H.O"
+    ]
+  },
+  "582102": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gadag Betgeri S.O"
+    ]
+  },
+  "582103": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gadag City S.O"
+    ]
+  },
+  "582111": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Abbigeri S.O"
+    ]
+  },
+  "582112": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bellatti S.O"
+    ]
+  },
+  "582113": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dambal S.O"
+    ]
+  },
+  "582114": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gajendragad S.O"
+    ]
+  },
+  "582115": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Lakkundi S.O"
+    ]
+  },
+  "582116": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Lakshmeshwar S.O"
+    ]
+  },
+  "582117": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mulgund S.O"
+    ]
+  },
+  "582118": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mundargi S.O"
+    ]
+  },
+  "582119": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Naregal S.O"
+    ]
+  },
+  "582120": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shiratti S.O"
+    ]
+  },
+  "582202": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belvanki S.O"
+    ]
+  },
+  "582203": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Holealur S.O"
+    ]
+  },
+  "582204": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hombal S.O"
+    ]
+  },
+  "582205": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hulkoti S.O"
+    ]
+  },
+  "582206": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Konnur S.O (Gadag)"
+    ]
+  },
+  "582207": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nargund S.O"
+    ]
+  },
+  "582209": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ron S.O"
+    ]
+  },
+  "582210": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shigli S.O"
+    ]
+  },
+  "582211": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sudi S.O"
+    ]
+  },
+  "583226": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Alawandi S.O"
+    ]
+  },
+  "583227": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gangavathi S.O"
+    ]
+  },
+  "583228": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ginigera S.O"
+    ]
+  },
+  "583229": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Karatgi S.O"
+    ]
+  },
+  "583230": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kinhal S.O"
+    ]
+  },
+  "583231": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Koppal H.O"
+    ]
+  },
+  "583232": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kuknoor S.O"
+    ]
+  },
+  "583233": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Munirabad S.O"
+    ]
+  },
+  "583234": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Munirabad RS S.O"
+    ]
+  },
+  "583235": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mukkumpi BO"
+    ]
+  },
+  "583236": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yelburga S.O"
+    ]
+  },
+  "583237": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bewoor S.O"
+    ]
+  },
+  "583238": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bhagyanagar S.O (Koppal)"
+    ]
+  },
+  "583268": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Pragathinagar S.O"
+    ]
+  },
+  "583277": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kushtagi S.O"
+    ]
+  },
+  "583278": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dotihal S.O"
+    ]
+  },
+  "583279": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tavargera S.O"
+    ]
+  },
+  "583280": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hanumanhal S.O"
+    ]
+  },
+  "583281": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hanamsagar S.O"
+    ]
+  },
+  "583282": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sriramnagar S.O (Koppal)"
+    ]
+  },
+  "583283": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kanakgiri S.O"
+    ]
+  },
+  "583284": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mudhol S.O"
+    ]
+  },
+  "583285": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hiresindogi S.O"
+    ]
+  },
+  "583287": {
+    "division": "Gadag",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Irkalgad S.O"
+    ]
+  },
+  "591101": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ankalgi S.O"
+    ]
+  },
+  "591107": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hidkal Dam S.O"
+    ]
+  },
+  "591122": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Pachhapur S.O"
+    ]
+  },
+  "591136": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yadwad S.O"
+    ]
+  },
+  "591218": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Lolsur S.O"
+    ]
+  },
+  "591221": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hebbal S.O"
+    ]
+  },
+  "591224": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kalloli S.O"
+    ]
+  },
+  "591225": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kanagala S.O (Belagavi)"
+    ]
+  },
+  "591227": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kaujalgi S.O"
+    ]
+  },
+  "591231": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Konnur S.O (Belagavi)"
+    ]
+  },
+  "591233": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mamadapur S.O"
+    ]
+  },
+  "591236": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nidasoshi S.O"
+    ]
+  },
+  "591243": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Thana Hattargi S.O"
+    ]
+  },
+  "591246": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yamakanmardi S.O"
+    ]
+  },
+  "591254": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Daddi S.O"
+    ]
+  },
+  "591305": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bellad Bagewadi S.O"
+    ]
+  },
+  "591306": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ghataprabha RS S.O"
+    ]
+  },
+  "591307": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gokak H.O"
+    ]
+  },
+  "591308": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gokak Falls S.O"
+    ]
+  },
+  "591309": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hukeri S.O"
+    ]
+  },
+  "591310": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kulgod S.O"
+    ]
+  },
+  "591312": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mudalgi S.O"
+    ]
+  },
+  "591313": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sankeshwar S.O"
+    ]
+  },
+  "591314": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sankeshwar Sugar Factory S.O"
+    ]
+  },
+  "591340": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nerli S.O"
+    ]
+  },
+  "591344": {
+    "division": "Gokak",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Khangaon S.O"
+    ]
+  },
+  "581101": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Adur S.O (Haveri)"
+    ]
+  },
+  "581102": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Akkialur S.O"
+    ]
+  },
+  "581104": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hangal S.O"
+    ]
+  },
+  "581106": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Byadgi S.O"
+    ]
+  },
+  "581108": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Guttal S.O"
+    ]
+  },
+  "581109": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Haunsabhavi S.O"
+    ]
+  },
+  "581110": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Haveri H.O"
+    ]
+  },
+  "581111": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hirekerur S.O"
+    ]
+  },
+  "581112": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Karajagi S.O (Haveri)"
+    ]
+  },
+  "581115": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ranebennur S.O"
+    ]
+  },
+  "581116": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Rattihalli S.O"
+    ]
+  },
+  "581118": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Savanur S.O"
+    ]
+  },
+  "581119": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tumminakatti S.O"
+    ]
+  },
+  "581120": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tilavalli S.O"
+    ]
+  },
+  "581123": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kumarapattanam S.O"
+    ]
+  },
+  "581126": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hulgur S.O"
+    ]
+  },
+  "581128": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Agadi S.O"
+    ]
+  },
+  "581145": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chalageri S.O"
+    ]
+  },
+  "581148": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sangur S.O"
+    ]
+  },
+  "581193": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dhundashi S.O"
+    ]
+  },
+  "581198": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Motebennur S.O"
+    ]
+  },
+  "581199": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belagalapete S.O."
+    ]
+  },
+  "581202": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bankapur S.O"
+    ]
+  },
+  "581203": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bommanahalli S.O (Haveri)"
+    ]
+  },
+  "581205": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shiggaon S.O"
+    ]
+  },
+  "581208": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Halageri S.O"
+    ]
+  },
+  "581210": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Masur S.O (Haveri)"
+    ]
+  },
+  "581211": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Medleri S.O"
+    ]
+  },
+  "581212": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tadas S.O"
+    ]
+  },
+  "581213": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hosaritti S.O"
+    ]
+  },
+  "581237": {
+    "division": "Haveri",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kadkol S.O"
+    ]
+  },
+  "585101": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kalaburagi H.O"
+    ]
+  },
+  "585102": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "GB RS S.O"
+    ]
+  },
+  "585103": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "GB Bahamanipura S.O"
+    ]
+  },
+  "585104": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "GB N Gunj S.O"
+    ]
+  },
+  "585105": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "GB Ggh S.O"
+    ]
+  },
+  "585106": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "GB Jnanaganga S.O"
+    ]
+  },
+  "585107": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kalaburagi HCB S.O"
+    ]
+  },
+  "585201": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yadgiri H.O"
+    ]
+  },
+  "585202": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yadgiri Station S.O"
+    ]
+  },
+  "585210": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kurkunta C.F S.O"
+    ]
+  },
+  "585211": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chittapur S.O"
+    ]
+  },
+  "585212": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ghanagapur T S.O"
+    ]
+  },
+  "585213": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Station Ghanagapur S.O"
+    ]
+  },
+  "585214": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gurmitkal S.O"
+    ]
+  },
+  "585215": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hunasgi S.O"
+    ]
+  },
+  "585216": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kembhavi S.O"
+    ]
+  },
+  "585217": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mashal S.O"
+    ]
+  },
+  "585218": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nalwar S.O"
+    ]
+  },
+  "585219": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Narayanpur S.O (Yadgir)"
+    ]
+  },
+  "585220": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Rangampeth S.O"
+    ]
+  },
+  "585221": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Saidapur S.O (Yadgir)"
+    ]
+  },
+  "585222": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sedam S.O"
+    ]
+  },
+  "585223": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shahapur S.O (Yadgir)"
+    ]
+  },
+  "585224": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shorapur S.O"
+    ]
+  },
+  "585225": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Wadi S.O (Kalaburagi)"
+    ]
+  },
+  "585228": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shahabad S.O (Kalaburagi)"
+    ]
+  },
+  "585229": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shahabad ACC S.O"
+    ]
+  },
+  "585236": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nimbal S.O"
+    ]
+  },
+  "585237": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kodekal S.O"
+    ]
+  },
+  "585265": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gobbur S.O"
+    ]
+  },
+  "585287": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bheemarayanagudi S.O"
+    ]
+  },
+  "585290": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kumbarpeth S.O"
+    ]
+  },
+  "585291": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Rajankollur S.O"
+    ]
+  },
+  "585292": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Malkhed Road S.O"
+    ]
+  },
+  "585301": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Afjalpur S.O"
+    ]
+  },
+  "585302": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Alund S.O"
+    ]
+  },
+  "585303": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Andola S.O"
+    ]
+  },
+  "585304": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bijaspur S.O"
+    ]
+  },
+  "585305": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chandapur S.O (Kalaburagi)"
+    ]
+  },
+  "585306": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chimmanchod S.O"
+    ]
+  },
+  "585307": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chincholi S.O"
+    ]
+  },
+  "585308": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Farhatabad S.O"
+    ]
+  },
+  "585309": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gogi S.O"
+    ]
+  },
+  "585310": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Jewargi S.O"
+    ]
+  },
+  "585311": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kadaganchi S.O"
+    ]
+  },
+  "585312": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kalgi S.O"
+    ]
+  },
+  "585313": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kamalapur S.O (Kalaburagi)"
+    ]
+  },
+  "585314": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Khajuri S.O (Kalaburagi)"
+    ]
+  },
+  "585315": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Madhwar S.O"
+    ]
+  },
+  "585316": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mahagaon (Kalaburagi) S.O"
+    ]
+  },
+  "585317": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Malkhed S.O"
+    ]
+  },
+  "585318": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mudhol (Kalaburagi) S.O"
+    ]
+  },
+  "585319": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Naikal S.O"
+    ]
+  },
+  "585320": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nidgunda S.O"
+    ]
+  },
+  "585321": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ramasamudra S.O (Yadgir)"
+    ]
+  },
+  "585322": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ratkal S.O"
+    ]
+  },
+  "585323": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sagar S.O"
+    ]
+  },
+  "585324": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sulahpeth S.O"
+    ]
+  },
+  "585325": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yedrami S.O"
+    ]
+  },
+  "585355": {
+    "division": "Yadgir",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Wadgera S.O"
+    ]
+  },
+  "585367": {
+    "division": "Kalaburagi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Central University of Karnataka,Kad"
+    ]
+  },
+  "581301": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Karwar H.O"
+    ]
+  },
+  "581302": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Karwar Baitkhol S.O"
+    ]
+  },
+  "581303": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kodibag S.O"
+    ]
+  },
+  "581304": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nandangadda S.O"
+    ]
+  },
+  "581306": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Habbuwada S.O"
+    ]
+  },
+  "581307": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Binaga S.O"
+    ]
+  },
+  "581308": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Karwar Naval Base S.O"
+    ]
+  },
+  "581314": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ankola S.O"
+    ]
+  },
+  "581316": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Aversa S.O"
+    ]
+  },
+  "581317": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Asnoti S.O"
+    ]
+  },
+  "581319": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bankikodla S.O"
+    ]
+  },
+  "581320": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bhatkal S.O"
+    ]
+  },
+  "581321": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Belekeri S.O"
+    ]
+  },
+  "581323": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chandavar S.O"
+    ]
+  },
+  "581324": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chendiye S.O"
+    ]
+  },
+  "581326": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gokarn S.O"
+    ]
+  },
+  "581327": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Haldipur S.O"
+    ]
+  },
+  "581328": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Halge S.O"
+    ]
+  },
+  "581330": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hegde S.O"
+    ]
+  },
+  "581332": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Herwatta S.O"
+    ]
+  },
+  "581333": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hiregutti S.O"
+    ]
+  },
+  "581334": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Honavar S.O"
+    ]
+  },
+  "581335": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hosad S.O"
+    ]
+  },
+  "581338": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kadtoka S.O"
+    ]
+  },
+  "581339": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kadwad S.O"
+    ]
+  },
+  "581341": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Karki S.O"
+    ]
+  },
+  "581342": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kasarkod S.O"
+    ]
+  },
+  "581343": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kumta H.O"
+    ]
+  },
+  "581344": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Madangeri S.O"
+    ]
+  },
+  "581345": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Majali S.O"
+    ]
+  },
+  "581348": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Manki S.O"
+    ]
+  },
+  "581350": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Murdeshwar S.O"
+    ]
+  },
+  "581351": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gudeangadi S.O"
+    ]
+  },
+  "581352": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sadashivgad S.O"
+    ]
+  },
+  "581353": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shetgeri S.O"
+    ]
+  },
+  "581354": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shirali S.O"
+    ]
+  },
+  "581357": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Vandige S.O"
+    ]
+  },
+  "581360": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Angadi S.O (Uttara Kannada)"
+    ]
+  },
+  "581361": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hadinbal S.O"
+    ]
+  },
+  "581362": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kumta Kanara College Road S.O"
+    ]
+  },
+  "581384": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gersoppa Jyothinagar S.O"
+    ]
+  },
+  "581396": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kadra S.O"
+    ]
+  },
+  "581400": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kaiga S.O"
+    ]
+  },
+  "581421": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kaikini S.O"
+    ]
+  },
+  "581423": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Melin Idgunji S.O"
+    ]
+  },
+  "581440": {
+    "division": "Karwar",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mirjan S.O"
+    ]
+  },
+  "584101": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Raichur H.O"
+    ]
+  },
+  "584102": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Raichur Mukram Gunj S.O"
+    ]
+  },
+  "584103": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Raichur Jawahar Nagar S.O"
+    ]
+  },
+  "584104": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Raichur UAS S.O"
+    ]
+  },
+  "584111": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Deodurga S.O"
+    ]
+  },
+  "584113": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gabbur S.O"
+    ]
+  },
+  "584115": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hutti S.O"
+    ]
+  },
+  "584116": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Jalahalli S.O"
+    ]
+  },
+  "584118": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kallur S.O (Raichur)"
+    ]
+  },
+  "584120": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kowthal S.O"
+    ]
+  },
+  "584122": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Lingasugur S.O"
+    ]
+  },
+  "584123": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Manvi S.O"
+    ]
+  },
+  "584124": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Maski S.O"
+    ]
+  },
+  "584125": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mudgal S.O"
+    ]
+  },
+  "584126": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mosarkal S.O"
+    ]
+  },
+  "584127": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Rodalbanda S.O"
+    ]
+  },
+  "584128": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sindhanur S.O"
+    ]
+  },
+  "584129": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sirwar S.O"
+    ]
+  },
+  "584132": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Turvihal S.O"
+    ]
+  },
+  "584133": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yergera S.O"
+    ]
+  },
+  "584134": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yeramarus S.O"
+    ]
+  },
+  "584135": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yeramarus Camp S.O"
+    ]
+  },
+  "584136": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kalmala S.O"
+    ]
+  },
+  "584138": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Balaganur S.O"
+    ]
+  },
+  "584139": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gurgunta S.O"
+    ]
+  },
+  "584140": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Gunjahalli S.O"
+    ]
+  },
+  "584143": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Jawalgera S.O"
+    ]
+  },
+  "584167": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dhadesugur S.O"
+    ]
+  },
+  "584170": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shaktinagar S.O (Raichur)"
+    ]
+  },
+  "584202": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Matmari S.O"
+    ]
+  },
+  "584203": {
+    "division": "Raichur",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kurdi S.O"
+    ]
+  },
+  "581121": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Castlerock S.O"
+    ]
+  },
+  "581129": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Jagalbet S.O"
+    ]
+  },
+  "581186": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Joida S.O"
+    ]
+  },
+  "581187": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kumbarwada S.O"
+    ]
+  },
+  "581315": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Aminalli S.O"
+    ]
+  },
+  "581318": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Banavasi S.O"
+    ]
+  },
+  "581322": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bilgi S.O (Uttara Kannada)"
+    ]
+  },
+  "581325": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dandeli S.O"
+    ]
+  },
+  "581329": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Haliyal S.O"
+    ]
+  },
+  "581331": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Heggarni S.O"
+    ]
+  },
+  "581336": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Hulekal S.O"
+    ]
+  },
+  "581337": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Idgundi S.O"
+    ]
+  },
+  "581340": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kansur S.O"
+    ]
+  },
+  "581346": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Malgi S.O"
+    ]
+  },
+  "581347": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Manchikeri S.O"
+    ]
+  },
+  "581349": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mundgod S.O"
+    ]
+  },
+  "581355": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Siddapur S.O"
+    ]
+  },
+  "581356": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tergaon S.O"
+    ]
+  },
+  "581358": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yekkambi S.O"
+    ]
+  },
+  "581359": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Yellapur S.O"
+    ]
+  },
+  "581363": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ambikanagar S.O"
+    ]
+  },
+  "581365": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ganeshgudi S.O"
+    ]
+  },
+  "581401": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sirsi H.O"
+    ]
+  },
+  "581402": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sirsi Market S.O"
+    ]
+  },
+  "581403": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nilekani S.O"
+    ]
+  },
+  "581411": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tibetan Colony S.O"
+    ]
+  },
+  "581412": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kirwatti S.O"
+    ]
+  },
+  "581450": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Neggu S.O"
+    ]
+  },
+  "581453": {
+    "division": "Sirsi",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ramnagar S.O (Uttara Kannada)"
+    ]
+  },
+  "586101": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Vijayapura H.O"
+    ]
+  },
+  "586103": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Vijayapura Vijaya College S.O"
+    ]
+  },
+  "586104": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Vijayapura Railway Station S.O"
+    ]
+  },
+  "586108": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Vijayapura Amc S.O"
+    ]
+  },
+  "586109": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Vijayapura Jalanagar S.O"
+    ]
+  },
+  "586111": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Agarkhed S.O"
+    ]
+  },
+  "586112": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Atharga S.O"
+    ]
+  },
+  "586113": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bableshwar S.O"
+    ]
+  },
+  "586114": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bijjargi S.O"
+    ]
+  },
+  "586115": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Devar Hippargi S.O"
+    ]
+  },
+  "586116": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dhavalgi S.O"
+    ]
+  },
+  "586117": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Horti S.O"
+    ]
+  },
+  "586118": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kalkeri S.O"
+    ]
+  },
+  "586119": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kannur S.O"
+    ]
+  },
+  "586120": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Korwar S.O"
+    ]
+  },
+  "586121": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kudgi S.O"
+    ]
+  },
+  "586122": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Mangoli S.O"
+    ]
+  },
+  "586123": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Moratgi S.O"
+    ]
+  },
+  "586124": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nalatwad S.O"
+    ]
+  },
+  "586125": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sarwad S.O"
+    ]
+  },
+  "586127": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Shivangi S.O"
+    ]
+  },
+  "586128": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Sindgi S.O"
+    ]
+  },
+  "586129": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tangadgi S.O"
+    ]
+  },
+  "586130": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tikota S.O"
+    ]
+  },
+  "586201": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Almatti  Damsite S.O"
+    ]
+  },
+  "586202": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Almel S.O"
+    ]
+  },
+  "586203": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Basavan Bagewadi S.O"
+    ]
+  },
+  "586204": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Bardol S.O (Vijayapura(KAR))"
+    ]
+  },
+  "586205": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Chadchan S.O"
+    ]
+  },
+  "586206": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Devangaon S.O"
+    ]
+  },
+  "586207": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Halsangi S.O"
+    ]
+  },
+  "586208": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Huvin Hippargi S.O"
+    ]
+  },
+  "586209": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Indi S.O"
+    ]
+  },
+  "586210": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Kolhar S.O (Vijayapura(KAR))"
+    ]
+  },
+  "586211": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Lachyan S.O"
+    ]
+  },
+  "586212": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Muddebiahl S.O"
+    ]
+  },
+  "586213": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Nidgundi S.O"
+    ]
+  },
+  "586214": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Talikoti S.O"
+    ]
+  },
+  "586215": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Tamba S.O"
+    ]
+  },
+  "586216": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Telgi S.O"
+    ]
+  },
+  "586217": {
+    "division": "Vijayapura",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Salotgi S.O"
+    ]
+  },
+  "577101": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chikkamagaluru H.O"
+    ]
+  },
+  "577102": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jyothinagar S.O (Chikkamagaluru)"
+    ]
+  },
+  "577111": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Aldur S.O"
+    ]
+  },
+  "577112": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Balehonnur S.O"
+    ]
+  },
+  "577113": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Banakal S.O"
+    ]
+  },
+  "577114": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Basarikatte S.O"
+    ]
+  },
+  "577116": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Birur S.O"
+    ]
+  },
+  "577117": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "C.R.Station S.O"
+    ]
+  },
+  "577120": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hariharapura S.O"
+    ]
+  },
+  "577121": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hirebyle S.O"
+    ]
+  },
+  "577122": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Javali S.O"
+    ]
+  },
+  "577123": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jayapura S.O"
+    ]
+  },
+  "577124": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kalasa S.O"
+    ]
+  },
+  "577125": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kammaradi S.O"
+    ]
+  },
+  "577126": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Koppa H.O"
+    ]
+  },
+  "577127": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kudregundi S.O"
+    ]
+  },
+  "577128": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Lakkavalli S.O"
+    ]
+  },
+  "577129": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Lingadahalli S.O"
+    ]
+  },
+  "577130": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mallandur S.O"
+    ]
+  },
+  "577131": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mallenahalli S.O"
+    ]
+  },
+  "577132": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mudigere S.O"
+    ]
+  },
+  "577133": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mugthihalli S.O"
+    ]
+  },
+  "577134": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Narasimharajapura S.O"
+    ]
+  },
+  "577135": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sakrepatna S.O"
+    ]
+  },
+  "577136": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sangameshwarapete S.O"
+    ]
+  },
+  "577137": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Santaveri S.O"
+    ]
+  },
+  "577138": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Singatagere S.O"
+    ]
+  },
+  "577139": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sringeri S.O"
+    ]
+  },
+  "577140": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yagati S.O"
+    ]
+  },
+  "577144": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Rangenahalli S.O"
+    ]
+  },
+  "577145": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bukkambudhi S.O"
+    ]
+  },
+  "577146": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kalasapura S.O"
+    ]
+  },
+  "577160": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Magundi S.O"
+    ]
+  },
+  "577168": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Uddeboranahalli S.O"
+    ]
+  },
+  "577175": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Devanur S.O"
+    ]
+  },
+  "577179": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Balehole S.O"
+    ]
+  },
+  "577180": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chowlahiriyur S.O"
+    ]
+  },
+  "577181": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Horanadu S.O"
+    ]
+  },
+  "577182": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Panchanahalli S.O"
+    ]
+  },
+  "577228": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tarikere S.O"
+    ]
+  },
+  "577547": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ajjampura S.O"
+    ]
+  },
+  "577548": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kadur S.O"
+    ]
+  },
+  "577549": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sivane S.O"
+    ]
+  },
+  "577550": {
+    "division": "Chikkamagaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sollapura S.O"
+    ]
+  },
+  "577001": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Davangere H.O"
+    ]
+  },
+  "577002": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jayadeva Circle Davanagere S.O"
+    ]
+  },
+  "577003": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Rm Yard  Davanagere S.O"
+    ]
+  },
+  "577004": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Southern Extension DVG S.O"
+    ]
+  },
+  "577005": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bapuji Vidyanagara S.O"
+    ]
+  },
+  "577006": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Devaraj Urs Layout Dvg S.O"
+    ]
+  },
+  "577007": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Davangere University Campus S.O"
+    ]
+  },
+  "577501": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chitradurga H.O"
+    ]
+  },
+  "577502": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Station Road chitradurga S.O"
+    ]
+  },
+  "577511": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Adivala S.O"
+    ]
+  },
+  "577512": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Anaji S.O"
+    ]
+  },
+  "577513": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Asagodu S.O"
+    ]
+  },
+  "577514": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bada S.O"
+    ]
+  },
+  "577515": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bagur S.O (Chitradurga)"
+    ]
+  },
+  "577516": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bhanuvally S.O"
+    ]
+  },
+  "577517": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Turuvanur S.O"
+    ]
+  },
+  "577518": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bndurga S.O"
+    ]
+  },
+  "577519": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bharamasagara S.O"
+    ]
+  },
+  "577520": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bheemasamudra S.O"
+    ]
+  },
+  "577521": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bidarakere S.O"
+    ]
+  },
+  "577522": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Challakere S.O"
+    ]
+  },
+  "577523": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chickjajur S.O"
+    ]
+  },
+  "577524": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Doddasiddavvanahalli S.O"
+    ]
+  },
+  "577525": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hadadi S.O"
+    ]
+  },
+  "577526": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Holalkere S.O"
+    ]
+  },
+  "577527": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hosadurga S.O"
+    ]
+  },
+  "577528": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jagalur S.O"
+    ]
+  },
+  "577529": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kondlahalli S.O"
+    ]
+  },
+  "577530": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Malebennur S.O"
+    ]
+  },
+  "577531": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Malladihalli S.O"
+    ]
+  },
+  "577532": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Maradihalli S.O"
+    ]
+  },
+  "577533": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mathodu S.O"
+    ]
+  },
+  "577534": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mayakonda S.O"
+    ]
+  },
+  "577535": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Molakalmuru S.O"
+    ]
+  },
+  "577536": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nayakanahatti S.O"
+    ]
+  },
+  "577537": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Obalapura S.O"
+    ]
+  },
+  "577538": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Parasurampura S.O"
+    ]
+  },
+  "577539": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ramagiri S.O (Chitradurga)"
+    ]
+  },
+  "577540": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Rampura S.O (Chitradurga)"
+    ]
+  },
+  "577541": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sirigere S.O (Chitradurga)"
+    ]
+  },
+  "577542": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Srirampura S.O"
+    ]
+  },
+  "577543": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Thallak S.O"
+    ]
+  },
+  "577545": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yerabally S.O"
+    ]
+  },
+  "577546": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hariyabbe S.O"
+    ]
+  },
+  "577553": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bilichodu S.O"
+    ]
+  },
+  "577554": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mallappanahalli S.O"
+    ]
+  },
+  "577555": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Godabanahal S.O"
+    ]
+  },
+  "577556": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Anagodu S.O"
+    ]
+  },
+  "577557": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "H.D.Pura S.O"
+    ]
+  },
+  "577558": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Aimangala S.O"
+    ]
+  },
+  "577566": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Doddabathi S.O"
+    ]
+  },
+  "577589": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kondajji S.O"
+    ]
+  },
+  "577596": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Dharmapura S.O"
+    ]
+  },
+  "577597": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belagur S.O"
+    ]
+  },
+  "577598": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hiriyur S.O"
+    ]
+  },
+  "577599": {
+    "division": "Chitradurga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hiriyur  Sugar Factory S.O"
+    ]
+  },
+  "577601": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Harihara S.O"
+    ]
+  },
+  "573101": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Arehalli S.O"
+    ]
+  },
+  "573102": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Arkalgud S.O"
+    ]
+  },
+  "573103": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Arsikere H.O"
+    ]
+  },
+  "573111": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bagur S.O (Hassan)"
+    ]
+  },
+  "573112": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Banavara S.O"
+    ]
+  },
+  "573113": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Basavapatna S.O (Hassan)"
+    ]
+  },
+  "573115": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belur Hassan S.O"
+    ]
+  },
+  "573116": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Channarayapatna S.O"
+    ]
+  },
+  "573117": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Doddamettikurke S.O"
+    ]
+  },
+  "573118": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Dudda R S S.O"
+    ]
+  },
+  "573119": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gandasi S.O"
+    ]
+  },
+  "573120": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gorur S.O"
+    ]
+  },
+  "573121": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Halebeedu S.O"
+    ]
+  },
+  "573122": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Haranahalli S.O"
+    ]
+  },
+  "573123": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hethur S.O"
+    ]
+  },
+  "573124": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hirisave S.O"
+    ]
+  },
+  "573125": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Javagal S.O"
+    ]
+  },
+  "573126": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jaya Chamaraja Pura S.O"
+    ]
+  },
+  "573127": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bykere S.O"
+    ]
+  },
+  "573128": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kattaya S.O"
+    ]
+  },
+  "573129": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kenchammanahosakote S.O"
+    ]
+  },
+  "573130": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Konanur S.O"
+    ]
+  },
+  "573131": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nuggihalli S.O"
+    ]
+  },
+  "573133": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ramanathapura S.O"
+    ]
+  },
+  "573134": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sakleshpur S.O"
+    ]
+  },
+  "573135": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shravanabelagola S.O"
+    ]
+  },
+  "573136": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Keralapura S.O"
+    ]
+  },
+  "573137": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yeslur S.O"
+    ]
+  },
+  "573141": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Didaga S.O"
+    ]
+  },
+  "573142": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Doddamagge S.O"
+    ]
+  },
+  "573144": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kanakatte S.O"
+    ]
+  },
+  "573162": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bageshpura S.O"
+    ]
+  },
+  "573164": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Lalanakere S.O"
+    ]
+  },
+  "573165": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hanbalu S.O"
+    ]
+  },
+  "573201": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hassan H.O"
+    ]
+  },
+  "573202": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vidyanagar (Hassan) S.O"
+    ]
+  },
+  "573210": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hallymysore S.O"
+    ]
+  },
+  "573211": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Holenarsipur S.O"
+    ]
+  },
+  "573212": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mosale Hosahalli S.O"
+    ]
+  },
+  "573213": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Alur S.O (Hassan)"
+    ]
+  },
+  "573214": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ballupet S.O"
+    ]
+  },
+  "573215": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bikkodu S.O"
+    ]
+  },
+  "573216": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hagare S.O"
+    ]
+  },
+  "573217": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kandali S.O"
+    ]
+  },
+  "573218": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Palya S.O"
+    ]
+  },
+  "573219": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Salagame S.O"
+    ]
+  },
+  "573220": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shanthigrama S.O"
+    ]
+  },
+  "573225": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Agriculture College Campus Dly S.O"
+    ]
+  },
+  "573226": {
+    "division": "Hassan",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Boovanahalli S.O"
+    ]
+  },
+  "571201": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Madikeri H.O"
+    ]
+  },
+  "571211": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ammathi S.O"
+    ]
+  },
+  "571212": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Cheyandane S.O"
+    ]
+  },
+  "571213": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gonikoppal S.O"
+    ]
+  },
+  "571214": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Napoklu S.O"
+    ]
+  },
+  "571215": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Pollibetta S.O"
+    ]
+  },
+  "571216": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ponnampet S.O"
+    ]
+  },
+  "571217": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Srimangala S.O"
+    ]
+  },
+  "571218": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Virajpet S.O"
+    ]
+  },
+  "571219": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Balele S.O"
+    ]
+  },
+  "571231": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kodlipet S.O"
+    ]
+  },
+  "571232": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kudige S.O"
+    ]
+  },
+  "571234": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kushalnagar S.O"
+    ]
+  },
+  "571235": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shanivarasanthe S.O"
+    ]
+  },
+  "571236": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Somwarpet S.O"
+    ]
+  },
+  "571237": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Suntikoppa S.O"
+    ]
+  },
+  "571247": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bhagamandala S.O"
+    ]
+  },
+  "571248": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chettalli S.O"
+    ]
+  },
+  "571249": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hudikeri S.O"
+    ]
+  },
+  "571250": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kutta S.O"
+    ]
+  },
+  "571251": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Madapura S.O"
+    ]
+  },
+  "571252": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Murnad S.O"
+    ]
+  },
+  "571253": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Siddapura Kodagu S.O"
+    ]
+  },
+  "571254": {
+    "division": "Kodagu",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Thithimathi S.O"
+    ]
+  },
+  "561206": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Dn Palya S.O"
+    ]
+  },
+  "561207": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bagepalli S.O"
+    ]
+  },
+  "561208": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gauribidanur S.O"
+    ]
+  },
+  "561209": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gudibanda S.O (Kolar)"
+    ]
+  },
+  "561210": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hossur S.O"
+    ]
+  },
+  "561211": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "MANCHENAHALLI S.O"
+    ]
+  },
+  "561212": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Pathapalya S.O"
+    ]
+  },
+  "561213": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Thondebhavi S.O"
+    ]
+  },
+  "561228": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vatadahosahalli S.O"
+    ]
+  },
+  "562101": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chickballapur H.O"
+    ]
+  },
+  "562102": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Melur S.O (Kolar)"
+    ]
+  },
+  "562103": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nandi S.O (Kolar)"
+    ]
+  },
+  "562104": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Peresandra S.O"
+    ]
+  },
+  "562105": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sidlaghatta S.O"
+    ]
+  },
+  "563101": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kolar H.O"
+    ]
+  },
+  "563103": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tamaka S.O"
+    ]
+  },
+  "563113": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Andersonpet S.O"
+    ]
+  },
+  "563114": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bangarpet S.O"
+    ]
+  },
+  "563115": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Beml Nagar S.O"
+    ]
+  },
+  "563116": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bethamangala S.O"
+    ]
+  },
+  "563117": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Championreefs S.O"
+    ]
+  },
+  "563118": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Coromandel S.O"
+    ]
+  },
+  "563119": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Marikuppam S.O"
+    ]
+  },
+  "563120": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Oorgaum S.O"
+    ]
+  },
+  "563121": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Oorgaumpet S.O"
+    ]
+  },
+  "563122": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "ROBERTSONPET MDG"
+    ]
+  },
+  "563123": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Batlahalli S.O"
+    ]
+  },
+  "563124": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chelur S.O (Kolar)"
+    ]
+  },
+  "563125": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chintamani S.O"
+    ]
+  },
+  "563126": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Dalasanur S.O"
+    ]
+  },
+  "563127": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Devarayasamudra S.O"
+    ]
+  },
+  "563128": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kaiwara S.O"
+    ]
+  },
+  "563129": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kamasamudra S.O"
+    ]
+  },
+  "563130": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Malur S.O"
+    ]
+  },
+  "563131": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mulbagal S.O"
+    ]
+  },
+  "563132": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nangli S.O"
+    ]
+  },
+  "563133": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Narasapura S.O"
+    ]
+  },
+  "563134": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Rayalpadu S.O"
+    ]
+  },
+  "563135": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Srinivaspur S.O"
+    ]
+  },
+  "563136": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tayalur S.O"
+    ]
+  },
+  "563137": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tekal S.O"
+    ]
+  },
+  "563138": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yeldur S.O"
+    ]
+  },
+  "563139": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Masthi S.O"
+    ]
+  },
+  "563146": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Murugamale S.O"
+    ]
+  },
+  "563147": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "BUDIKOTE SO"
+    ]
+  },
+  "563157": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "VEMAGAL SO"
+    ]
+  },
+  "563159": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Burudugunte S.O"
+    ]
+  },
+  "563160": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Malur Railway Station S.O"
+    ]
+  },
+  "563161": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gownipalli S.O"
+    ]
+  },
+  "563162": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Deshihalli Bangarpet S.O"
+    ]
+  },
+  "563163": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chikkathirupathi S.O"
+    ]
+  },
+  "571401": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mandya H.O"
+    ]
+  },
+  "571402": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sugar Town S.O"
+    ]
+  },
+  "571403": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Guthal Colony S.O"
+    ]
+  },
+  "571404": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Acetate Town S.O"
+    ]
+  },
+  "571405": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "V C Farm S.O"
+    ]
+  },
+  "571415": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Arakere S.O"
+    ]
+  },
+  "571416": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Basaralu S.O"
+    ]
+  },
+  "571417": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belakavadi S.O"
+    ]
+  },
+  "571418": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bellur S.O"
+    ]
+  },
+  "571419": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Besagarahalli S.O"
+    ]
+  },
+  "571421": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Halagur S.O"
+    ]
+  },
+  "571422": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bharathinagar S.O"
+    ]
+  },
+  "571423": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kikkeri S.O"
+    ]
+  },
+  "571424": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kiragavalu S.O"
+    ]
+  },
+  "571425": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Koppa mandya S.O"
+    ]
+  },
+  "571426": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Krishnarajapete S.O"
+    ]
+  },
+  "571427": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kyathanahalli S.O"
+    ]
+  },
+  "571428": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Maddur S.O (Mandya)"
+    ]
+  },
+  "571429": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shivapura Maddur S.O"
+    ]
+  },
+  "571430": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Malavalli S.O"
+    ]
+  },
+  "571431": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Melukote S.O"
+    ]
+  },
+  "571432": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nagamangala S.O"
+    ]
+  },
+  "571433": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nidaghatta S.O"
+    ]
+  },
+  "571434": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Pandavapura S.O"
+    ]
+  },
+  "571435": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Pandavapura R S S.O"
+    ]
+  },
+  "571436": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Santhebachahalli S.O"
+    ]
+  },
+  "571438": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Srirangapatna H.O"
+    ]
+  },
+  "571445": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Devalapura S.O (Mandya)"
+    ]
+  },
+  "571446": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Keragodu S.O"
+    ]
+  },
+  "571448": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Balagangadaranathnagar S.O"
+    ]
+  },
+  "571450": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Keelara S.O"
+    ]
+  },
+  "571455": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chinakurali S.O"
+    ]
+  },
+  "571463": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Purigali S.O"
+    ]
+  },
+  "571475": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hadli S.O"
+    ]
+  },
+  "571476": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kestur S.O"
+    ]
+  },
+  "571477": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ganjam S.O"
+    ]
+  },
+  "571478": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kottatti S.O"
+    ]
+  },
+  "571605": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Akkihebbal S.O"
+    ]
+  },
+  "571606": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belagola S.O"
+    ]
+  },
+  "571607": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Krishnaraja Sagar S.O"
+    ]
+  },
+  "571802": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bindiganavile S.O"
+    ]
+  },
+  "571807": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kirangoor S.O"
+    ]
+  },
+  "571811": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chunchanahalli S.O"
+    ]
+  },
+  "571812": {
+    "division": "Mandya",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bukkinakere S.O"
+    ]
+  },
+  "574141": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Aikala S.O"
+    ]
+  },
+  "574142": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bajpe S.O"
+    ]
+  },
+  "574143": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Farangipet S.O"
+    ]
+  },
+  "574144": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ganjimat S.O"
+    ]
+  },
+  "574145": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gurpur S.O"
+    ]
+  },
+  "574146": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Haleangady S.O"
+    ]
+  },
+  "574148": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kateel S.O"
+    ]
+  },
+  "574150": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kinnigoli S.O"
+    ]
+  },
+  "574151": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kinnikambla S.O"
+    ]
+  },
+  "574153": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kurnad S.O"
+    ]
+  },
+  "574154": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mulki S.O"
+    ]
+  },
+  "574199": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mangalagangothri S.O"
+    ]
+  },
+  "574267": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Badagayedapadavu S.O"
+    ]
+  },
+  "574509": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Permude S.O"
+    ]
+  },
+  "575001": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mangaluru H.O"
+    ]
+  },
+  "575002": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kankanady S.O"
+    ]
+  },
+  "575003": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kodiyalbail S.O"
+    ]
+  },
+  "575004": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bijai S.O"
+    ]
+  },
+  "575005": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kulshekar H.O"
+    ]
+  },
+  "575006": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ashoknagar(MR) S.O"
+    ]
+  },
+  "575007": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Padil S.O"
+    ]
+  },
+  "575008": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Konchady S.O"
+    ]
+  },
+  "575010": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Panambur S.O"
+    ]
+  },
+  "575011": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Baikampady S.O"
+    ]
+  },
+  "575013": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kulur S.O"
+    ]
+  },
+  "575014": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Surathkal S.O"
+    ]
+  },
+  "575015": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kavur S.O"
+    ]
+  },
+  "575016": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shakthinagar (Dakshina Kannada) S.O"
+    ]
+  },
+  "575017": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Permannur S.O"
+    ]
+  },
+  "575018": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Derlakatte S.O"
+    ]
+  },
+  "575019": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kulai S.O"
+    ]
+  },
+  "575020": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ullal S.O"
+    ]
+  },
+  "575022": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kotekar S.O"
+    ]
+  },
+  "575023": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Someshwar Uchil S.O"
+    ]
+  },
+  "575025": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Srinivasnagar S.O"
+    ]
+  },
+  "575028": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vamanjoor S.O"
+    ]
+  },
+  "575029": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Pedamale S.O"
+    ]
+  },
+  "575030": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Katipalla S.O"
+    ]
+  },
+  "576111": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belmannu S.O"
+    ]
+  },
+  "576121": {
+    "division": "Mangaluru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mundkur S.O"
+    ]
+  },
+  "570001": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mysuru H.O"
+    ]
+  },
+  "570002": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vani Vilas Mohalla S.O"
+    ]
+  },
+  "570003": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Note Mudran Nagar S.O"
+    ]
+  },
+  "570004": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Lakshmipuram S.O (Mysuru)"
+    ]
+  },
+  "570005": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mysuru University S.O"
+    ]
+  },
+  "570006": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Manasagangothri S.O"
+    ]
+  },
+  "570007": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Narasimha Raja Mohalla S.O"
+    ]
+  },
+  "570008": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mysuru South S.O"
+    ]
+  },
+  "570009": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Saraswathipuram H.O"
+    ]
+  },
+  "570010": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ittigegud S.O"
+    ]
+  },
+  "570011": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Siddarthanagar Nagar S.O"
+    ]
+  },
+  "570012": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jayalakshmipuram S.O (Mysuru)"
+    ]
+  },
+  "570014": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jayanagar S.O (Mysuru)"
+    ]
+  },
+  "570015": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bannimantap S.O"
+    ]
+  },
+  "570016": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Metagalli S.O"
+    ]
+  },
+  "570017": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vijaynagar II Stage S.O"
+    ]
+  },
+  "570018": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belavadi S.O"
+    ]
+  },
+  "570019": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Udayagiri S.O (Mysuru)"
+    ]
+  },
+  "570020": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yadavagiri S.O"
+    ]
+  },
+  "570022": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ramakrishna Nagar S.O (Mysuru)"
+    ]
+  },
+  "570023": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kuvempunagar S.O (Mysuru)"
+    ]
+  },
+  "570025": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "G S Ashram S.O"
+    ]
+  },
+  "570026": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bogadi S.O"
+    ]
+  },
+  "570027": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Infosys Campus S.O"
+    ]
+  },
+  "570028": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Alanahalli S.O"
+    ]
+  },
+  "570029": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shakthinagar S.O"
+    ]
+  },
+  "570030": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vijayanagar III Stage S.O"
+    ]
+  },
+  "570031": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jaya Prakash Nagar S.O"
+    ]
+  },
+  "570032": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vijayanagar IV Stage S.O"
+    ]
+  },
+  "570033": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Dattagalli S.O"
+    ]
+  },
+  "570034": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sri Rampura 2nd Stage S.O"
+    ]
+  },
+  "571102": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bettadapura S.O"
+    ]
+  },
+  "571103": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bilikere S.O"
+    ]
+  },
+  "571104": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bylakuppe S.O"
+    ]
+  },
+  "571105": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hunsur S.O"
+    ]
+  },
+  "571106": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hanagodu S.O"
+    ]
+  },
+  "571107": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Periyapatna S.O"
+    ]
+  },
+  "571108": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ravandur S.O"
+    ]
+  },
+  "571114": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Heggadedevana Kote S.O"
+    ]
+  },
+  "571116": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kabini Colony S.O"
+    ]
+  },
+  "571121": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sargur S.O"
+    ]
+  },
+  "571125": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hampapura (H D Kote) S.O"
+    ]
+  },
+  "571130": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yelwal S.O"
+    ]
+  },
+  "571134": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kattemalalavadi S.O"
+    ]
+  },
+  "571187": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kanagal S.O"
+    ]
+  },
+  "571189": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Rathnapuri Colony S.O"
+    ]
+  },
+  "571311": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kadakola S.O"
+    ]
+  },
+  "571601": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hampapura (K R Nagar) S.O"
+    ]
+  },
+  "571602": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Krishna Raja Nagar S.O"
+    ]
+  },
+  "571603": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mirle S.O"
+    ]
+  },
+  "571604": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Saligrama S.O (Mysuru)"
+    ]
+  },
+  "571610": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gavadagere S.O"
+    ]
+  },
+  "571617": {
+    "division": "Mysuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chunchunakatte S.O"
+    ]
+  },
+  "571101": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bannur S.O"
+    ]
+  },
+  "571109": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Begur S.O"
+    ]
+  },
+  "571110": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gargeshwari S.O"
+    ]
+  },
+  "571111": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gundlupet S.O"
+    ]
+  },
+  "571115": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Santhemaranahalli S.O"
+    ]
+  },
+  "571117": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kagalavadi S.O"
+    ]
+  },
+  "571118": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kalale S.O"
+    ]
+  },
+  "571119": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tagadur S.O"
+    ]
+  },
+  "571120": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Old Sosale S.O"
+    ]
+  },
+  "571122": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Talakad S.O"
+    ]
+  },
+  "571123": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tirukanambi S.O"
+    ]
+  },
+  "571124": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "T Narasipura S.O"
+    ]
+  },
+  "571126": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hangala S.O"
+    ]
+  },
+  "571127": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Haradanahalli S.O"
+    ]
+  },
+  "571128": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Harave S.O"
+    ]
+  },
+  "571129": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nagarle S.O"
+    ]
+  },
+  "571301": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nanjangud H.O"
+    ]
+  },
+  "571302": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Thandavapura S.O"
+    ]
+  },
+  "571312": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kavalande S.O"
+    ]
+  },
+  "571313": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chamarajanagara S.O"
+    ]
+  },
+  "571314": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hullahalli S.O"
+    ]
+  },
+  "571315": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hura S.O (Mysuru)"
+    ]
+  },
+  "571316": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kuderu S.O (Chamrajnagar)"
+    ]
+  },
+  "571320": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Cowdalli S.O"
+    ]
+  },
+  "571342": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ramasamudra S.O (Chamrajnagar)"
+    ]
+  },
+  "571439": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hanur S.O"
+    ]
+  },
+  "571440": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kollegal H.O"
+    ]
+  },
+  "571441": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yelandur S.O"
+    ]
+  },
+  "571442": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mamballi S.O"
+    ]
+  },
+  "571443": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kamakerai S.O"
+    ]
+  },
+  "571444": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ramapuram Ghat S.O"
+    ]
+  },
+  "571457": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tibetan Settlement S.O"
+    ]
+  },
+  "571490": {
+    "division": "Nanjangud",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mahadeshwara Malai S.O"
+    ]
+  },
+  "574101": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ajekar S.O"
+    ]
+  },
+  "574102": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bailur S.O"
+    ]
+  },
+  "574104": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Karkala H.O"
+    ]
+  },
+  "574107": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Miyar S.O"
+    ]
+  },
+  "574108": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Muniyal S.O"
+    ]
+  },
+  "574109": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Naravi S.O"
+    ]
+  },
+  "574110": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nitte S.O"
+    ]
+  },
+  "574114": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sanur S.O"
+    ]
+  },
+  "574122": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bajegoli S.O"
+    ]
+  },
+  "574129": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kanthavara S.O"
+    ]
+  },
+  "574197": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kodangallu S.O"
+    ]
+  },
+  "574198": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kokkada S.O"
+    ]
+  },
+  "574201": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Puttur(D.K.) H.O"
+    ]
+  },
+  "574202": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Darbe(Puttur) S.O"
+    ]
+  },
+  "574203": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nehrunagar(Puttur DK) S.O"
+    ]
+  },
+  "574210": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Aryapu S.O"
+    ]
+  },
+  "574211": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bantval S.O"
+    ]
+  },
+  "574212": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bellare S.O"
+    ]
+  },
+  "574213": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belvai S.O"
+    ]
+  },
+  "574214": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belthangady S.O"
+    ]
+  },
+  "574216": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Dharmasthala S.O"
+    ]
+  },
+  "574217": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Guruvayanakere S.O"
+    ]
+  },
+  "574218": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Guthigar S.O"
+    ]
+  },
+  "574219": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jodumarga S.O"
+    ]
+  },
+  "574220": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kabaka S.O"
+    ]
+  },
+  "574221": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kadaba S.O (Dakshina Kannada)"
+    ]
+  },
+  "574222": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kalladka S.O"
+    ]
+  },
+  "574223": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kav S.O"
+    ]
+  },
+  "574224": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Madanthyar S.O"
+    ]
+  },
+  "574225": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mijar S.O"
+    ]
+  },
+  "574226": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mithabail S.O"
+    ]
+  },
+  "574227": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Moodbidri S.O"
+    ]
+  },
+  "574228": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mundaje S.O"
+    ]
+  },
+  "574229": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nellyadi S.O"
+    ]
+  },
+  "574230": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nettana S.O"
+    ]
+  },
+  "574231": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Panemangalore S.O"
+    ]
+  },
+  "574232": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Panja S.O"
+    ]
+  },
+  "574233": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Punjalkatte S.O"
+    ]
+  },
+  "574234": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sampaje S.O"
+    ]
+  },
+  "574235": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sathya Sai Vihar S.O"
+    ]
+  },
+  "574236": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shirthady S.O"
+    ]
+  },
+  "574237": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Siddakatte S.O"
+    ]
+  },
+  "574238": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Subramanya S.O"
+    ]
+  },
+  "574239": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sullia S.O"
+    ]
+  },
+  "574240": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ujire S.O"
+    ]
+  },
+  "574241": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Uppinangady S.O"
+    ]
+  },
+  "574242": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Venur S.O"
+    ]
+  },
+  "574243": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vittal S.O"
+    ]
+  },
+  "574244": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Palli S.O"
+    ]
+  },
+  "574248": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Doddathota S.O"
+    ]
+  },
+  "574253": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mani S.O"
+    ]
+  },
+  "574259": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Panaje S.O"
+    ]
+  },
+  "574260": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Adyanadka S.O"
+    ]
+  },
+  "574265": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vogga S.O"
+    ]
+  },
+  "574274": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kallamundkur S.O"
+    ]
+  },
+  "574279": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kanyana S.O"
+    ]
+  },
+  "574285": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Alankar S.O"
+    ]
+  },
+  "574313": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ishwaramangala S.O"
+    ]
+  },
+  "574314": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Aranthodu S.O"
+    ]
+  },
+  "574323": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Manchi S.O"
+    ]
+  },
+  "574324": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vamadapadavu S.O"
+    ]
+  },
+  "574325": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nekkilady(34) S.O"
+    ]
+  },
+  "574326": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kalleri S.O"
+    ]
+  },
+  "574327": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kurunjibag S.O"
+    ]
+  },
+  "574328": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kaniyur(Puttur) S.O"
+    ]
+  },
+  "576112": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hebri S.O"
+    ]
+  },
+  "576117": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kukkundur S.O"
+    ]
+  },
+  "577115": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bhadra Reservoir Project S.O"
+    ]
+  },
+  "577201": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shivamogga H.O"
+    ]
+  },
+  "577202": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shivamogga Doddapete S.O"
+    ]
+  },
+  "577203": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vidyanagar Shivamogga S.O"
+    ]
+  },
+  "577204": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vinobanagar Shivamogga S.O"
+    ]
+  },
+  "577205": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gopala Extension S.O"
+    ]
+  },
+  "577211": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ayanur S.O"
+    ]
+  },
+  "577213": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Channagiri S.O"
+    ]
+  },
+  "577214": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hithla S.O"
+    ]
+  },
+  "577215": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hodikere S.O"
+    ]
+  },
+  "577216": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Holalur S.O"
+    ]
+  },
+  "577217": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Honnali S.O"
+    ]
+  },
+  "577218": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kerebilichi S.O"
+    ]
+  },
+  "577219": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kundur S.O"
+    ]
+  },
+  "577220": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mandagadde S.O"
+    ]
+  },
+  "577221": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nallur S.O (Davangere)"
+    ]
+  },
+  "577222": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nidige S.O"
+    ]
+  },
+  "577223": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nyamthi S.O"
+    ]
+  },
+  "577224": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sasvehalli S.O"
+    ]
+  },
+  "577225": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Saualanga S.O"
+    ]
+  },
+  "577226": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tudur S.O"
+    ]
+  },
+  "577227": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Holehonner S.O"
+    ]
+  },
+  "577229": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kawalgundi S.O"
+    ]
+  },
+  "577230": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chilur S.O"
+    ]
+  },
+  "577231": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kanivebilichi S.O"
+    ]
+  },
+  "577232": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bejjavalli S.O"
+    ]
+  },
+  "577233": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kudligere S.O"
+    ]
+  },
+  "577243": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Anaveri S.O"
+    ]
+  },
+  "577245": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Barandur S.O"
+    ]
+  },
+  "577301": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bhadravati H.O"
+    ]
+  },
+  "577302": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bhadravathi Paper Town S.O"
+    ]
+  },
+  "577401": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sagar H.O"
+    ]
+  },
+  "577411": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Agumbe S.O"
+    ]
+  },
+  "577412": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Anandapuram S.O (Shivamogga)"
+    ]
+  },
+  "577413": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Anavatti S.O"
+    ]
+  },
+  "577414": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Arga S.O"
+    ]
+  },
+  "577415": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Devangi S.O"
+    ]
+  },
+  "577416": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Harnahalli S.O"
+    ]
+  },
+  "577417": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Honnesara S.O"
+    ]
+  },
+  "577418": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hosanagar S.O"
+    ]
+  },
+  "577419": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jade S.O"
+    ]
+  },
+  "577421": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kargal Colony S.O"
+    ]
+  },
+  "577422": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Konandur S.O"
+    ]
+  },
+  "577423": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kumsi S.O"
+    ]
+  },
+  "577424": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Megaravalli S.O"
+    ]
+  },
+  "577425": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nagara Shimoga SO"
+    ]
+  },
+  "577426": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ripponpet S.O"
+    ]
+  },
+  "577427": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shikaripur S.O"
+    ]
+  },
+  "577428": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shiralakoppa S.O"
+    ]
+  },
+  "577429": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sorab S.O"
+    ]
+  },
+  "577430": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Talaguppa S.O"
+    ]
+  },
+  "577431": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Thagarthi S.O"
+    ]
+  },
+  "577432": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Thirthahalli S.O"
+    ]
+  },
+  "577433": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Togarsi S.O"
+    ]
+  },
+  "577434": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ulavi S.O"
+    ]
+  },
+  "577435": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Jog Falls S.O"
+    ]
+  },
+  "577436": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Humcha S.O"
+    ]
+  },
+  "577451": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "KVV Shankaraghattta S.O"
+    ]
+  },
+  "577452": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nittur S.O (Shivamogga)"
+    ]
+  },
+  "577453": {
+    "division": "Shivamogga",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Avinahalli S.O"
+    ]
+  },
+  "577544": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Thyavanige S.O"
+    ]
+  },
+  "577551": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Basavapatna S.O (Davangere)"
+    ]
+  },
+  "577552": {
+    "division": "Davangere",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Santhebennur S.O"
+    ]
+  },
+  "561202": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Pavagada S.O"
+    ]
+  },
+  "572101": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tumakuru H.O"
+    ]
+  },
+  "572102": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Someswarapuram S.O"
+    ]
+  },
+  "572103": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kuvempunagara S.O"
+    ]
+  },
+  "572104": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kyathasandra S.O"
+    ]
+  },
+  "572105": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Maralur S.O"
+    ]
+  },
+  "572106": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Northren Extension S.O"
+    ]
+  },
+  "572107": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "M C Campus Tumakuru S.O"
+    ]
+  },
+  "572111": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Amruthur S.O"
+    ]
+  },
+  "572112": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Badavanahalli S.O"
+    ]
+  },
+  "572113": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Baragur S.O"
+    ]
+  },
+  "572114": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Biligere S.O"
+    ]
+  },
+  "572115": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Bukkapatna S.O"
+    ]
+  },
+  "572116": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Channakeshavapura S.O"
+    ]
+  },
+  "572117": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chelur S.O (Tumakuru)"
+    ]
+  },
+  "572118": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gulur S.O"
+    ]
+  },
+  "572119": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Handanakere S.O"
+    ]
+  },
+  "572120": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hebbur S.O"
+    ]
+  },
+  "572121": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Holavanahalli S.O"
+    ]
+  },
+  "572122": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Honnudike S.O"
+    ]
+  },
+  "572123": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Huliyur Durga S.O"
+    ]
+  },
+  "572124": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ittakadibbanahalli S.O"
+    ]
+  },
+  "572125": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kallambella S.O"
+    ]
+  },
+  "572126": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kempanahalli S.O"
+    ]
+  },
+  "572127": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kodigenahalli S.O"
+    ]
+  },
+  "572128": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kora S.O (Tumakuru)"
+    ]
+  },
+  "572129": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Koratagere S.O"
+    ]
+  },
+  "572130": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kunigal S.O"
+    ]
+  },
+  "572132": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Madhugiri S.O"
+    ]
+  },
+  "572133": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Medigeshi S.O"
+    ]
+  },
+  "572134": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nagasandra S.O (Tumakuru)"
+    ]
+  },
+  "572135": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "P N Halli S.O"
+    ]
+  },
+  "572136": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Palavalli S.O"
+    ]
+  },
+  "572137": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sira S.O"
+    ]
+  },
+  "572138": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tovinakere S.O"
+    ]
+  },
+  "572139": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tavarekere S.O (Tumakuru)"
+    ]
+  },
+  "572140": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Urdigere S.O"
+    ]
+  },
+  "572141": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Y N Hoskote S.O"
+    ]
+  },
+  "572142": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yediyur S.O (Tumakuru)"
+    ]
+  },
+  "572168": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hirehalli S.O"
+    ]
+  },
+  "572175": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Puravara S.O"
+    ]
+  },
+  "572201": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tiptur H.O"
+    ]
+  },
+  "572211": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ammasandra S.O"
+    ]
+  },
+  "572212": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Banasandra S.O"
+    ]
+  },
+  "572213": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chandrashekarapura S.O"
+    ]
+  },
+  "572214": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Chikkanayakanahalli S.O"
+    ]
+  },
+  "572215": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Dandinashivara S.O"
+    ]
+  },
+  "572216": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gubbi S.O"
+    ]
+  },
+  "572217": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Honnavalli S.O"
+    ]
+  },
+  "572218": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Huliyar S.O"
+    ]
+  },
+  "572219": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kadaba S.O (Tumakuru)"
+    ]
+  },
+  "572220": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kallur S.O (Tumakuru)"
+    ]
+  },
+  "572221": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mayasandra S.O"
+    ]
+  },
+  "572222": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mooganayakana Kote S.O"
+    ]
+  },
+  "572223": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nittur S.O (Tumakuru)"
+    ]
+  },
+  "572224": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Nonavinakere S.O"
+    ]
+  },
+  "572225": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sampige S.O"
+    ]
+  },
+  "572226": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Settikere S.O"
+    ]
+  },
+  "572227": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Turuvekere S.O"
+    ]
+  },
+  "572228": {
+    "division": "Tumakuru",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kandikere S.O"
+    ]
+  },
+  "574103": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hejmadi SO"
+    ]
+  },
+  "574105": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "KatapadiUdupi SO"
+    ]
+  },
+  "574106": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kaup SO"
+    ]
+  },
+  "574111": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Padubidri SO"
+    ]
+  },
+  "574112": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Palimar SO"
+    ]
+  },
+  "574113": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Pilar SO Udupi"
+    ]
+  },
+  "574115": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shankarapura SO"
+    ]
+  },
+  "574116": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shirva SO"
+    ]
+  },
+  "574117": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Uchila SO"
+    ]
+  },
+  "574118": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Udyavara SO"
+    ]
+  },
+  "574119": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Yermal SO"
+    ]
+  },
+  "576101": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Udupi HO"
+    ]
+  },
+  "576102": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kunjibettu SO"
+    ]
+  },
+  "576103": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ambalapadi SO"
+    ]
+  },
+  "576104": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Manipal HO"
+    ]
+  },
+  "576105": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Santhekatte SO"
+    ]
+  },
+  "576106": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Krodashrama SO"
+    ]
+  },
+  "576107": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Parkala SO"
+    ]
+  },
+  "576108": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Malpe SO"
+    ]
+  },
+  "576113": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hiriadka SO"
+    ]
+  },
+  "576114": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kallianapura SO"
+    ]
+  },
+  "576115": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kemmannu SO"
+    ]
+  },
+  "576120": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Moodubelle SO"
+    ]
+  },
+  "576122": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Pangala SO"
+    ]
+  },
+  "576124": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Perdur SO"
+    ]
+  },
+  "576201": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kundapura HO"
+    ]
+  },
+  "576210": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Barkur SO"
+    ]
+  },
+  "576211": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Basrur SO"
+    ]
+  },
+  "576212": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belve SO"
+    ]
+  },
+  "576213": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Brahmavara SO"
+    ]
+  },
+  "576214": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Byndoor SO"
+    ]
+  },
+  "576215": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Cherkadi SO"
+    ]
+  },
+  "576216": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Ganguli SO"
+    ]
+  },
+  "576217": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hanglur SO"
+    ]
+  },
+  "576218": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hungarcutta SO"
+    ]
+  },
+  "576219": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Khambadakone SO"
+    ]
+  },
+  "576220": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kollur SO"
+    ]
+  },
+  "576221": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kota SO"
+    ]
+  },
+  "576222": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Koteshwara SO"
+    ]
+  },
+  "576223": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Mandarthi SO"
+    ]
+  },
+  "576224": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Navunda SO"
+    ]
+  },
+  "576225": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Saligrama SO Udupi"
+    ]
+  },
+  "576226": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Sasthan SO"
+    ]
+  },
+  "576227": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shankaranarayana SO"
+    ]
+  },
+  "576228": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Shiruru Udupi SO"
+    ]
+  },
+  "576229": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Siddapura Udupi SO"
+    ]
+  },
+  "576230": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tallur SO Udupi"
+    ]
+  },
+  "576231": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Tekkatte SO"
+    ]
+  },
+  "576232": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Uppunda SO"
+    ]
+  },
+  "576233": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Vandse SO"
+    ]
+  },
+  "576234": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kokkarne SO"
+    ]
+  },
+  "576235": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Trasi SO"
+    ]
+  },
+  "576247": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Gujjadi SO"
+    ]
+  },
+  "576257": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kumbhashi SO"
+    ]
+  },
+  "576282": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hosangadi SO"
+    ]
+  },
+  "576283": {
+    "division": "Udupi",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Hattiangadi SO"
+    ]
+  }
+}
