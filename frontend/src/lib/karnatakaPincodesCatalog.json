@@ -9413,5 +9413,376 @@
     "offices": [
       "Hattiangadi SO"
     ]
+  },
+  "560019": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Gaviopuram Extension S.O"
+    ]
+  },
+  "560028": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Tyagrajnagar S.O"
+    ]
+  },
+  "560031": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "ISRO S.O"
+    ]
+  },
+  "560039": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Nayandahalli S.O"
+    ]
+  },
+  "560044": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Rajajinagar IV Block S.O"
+    ]
+  },
+  "560052": {
+    "division": "BG Central",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Vasanthnagar S.O"
+    ]
+  },
+  "560069": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Jayanagar East S.O"
+    ]
+  },
+  "560106": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Electronic City II Stage S.O"
+    ]
+  },
+  "560130": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Tavarekere S.O"
+    ]
+  },
+  "560214": {
+    "division": "Puttur",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Belthangady S.O"
+    ]
+  },
+  "560740": {
+    "division": "BG South",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Kumbalagodu S.O"
+    ]
+  },
+  "561229": {
+    "division": "BG West",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Doddaballapur Bazaar S.O"
+    ]
+  },
+  "561260": {
+    "division": "Channapatna",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Channapatna S.O"
+    ]
+  },
+  "562158": {
+    "division": "BG East",
+    "region": "Bengaluru HQ Region",
+    "offices": [
+      "Devanahalli S.O"
+    ]
+  },
+  "563102": {
+    "division": "Kolar",
+    "region": "South Karnataka Region",
+    "offices": [
+      "Kolar Extension S.O"
+    ]
+  },
+  "580101": {
+    "division": "Dharwad",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Dharwad S.O"
+    ]
+  },
+  "583013": {
+    "division": "Ballari",
+    "region": "North Karnataka Region",
+    "offices": [
+      "Ballari S.O"
+    ]
+  },
+  "500013": {
+    "division": "Hyderabad",
+    "region": "Telangana Circle",
+    "offices": [
+      "Tarnaka S.O"
+    ]
+  },
+  "500004": {
+    "division": "Hyderabad",
+    "region": "Telangana Circle",
+    "offices": [
+      "Khairatabad S.O"
+    ]
+  },
+  "411057": {
+    "division": "Pune",
+    "region": "Maharashtra Circle",
+    "offices": [
+      "Hinjawadi S.O"
+    ]
+  },
+  "411030": {
+    "division": "Pune",
+    "region": "Maharashtra Circle",
+    "offices": [
+      "Sadashiv Peth S.O"
+    ]
+  },
+  "411006": {
+    "division": "Pune",
+    "region": "Maharashtra Circle",
+    "offices": [
+      "Yerwada S.O"
+    ]
+  },
+  "411001": {
+    "division": "Pune",
+    "region": "Maharashtra Circle",
+    "offices": [
+      "Pune H.O"
+    ]
+  },
+  "400059": {
+    "division": "Mumbai",
+    "region": "Maharashtra Circle",
+    "offices": [
+      "Andheri East S.O"
+    ]
+  },
+  "400021": {
+    "division": "Mumbai",
+    "region": "Maharashtra Circle",
+    "offices": [
+      "Nariman Point S.O"
+    ]
+  },
+  "226016": {
+    "division": "Lucknow",
+    "region": "Uttar Pradesh Circle",
+    "offices": [
+      "Indira Nagar S.O"
+    ]
+  },
+  "173205": {
+    "division": "Solan",
+    "region": "Himachal Pradesh Circle",
+    "offices": [
+      "Kumarhatti S.O"
+    ]
+  },
+  "122001": {
+    "division": "Gurgaon",
+    "region": "Haryana Circle",
+    "offices": [
+      "Gurgaon H.O"
+    ]
+  },
+  "403001": {
+    "division": "Goa",
+    "region": "Maharashtra Circle",
+    "offices": [
+      "Panaji H.O"
+    ]
+  },
+  "403702": {
+    "division": "Goa",
+    "region": "Maharashtra Circle",
+    "offices": [
+      "Margao S.O"
+    ]
+  },
+  "641603": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Tirupur Cotton Market S.O"
+    ]
+  },
+  "641602": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Tirupur H.O"
+    ]
+  },
+  "641605": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Anupparpalayam S.O"
+    ]
+  },
+  "641607": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Tirupur Bazaar S.O"
+    ]
+  },
+  "641604": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Rayapuram S.O"
+    ]
+  },
+  "641687": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Uthukuli S.O"
+    ]
+  },
+  "641001": {
+    "division": "Coimbatore",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Coimbatore H.O"
+    ]
+  },
+  "639002": {
+    "division": "Karur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Karur H.O"
+    ]
+  },
+  "600003": {
+    "division": "Chennai",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Park Town S.O"
+    ]
+  },
+  "600006": {
+    "division": "Chennai",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Greams Road S.O"
+    ]
+  },
+  "600052": {
+    "division": "Chennai",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Redhills S.O"
+    ]
+  },
+  "600102": {
+    "division": "Chennai",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Anna Nagar S.O"
+    ]
+  },
+  "620005": {
+    "division": "Tiruchirappalli",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Tiruchirappalli S.O"
+    ]
+  },
+  "632004": {
+    "division": "Vellore",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Vellore S.O"
+    ]
+  },
+  "635114": {
+    "division": "Hosur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Hosur S.O"
+    ]
+  },
+  "636004": {
+    "division": "Salem",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Salem S.O"
+    ]
+  },
+  "641107": {
+    "division": "Coimbatore",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Irugur S.O"
+    ]
+  },
+  "641402": {
+    "division": "Coimbatore",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Sulur S.O"
+    ]
+  },
+  "641606": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Nallur S.O"
+    ]
+  },
+  "641608": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Veerapandi S.O"
+    ]
+  },
+  "641666": {
+    "division": "Tirupur",
+    "region": "Tamilnadu Circle",
+    "offices": [
+      "Mangalam S.O"
+    ]
+  },
+  "670643": {
+    "division": "Wayanad",
+    "region": "Kerala Circle",
+    "offices": [
+      "Mananthavady S.O"
+    ]
+  },
+  "700068": {
+    "division": "Kolkata",
+    "region": "West Bengal Circle",
+    "offices": [
+      "Kolkata S.O"
+    ]
   }
 }

@@ -308,7 +308,7 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                 <th className="px-4 py-3.5 font-semibold text-center w-12">#</th>
                 <th className="px-4 py-3.5 font-semibold text-center w-24">Actions</th>
                 <th className="px-5 py-3.5 font-semibold min-w-[240px]">Lead / Exporter</th>
-                <th className="px-4 py-3.5 font-semibold min-w-[140px]">Post Office</th>
+                <th className="px-4 py-3.5 font-semibold min-w-[140px]">Pincode / Post Office</th>
                 <th className="px-4 py-3.5 font-semibold min-w-[130px]">Contact Person</th>
                 <th className="px-4 py-3.5 font-semibold min-w-[140px]">Product / Provider</th>
                 <th className="px-4 py-3.5 font-semibold min-w-[130px]">ME Name / Mobile</th>
@@ -380,9 +380,12 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                       </div>
                     </td>
                     
-                    {/* 4. Post Office (Pincode hidden as requested, PO Name visible) */}
+                    {/* 4. Pincode first, then Post Office Name */}
                     <td className="px-4 py-3.5 text-left">
-                      <div className="text-xs font-semibold text-slate-800 leading-tight">
+                      <div className="text-[11px] text-slate-500 font-mono font-bold leading-tight">
+                        {lead.pincode || '—'}
+                      </div>
+                      <div className="text-xs font-semibold text-slate-800 leading-tight mt-0.5">
                         {locationPo}
                       </div>
                     </td>

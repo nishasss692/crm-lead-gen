@@ -2880,14 +2880,13 @@ def get_pincode_performance(
     for r in results:
         raw_pin = str(r.pincode or "").strip()
         clean_pin = re.sub(r'\D', '', raw_pin)
-        pin = clean_pin if len(clean_pin) == 6 else raw_pin
-        
-        if not pin or pin.lower() in ['nan', 'none', 'null', '0', '000000', '']:
+        if len(clean_pin) != 6:
             continue
+        pin = clean_pin
             
         office = (r.office_name or "").strip()
-        if not office or office.lower() in ['nan', 'none', 'null', ''] or office.lower().startswith('post office'):
-            office = PINCODE_OFFICE_MAP.get(pin, PINCODE_OFFICE_MAP.get(clean_pin, f"PO {pin}"))
+        if not office or office.lower() in ['nan', 'none', 'null', ''] or office.lower().startswith('post office') or office.startswith('PO '):
+            office = PINCODE_OFFICE_MAP.get(pin, PINCODE_OFFICE_MAP.get(clean_pin, f"Post Office - {pin}"))
         
         pincode_list.append({
             "pincode": pin,

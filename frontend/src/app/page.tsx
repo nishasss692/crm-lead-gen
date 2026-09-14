@@ -952,7 +952,7 @@ export default function MarketingExecutiveDashboard() {
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead className="bg-[#114b79] text-white text-xs font-bold uppercase tracking-wider sticky top-0 z-10 shadow-xs">
               <tr>
-                <th scope="col" className="py-3.5 px-6 whitespace-nowrap">POST OFFICE</th>
+                <th scope="col" className="py-3.5 px-6 whitespace-nowrap">PINCODE / POST OFFICE</th>
                 <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">TOTAL</th>
                 <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">PENDING</th>
                 <th scope="col" className="py-3.5 px-3 text-center whitespace-nowrap">CONTACTED</th>
@@ -970,7 +970,7 @@ export default function MarketingExecutiveDashboard() {
                   <td colSpan={10} className="py-12 text-center text-slate-400 font-semibold">
                     <div className="inline-flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-[#114b79] border-t-transparent rounded-full animate-spin"></div>
-                      <span>Loading pincode performance records...</span>
+                      <span>Loading post office performance records...</span>
                     </div>
                   </td>
                 </tr>
@@ -986,16 +986,21 @@ export default function MarketingExecutiveDashboard() {
                     key={item.pincode || idx} 
                     className="border-b border-gray-100 odd:bg-white even:bg-gray-50/60 hover:bg-blue-50/20 transition-colors"
                   >
-                    {/* Post Office Name (Pincode hidden as requested, PO Name visible) */}
+                    {/* Pincode first, and then Post Office Name underneath */}
                     <td className="py-3.5 px-6 whitespace-nowrap">
                       {(() => {
-                        const resolvedOffice = item.office_name && !item.office_name.toLowerCase().startsWith('post office')
+                        const resolvedOffice = item.office_name && !item.office_name.toLowerCase().startsWith('post office') && !item.office_name.startsWith('PO ')
                           ? item.office_name
-                          : (PINCODE_TERRITORY_CATALOG[item.pincode]?.offices?.[0] || item.office_name || 'Post Office');
+                          : (PINCODE_TERRITORY_CATALOG[item.pincode]?.offices?.[0] || item.office_name || `Post Office - ${item.pincode}`);
                         return (
-                          <div className="font-bold text-slate-900 text-sm font-sans leading-tight truncate max-w-[260px]" title={resolvedOffice}>
-                            {resolvedOffice}
-                          </div>
+                          <>
+                            <div className="font-bold text-gray-900 text-sm font-mono leading-tight">
+                              {item.pincode}
+                            </div>
+                            <div className="text-xs font-semibold text-slate-700 mt-0.5 font-sans truncate max-w-[260px]" title={resolvedOffice}>
+                              {resolvedOffice}
+                            </div>
+                          </>
                         );
                       })()}
                     </td>
