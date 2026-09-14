@@ -198,7 +198,7 @@ export default function LoginPage() {
             </h2>
 
             <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed font-medium max-w-lg">
-              Integrated Lead Operations & Commercial Outreach Dashboard for Department of Posts Marketing Executives, Divisional Officers, and Regional Leadership.
+              Integrated Lead Operations & Commercial Outreach Dashboard for Department of Posts Marketing Executives, Divisional Officers, Regional Leadership, and Circle Officers.
             </p>
 
             {/* Quick Metrics Grid: Dual Blue and Red Accents */}
@@ -371,7 +371,7 @@ export default function LoginPage() {
                   onClick={() => handleQuickAccess('CO_ADMIN', 'Post@123')}
                   className="p-2.5 rounded-xl border border-red-100 hover:border-[#D1242F] bg-white hover:bg-red-50/40 text-left transition-all cursor-pointer group shadow-xs hover:shadow-sm"
                 >
-                  <div className="font-bold text-[#D1242F] text-xs">CO (Circle)</div>
+                  <div className="font-bold text-[#D1242F] text-xs">CO (Circle Officer)</div>
                   <div className="text-slate-500 text-[10px] mt-0.5">Circle-wide</div>
                 </button>
 

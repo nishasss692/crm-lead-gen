@@ -19,7 +19,7 @@ The portal strictly enforces the operational hierarchy of the Karnataka Postal C
 
 ```
                           ┌──────────────────────────────┐
-                          │   Circle Office (CO - Apex)  │
+                          │  Circle Officer (CO - Apex) │
                           │   Statewide Lead Governance  │
                           └──────────────┬───────────────┘
                                          │
@@ -40,7 +40,7 @@ The portal strictly enforces the operational hierarchy of the Karnataka Postal C
 
 | Role Level | Jurisdiction Scope | Permissions |
 | :--- | :--- | :--- |
-| **CO (Circle Office)** | Entire Karnataka Circle (Statewide) | Full oversight, division management, analytics, system exports, deduplication, circle-wide assignments. |
+| **CO (Circle Officer)** | Entire Karnataka Circle (Statewide) | Full oversight, division management, analytics, system exports, deduplication, circle-wide assignments. |
 | **RO (Regional Office)** | Assigned Region (Bengaluru HQ, South Kar, or North Kar) | Oversees all constituent divisions and MEs; performance tracking; lead reallocation. |
 | **DO (Division Office)** | Assigned Postal Division (e.g., Mysuru, BG Central) | Division lead lifecycle management, ME pipeline tracking, assignment, lead verification. |
 | **ME (Marketing Executive)**| Assigned Territory / Division | Field operations, merchant calls, meeting notes, status updates (`Contacted`, `Willing`, `Onboarded`). |
@@ -223,7 +223,7 @@ The portal features quick one-click authentication and supports standard credent
 
 | Role Level | User / Employee ID | Jurisdiction Scope | Password |
 | :--- | :--- | :--- | :--- |
-| **Circle Office (CO)** | `CO_ADMIN` | Statewide (Karnataka Circle) | `Post@123` |
+| **Circle Officer (CO)** | `CO_ADMIN` | Statewide (Karnataka Circle) | `Post@123` |
 | **RO Bengaluru** | `r001` | Bengaluru HQ Region | `Post@123` |
 | **RO South Karnataka** | `r002` | South Karnataka Region | `Post@123` |
 | **RO North Karnataka** | `r003` | North Karnataka Region | `Post@123` |

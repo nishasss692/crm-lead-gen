@@ -463,7 +463,7 @@ export default function MarketingExecutiveDashboard() {
   const isCO = userRole === 'CO' || (!isDO && !isRO && !isME);
 
   const roleTitle = isCO 
-    ? 'Central Office (CO) Operations & Commercial Analytics' 
+    ? 'Circle Officer (CO) Operations & Commercial Analytics' 
     : isRO 
     ? `${user?.assigned_region || 'Regional Office (RO)'} Operations & Territory Analytics` 
     : isDO 

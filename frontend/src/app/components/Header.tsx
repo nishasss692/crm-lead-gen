@@ -44,7 +44,7 @@ export default function Header({
   const roleDisplay = (roleUpper === 'DIVISION' || roleUpper === 'DO' || roleUpper === 'DIV') ? 'DO' : (roleUpper === 'RO' ? 'RO' : (roleUpper === 'ME' ? 'ME' : 'CO'));
   
   const roleFullName = roleDisplay === 'CO' 
-    ? 'Central Office (CO)' 
+    ? 'Circle Officer (CO)' 
     : roleDisplay === 'RO' 
     ? 'Regional Office (RO)' 
     : roleDisplay === 'DO' 
@@ -55,7 +55,7 @@ export default function Header({
     ? `${user?.assigned_division || user?.division} Division` 
     : user?.assigned_region || user?.region 
     ? `${user?.assigned_region || user?.region}` 
-    : (roleDisplay === 'CO' ? 'Central Office • Karnataka Circle' : 'Karnataka Circle');
+    : (roleDisplay === 'CO' ? 'Circle Officer • Karnataka Circle' : 'Karnataka Circle');
 
   return (
     <header className="bg-white border-b-[3px] border-[#D1242F] h-18 md:h-20 flex items-center px-4 md:px-8 justify-between shrink-0 shadow-xs relative z-30 select-none">

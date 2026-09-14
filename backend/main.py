@@ -1681,7 +1681,7 @@ async def upload_excel(
     if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Only Circle Office (CO) administrators are authorized to upload lead files."
+            detail="Access denied. Only Circle Officer (CO) administrators are authorized to upload lead files."
         )
 
     filename = (file.filename or "").lower()
@@ -1936,7 +1936,7 @@ def apply_rbac_filter(query, user: Optional[dict], division_name: Optional[str] 
     - DO (Divisional Officer): Scoped to their assigned division (or selected division).
     - RO (Regional Officer): Scoped to their assigned region, or to explicitly selected division.
       If RO selects a division, that division takes priority so RO can inspect any division.
-    - CO (Circle Office / Admin): Full circle-wide visibility across all divisions; filtered if division_name is passed.
+    - CO (Circle Officer / Admin): Full circle-wide visibility across all divisions; filtered if division_name is passed.
     """
     if not user:
         return query
