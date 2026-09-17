@@ -18,10 +18,12 @@ import {
   DollarSign,
   ShieldCheck,
   Percent,
-  Layers
+  Layers,
+  UserPlus
 } from 'lucide-react';
 import { apiFetch, safeJson } from '@/lib/api';
 import { PINCODE_TERRITORY_CATALOG } from '@/lib/karnatakaTerritory';
+import UploadMEModal from './components/UploadMEModal';
 import {
   ResponsiveContainer,
   BarChart,
@@ -116,6 +118,8 @@ export default function MarketingExecutiveDashboard() {
     assigned_region?: string;
     region?: string;
   } | null>(null);
+
+  const [isUploadMEModalOpen, setIsUploadMEModalOpen] = useState(false);
 
   // Analytics & Data State
   const [analytics, setAnalytics] = useState<AnalyticsData>({
@@ -529,6 +533,17 @@ export default function MarketingExecutiveDashboard() {
                 })}
               </select>
             </div>
+          )}
+
+          {isCO && (
+            <button
+              onClick={() => setIsUploadMEModalOpen(true)}
+              title="Upload ME Roster or onboard new Marketing Executives"
+              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+            >
+              <UserPlus className="w-3.5 h-3.5 text-amber-200" />
+              <span>Upload MEs</span>
+            </button>
           )}
 
           <button
@@ -1057,6 +1072,10 @@ export default function MarketingExecutiveDashboard() {
         </div>
       </div>
 
+      <UploadMEModal
+        isOpen={isUploadMEModalOpen}
+        onClose={() => setIsUploadMEModalOpen(false)}
+      />
     </div>
   );
 }

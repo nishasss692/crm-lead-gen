@@ -3,6 +3,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import ChangePasswordModal from './ChangePasswordModal';
+import UploadMEModal from './UploadMEModal';
 import { 
   LayoutDashboard, 
   Users, 
@@ -13,7 +14,8 @@ import {
   Briefcase, 
   KeyRound, 
   LogOut,
-  XCircle
+  XCircle,
+  UserPlus
 } from 'lucide-react';
 
 function SidebarContent() {
@@ -23,6 +25,7 @@ function SidebarContent() {
   const statusParam = searchParams.get('status');
 
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isUploadMEModalOpen, setIsUploadMEModalOpen] = useState(false);
   const [user, setUser] = useState<{username: string, role: string} | null>(null);
 
   useEffect(() => {
@@ -128,6 +131,30 @@ function SidebarContent() {
             </li>
           </ul>
         </div>
+
+        {/* Circle Administration for CO */}
+        {user?.role && ['CO', 'ADMIN', 'CO_ADMIN'].includes(String(user.role).toUpperCase()) && (
+          <div>
+            <div className="px-3 mb-2 text-[10px] font-extrabold text-[#FAB52C] uppercase tracking-widest flex items-center justify-between">
+              <span>Circle Operations</span>
+              <span className="bg-[#FAB52C]/20 text-[#FAB52C] text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">CO</span>
+            </div>
+            <ul className="space-y-1">
+              <li>
+                <button
+                  onClick={() => setIsUploadMEModalOpen(true)}
+                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] text-amber-300 hover:bg-white/10 hover:text-white font-semibold cursor-pointer text-left"
+                >
+                  <UserPlus className="w-4 h-4 mr-3 shrink-0 text-[#FAB52C]" />
+                  <div className="flex-1 flex items-center justify-between">
+                    <span className="text-sm">Manage & Upload MEs</span>
+                    <span className="text-[10px] bg-[#FAB52C]/20 text-[#FAB52C] px-1.5 py-0.5 rounded font-bold">New</span>
+                  </div>
+                </button>
+              </li>
+            </ul>
+          </div>
+        )}
       </nav>
 
       {/* User Account Info */}
@@ -173,6 +200,11 @@ function SidebarContent() {
       <ChangePasswordModal 
         isOpen={isPasswordModalOpen} 
         onClose={() => setIsPasswordModalOpen(false)} 
+      />
+
+      <UploadMEModal
+        isOpen={isUploadMEModalOpen}
+        onClose={() => setIsUploadMEModalOpen(false)}
       />
     </div>
   );

@@ -20,10 +20,12 @@ import {
   BadgeCheck,
   Server,
   ChevronDown,
-  PlusCircle
+  PlusCircle,
+  UserPlus
 } from 'lucide-react';
 import { apiFetch, safeJson, getApiBaseUrl } from '@/lib/api';
 import AddRowModal from '../components/AddRowModal';
+import UploadMEModal from '../components/UploadMEModal';
 
 function LeadsPageContent() {
   const router = useRouter();
@@ -41,6 +43,7 @@ function LeadsPageContent() {
   } | null>(null);
 
   const [isAddRowModalOpen, setIsAddRowModalOpen] = useState(false);
+  const [isUploadMEModalOpen, setIsUploadMEModalOpen] = useState(false);
 
   const [selectedDivision, setSelectedDivision] = useState('');
   const [selectedPincode, setSelectedPincode] = useState('');
@@ -512,6 +515,18 @@ function LeadsPageContent() {
               </button>
             )}
 
+            {/* Upload MEs Button - Only in CO login */}
+            {isCO && (
+              <button
+                onClick={() => setIsUploadMEModalOpen(true)}
+                title="Upload ME Roster or onboard new Marketing Executives"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+              >
+                <UserPlus className="w-3.5 h-3.5 text-amber-200" />
+                <span>Upload MEs</span>
+              </button>
+            )}
+
             {/* Export CSV Button */}
             <button 
               onClick={handleExportCSV} 
@@ -890,6 +905,14 @@ function LeadsPageContent() {
         currentUser={user}
         divisions={divisions}
         activeDivision={selectedDivision}
+      />
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL 4: UPLOAD & ONBOARD MARKETING EXECUTIVES (CO ONLY)
+         ═══════════════════════════════════════════════════════════ */}
+      <UploadMEModal
+        isOpen={isUploadMEModalOpen}
+        onClose={() => setIsUploadMEModalOpen(false)}
       />
     </main>
   );

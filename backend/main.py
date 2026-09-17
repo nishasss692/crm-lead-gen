@@ -3573,3 +3573,376 @@ def get_marketing_executives(db: Session = Depends(get_db), current_user: dict =
             "region": u.assigned_region
         })
     return results
+
+
+def persist_me_to_excel(records: List[Dict[str, Any]]):
+    """Appends or updates newly registered MEs into the persistent MEs DATA.xlsx file."""
+    me_file = get_me_excel_path() or os.path.join(BASE_DIR, "MEs DATA.xlsx")
+    try:
+        if os.path.exists(me_file):
+            try:
+                df = pd.read_excel(me_file)
+            except Exception:
+                df = pd.DataFrame(columns=['Emp ID', 'Name', 'Role', 'Division Name', 'Division ID', 'Region Name', 'Circle Name', 'Mobile Number'])
+        else:
+            df = pd.DataFrame(columns=['Emp ID', 'Name', 'Role', 'Division Name', 'Division ID', 'Region Name', 'Circle Name', 'Mobile Number'])
+
+        if 'Emp ID' not in df.columns:
+            df['Emp ID'] = ""
+
+        df['Emp ID_str'] = df['Emp ID'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
+
+        for rec in records:
+            emp_id = str(rec.get('employee_id', '')).strip()
+            if not emp_id:
+                continue
+            name = rec.get('name', '')
+            div = rec.get('division', '')
+            reg = rec.get('region', '') or get_region_for_division(div) or ''
+            mob = rec.get('mobile_number', '')
+
+            mask = df['Emp ID_str'] == emp_id
+            if mask.any():
+                idx = df[mask].index[0]
+                if name:
+                    df.at[idx, 'Name'] = name
+                if div:
+                    df.at[idx, 'Division Name'] = div
+                if reg:
+                    df.at[idx, 'Region Name'] = reg
+                if mob:
+                    df.at[idx, 'Mobile Number'] = mob
+                df.at[idx, 'Role'] = 'ME'
+                df.at[idx, 'Circle Name'] = 'Karnataka'
+            else:
+                new_row = {
+                    'Emp ID': emp_id,
+                    'Name': name,
+                    'Role': 'ME',
+                    'Division Name': div,
+                    'Division ID': '',
+                    'Region Name': reg,
+                    'Circle Name': 'Karnataka',
+                    'Mobile Number': mob,
+                    'Emp ID_str': emp_id
+                }
+                df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+
+        df = df.drop(columns=['Emp ID_str'], errors='ignore')
+        df.to_excel(me_file, index=False)
+        print(f"[ME Registry] Successfully synced {len(records)} ME(s) to {me_file}")
+    except Exception as e:
+        print(f"[ME Registry] Warning: Could not persist to Excel ({e})")
+
+
+class CreateMERequest(BaseModel):
+    employee_id: str
+    name: str
+    division: str
+    region: Optional[str] = None
+    mobile_number: Optional[str] = None
+
+
+@app.post("/api/mes/create")
+def create_marketing_executive(
+    payload: CreateMERequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Allows Circle Officer (CO) to onboard a new Marketing Executive (ME). 
+    The ME is provisioned with default password 'Post@123' and can immediately log in."""
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Only Circle Officer (CO) administrators can onboard Marketing Executives."
+        )
+
+    emp_id = str(payload.employee_id).strip()
+    if emp_id.endswith(".0"):
+        emp_id = emp_id[:-2]
+    if not emp_id:
+        raise HTTPException(status_code=400, detail="Employee ID is required.")
+
+    name = str(payload.name).strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required.")
+
+    div_name = normalize_division_name(str(payload.division).strip()) if payload.division else ""
+    reg_name = str(payload.region).strip() if payload.region else ""
+    if not reg_name or reg_name.lower() in ["nan", "none", ""]:
+        reg_name = get_region_for_division(div_name) or "Karnataka Circle"
+
+    clean_mob = sanitize_contact_phone(str(payload.mobile_number).strip()) if payload.mobile_number else ""
+    default_pwd_hash = get_password_hash("Post@123")
+
+    # Update in-memory registry
+    if clean_mob:
+        ME_MOBILE_REGISTRY[emp_id] = clean_mob
+        ME_MOBILE_REGISTRY[emp_id.lower()] = clean_mob
+        if name:
+            ME_MOBILE_REGISTRY[name] = clean_mob
+            ME_MOBILE_REGISTRY[name.lower()] = clean_mob
+            cn = re.sub(r'[^a-z0-9]', '', name.lower())
+            if cn:
+                ME_MOBILE_REGISTRY[cn] = clean_mob
+
+    # Check existing user
+    user = db.query(User).filter(
+        or_(
+            User.employee_id == emp_id,
+            func.lower(User.employee_id) == emp_id.lower()
+        )
+    ).first()
+
+    action = "updated"
+    if user:
+        user.name = name or user.name
+        user.role = "ME"
+        user.assigned_division = div_name or user.assigned_division
+        user.assigned_region = reg_name or user.assigned_region
+        user.mobile_number = clean_mob or user.mobile_number
+        if not user.password:
+            user.password = default_pwd_hash
+    else:
+        action = "created"
+        user = User(
+            employee_id=emp_id,
+            name=name,
+            password=default_pwd_hash,
+            role="ME",
+            assigned_division=div_name,
+            assigned_region=reg_name,
+            mobile_number=clean_mob
+        )
+        db.add(user)
+
+    try:
+        db.commit()
+        db.refresh(user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error saving ME: {str(e)}")
+
+    # Persist to disk Excel
+    persist_me_to_excel([{
+        "employee_id": emp_id,
+        "name": name,
+        "division": div_name,
+        "region": reg_name,
+        "mobile_number": clean_mob
+    }])
+
+    return {
+        "success": True,
+        "action": action,
+        "message": f"Marketing Executive {name} ({emp_id}) {action} successfully! Login enabled with Employee ID '{emp_id}' and default password 'Post@123'.",
+        "default_password": "Post@123",
+        "me": {
+            "employee_id": user.employee_id,
+            "name": user.name,
+            "division": user.assigned_division,
+            "region": user.assigned_region,
+            "mobile_number": user.mobile_number
+        }
+    }
+
+
+@app.post("/api/upload-mes")
+async def upload_marketing_executives(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload bulk Marketing Executives from Excel (.xlsx, .xls) or CSV (.csv) file.
+    New MEs automatically receive role 'ME' and default password 'Post@123'."""
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Only Circle Officer (CO) administrators can upload Marketing Executives."
+        )
+
+    filename = (file.filename or "").lower()
+    if not (filename.endswith('.xls') or filename.endswith('.xlsx') or filename.endswith('.csv')):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file format. Please upload an Excel (.xlsx, .xls) or CSV (.csv) file."
+        )
+
+    try:
+        contents = await file.read()
+        if not contents or len(contents) == 0:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+        df = None
+        if filename.endswith('.csv'):
+            encodings = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+            for enc in encodings:
+                try:
+                    df = pd.read_csv(io.BytesIO(contents), encoding=enc, sep=None, engine='python', on_bad_lines='skip', skipinitialspace=True)
+                    if df is not None and not df.empty:
+                        break
+                except Exception:
+                    continue
+            if df is None or df.empty:
+                df = pd.read_csv(io.BytesIO(contents), encoding='utf-8', on_bad_lines='skip')
+        else:
+            try:
+                df = pd.read_excel(io.BytesIO(contents), engine='openpyxl')
+            except Exception:
+                try:
+                    df = pd.read_excel(io.BytesIO(contents))
+                except Exception as excel_err:
+                    raise HTTPException(status_code=400, detail=f"Could not read Excel file: {str(excel_err)}")
+
+        if df is None or df.empty:
+            raise HTTPException(status_code=400, detail="The file contains no readable records.")
+
+        df = df.dropna(how='all')
+        df.columns = [str(c).strip() for c in df.columns]
+
+        # Column resolution helper
+        def resolve_col(candidates: List[str]) -> Optional[str]:
+            for cand in candidates:
+                cand_clean = re.sub(r'[^a-z0-9]', '', cand.lower())
+                for col in df.columns:
+                    col_clean = re.sub(r'[^a-z0-9]', '', col.lower())
+                    if cand_clean == col_clean or cand_clean in col_clean:
+                        return col
+            return None
+
+        emp_id_col = resolve_col(['emp id', 'employee id', 'empid', 'emp_id', 'me id', 'id', 'user id'])
+        name_col = resolve_col(['name', 'me name', 'employee name', 'full name', 'officer name', 'executive name'])
+        div_col = resolve_col(['division name', 'division', 'assigned division', 'div', 'territory'])
+        reg_col = resolve_col(['region name', 'region', 'assigned region'])
+        mob_col = resolve_col(['mobile number', 'mobile', 'phone number', 'phone', 'contact number', 'contact'])
+
+        if not emp_id_col:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not find 'Emp ID' column in the uploaded file. Required headers: 'Emp ID', 'Name', 'Division Name', 'Mobile Number'."
+            )
+
+        default_pwd_hash = get_password_hash("Post@123")
+        records_to_sync = []
+        created_count = 0
+        updated_count = 0
+
+        for row_idx, row in df.iterrows():
+            emp_id_raw = row.get(emp_id_col)
+            if bool(pd.isna(emp_id_raw)):
+                continue
+            emp_id = str(emp_id_raw).strip()
+            if emp_id.endswith(".0"):
+                emp_id = emp_id[:-2]
+            if not emp_id or emp_id.lower() in ["nan", "none", "null"]:
+                continue
+
+            name = str(row.get(name_col)).strip() if name_col and bool(pd.notna(row.get(name_col))) else f"ME {emp_id}"
+            if name.lower() in ["nan", "none"]:
+                name = f"ME {emp_id}"
+
+            div_raw = str(row.get(div_col)).strip() if div_col and bool(pd.notna(row.get(div_col))) else ""
+            if div_raw.lower() in ["nan", "none"]:
+                div_raw = ""
+            div_name = normalize_division_name(div_raw) if div_raw else ""
+
+            reg_raw = str(row.get(reg_col)).strip() if reg_col and bool(pd.notna(row.get(reg_col))) else ""
+            if reg_raw.lower() in ["nan", "none"]:
+                reg_raw = ""
+            if not reg_raw and div_name:
+                reg_raw = get_region_for_division(div_name) or "Karnataka Circle"
+
+            mob_raw = str(row.get(mob_col)).strip() if mob_col and bool(pd.notna(row.get(mob_col))) else ""
+            if mob_raw.lower() in ["nan", "none"]:
+                mob_raw = ""
+            clean_mob = sanitize_contact_phone(mob_raw)
+
+            # Update in-memory registry
+            if clean_mob:
+                ME_MOBILE_REGISTRY[emp_id] = clean_mob
+                ME_MOBILE_REGISTRY[emp_id.lower()] = clean_mob
+                if name:
+                    ME_MOBILE_REGISTRY[name] = clean_mob
+                    ME_MOBILE_REGISTRY[name.lower()] = clean_mob
+                    cn = re.sub(r'[^a-z0-9]', '', name.lower())
+                    if cn:
+                        ME_MOBILE_REGISTRY[cn] = clean_mob
+
+            existing_user = db.query(User).filter(
+                or_(
+                    User.employee_id == emp_id,
+                    func.lower(User.employee_id) == emp_id.lower()
+                )
+            ).first()
+
+            if existing_user:
+                existing_user.name = name or existing_user.name
+                existing_user.role = "ME"
+                existing_user.assigned_division = div_name or existing_user.assigned_division
+                existing_user.assigned_region = reg_raw or existing_user.assigned_region
+                existing_user.mobile_number = clean_mob or existing_user.mobile_number
+                if not existing_user.password:
+                    existing_user.password = default_pwd_hash
+                updated_count += 1
+            else:
+                new_user = User(
+                    employee_id=emp_id,
+                    name=name,
+                    password=default_pwd_hash,
+                    role="ME",
+                    assigned_division=div_name,
+                    assigned_region=reg_raw,
+                    mobile_number=clean_mob
+                )
+                db.add(new_user)
+                created_count += 1
+
+            records_to_sync.append({
+                "employee_id": emp_id,
+                "name": name,
+                "division": div_name,
+                "region": reg_raw,
+                "mobile_number": clean_mob
+            })
+
+        db.commit()
+
+        # Persist to disk Excel for permanent synchronization
+        if records_to_sync:
+            persist_me_to_excel(records_to_sync)
+
+        total_processed = created_count + updated_count
+        return {
+            "success": True,
+            "message": f"Successfully uploaded {total_processed} Marketing Executives ({created_count} newly registered, {updated_count} updated). Newly added MEs can immediately sign in with their Employee ID and default password 'Post@123'.",
+            "total_processed": total_processed,
+            "created_count": created_count,
+            "updated_count": updated_count,
+            "default_password": "Post@123",
+            "sample_mes": records_to_sync[:5]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error processing ME upload file: {str(e)}")
+
+
+@app.get("/api/mes/template")
+def download_me_template():
+    """Generates a downloadable CSV template for Circle Officers to populate and upload new MEs."""
+    csv_content = (
+        "Emp ID,Name,Role,Division Name,Region Name,Mobile Number\n"
+        "10099881,Ramesh Patil,ME,Bengaluru East,Bengaluru HQ Region,9876543210\n"
+        "10099882,Pooja Sharma,ME,Mysuru,South Karnataka Region,9876543211\n"
+        "10099883,Anand Kumar,ME,Belagavi,North Karnataka Region,9876543212\n"
+    )
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": "attachment; filename=ME_Upload_Template.csv"
+        }
+    )
