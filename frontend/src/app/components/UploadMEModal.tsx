@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Upload, 
@@ -36,7 +37,12 @@ interface MEUser {
 }
 
 export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'upload' | 'single' | 'directory'>('upload');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   // Bulk upload states
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -264,9 +270,18 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
     );
   });
 
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs animate-fade-in-up select-none">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden relative">
+  if (!mounted || !isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      {/* Dark Blur Backdrop */}
+      <div 
+        className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in" 
+        onClick={onClose} 
+      />
+
+      {/* Modal Container: perfectly centered horizontally and vertically */}
+      <div className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-slate-200 z-10 overflow-hidden my-auto select-none animate-in fade-in zoom-in-95 duration-150">
         
         {/* Modal Top Bar */}
         <div className="bg-gradient-to-r from-[#1B2A4A] via-[#24355A] to-[#D1242F] p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
@@ -277,14 +292,14 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black tracking-tight text-white">
-                  Marketing Executive (ME) Onboarding
+                  Marketing Executive (ME) Onboarding & Update
                 </h2>
                 <span className="text-[10px] font-bold bg-[#FAB52C] text-slate-900 px-2 py-0.5 rounded-full uppercase tracking-wider">
                   CO Admin
                 </span>
               </div>
               <p className="text-xs text-slate-300 font-medium mt-0.5">
-                Upload new MEs or add individual executives with automatic login provisioning
+                Upload new MEs, update existing roster, or add individual executives with automatic login provisioning
               </p>
             </div>
           </div>
@@ -321,7 +336,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
             }`}
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>Upload Bulk File (.xlsx / .csv)</span>
+            <span>Upload & Update MEs (.xlsx / .csv)</span>
           </button>
 
           <button
@@ -333,7 +348,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
             }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Add Single ME</span>
+            <span>Add / Update Single ME</span>
           </button>
 
           <button
@@ -749,6 +764,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
