@@ -617,7 +617,7 @@ function LeadsPageContent() {
           </div>
         ) : (
           <div>
-            <LeadsTable data={filtered} allowEdit={true} statusFilter={statusFilter} />
+            <LeadsTable data={filtered} allowEdit={true} statusFilter={statusFilter} isCO={isCO} />
           </div>
         )}
         

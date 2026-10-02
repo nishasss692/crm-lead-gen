@@ -1857,10 +1857,10 @@ async def upload_excel(
 @app.post("/api/leads/clear-all")
 def clear_all_leads(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_role = str(current_user.get("role") or "").upper().strip()
-    if user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Marketing Executives (ME) cannot delete or clear leads."
+            detail="Access denied. Only Circle Officers (CO) can delete or clear leads."
         )
     try:
         query = db.query(Lead)
@@ -2978,10 +2978,10 @@ class DeduplicateRequest(BaseModel):
 @app.post("/api/leads/deduplicate")
 def deduplicate_leads(req: DeduplicateRequest = Body(default=DeduplicateRequest()), db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_role = str(current_user.get("role") or "").upper().strip()
-    if user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Marketing Executives (ME) cannot perform deletion operations."
+            detail="Access denied. Only Circle Officers (CO) can perform deletion or deduplication operations."
         )
     from collections import defaultdict
     query = db.query(Lead)
@@ -3164,10 +3164,10 @@ async def update_lead(lead_id: int, data: dict, db: Session = Depends(get_db), c
 @app.delete("/api/leads/{lead_id}")
 def delete_lead(lead_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     user_role = str(current_user.get("role") or "").upper().strip()
-    if user_role in ["ME", "MARKETING EXECUTIVE", "EXECUTIVE"]:
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Marketing Executives (ME) cannot delete leads."
+            detail="Access denied. Only Circle Officers (CO) can delete leads."
         )
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:

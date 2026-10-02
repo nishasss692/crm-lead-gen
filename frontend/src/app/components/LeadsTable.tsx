@@ -59,9 +59,10 @@ interface LeadsTableProps {
   data: Lead[];
   allowEdit?: boolean;
   statusFilter?: string | null;
+  isCO?: boolean;
 }
 
-export default function LeadsTable({ data, allowEdit = true, statusFilter }: LeadsTableProps) {
+export default function LeadsTable({ data, allowEdit = true, statusFilter, isCO: isCOProp }: LeadsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -108,6 +109,9 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
   }, []);
 
   const isME = userRole === 'ME' || userRole === 'MARKETING EXECUTIVE' || userRole === 'EXECUTIVE';
+  const isCO = typeof isCOProp === 'boolean'
+    ? isCOProp
+    : (userRole === 'CO' || userRole === 'ADMIN' || userRole === 'CO_ADMIN');
 
   const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
   
@@ -358,7 +362,7 @@ export default function LeadsTable({ data, allowEdit = true, statusFilter }: Lea
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        {!isME && (
+                        {isCO && (
                           <button 
                             onClick={() => handleDelete(lead.id, lead.exporterName)}
                             className="p-1.5 border border-rose-200 hover:bg-rose-100/60 text-rose-600 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
