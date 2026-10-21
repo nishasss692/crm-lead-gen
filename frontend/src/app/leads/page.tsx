@@ -21,11 +21,14 @@ import {
   Server,
   ChevronDown,
   PlusCircle,
-  UserPlus
+  UserPlus,
+  Building2,
+  MapPin
 } from 'lucide-react';
 import { apiFetch, safeJson, getApiBaseUrl } from '@/lib/api';
 import AddRowModal from '../components/AddRowModal';
 import UploadMEModal from '../components/UploadMEModal';
+import ManageOfficersModal from '../components/ManageOfficersModal';
 
 function LeadsPageContent() {
   const router = useRouter();
@@ -44,6 +47,8 @@ function LeadsPageContent() {
 
   const [isAddRowModalOpen, setIsAddRowModalOpen] = useState(false);
   const [isUploadMEModalOpen, setIsUploadMEModalOpen] = useState(false);
+  const [isManageOfficersModalOpen, setIsManageOfficersModalOpen] = useState(false);
+  const [officersTargetRole, setOfficersTargetRole] = useState<'RO' | 'DO' | 'ALL'>('ALL');
 
   const [selectedDivision, setSelectedDivision] = useState('');
   const [selectedPincode, setSelectedPincode] = useState('');
@@ -515,15 +520,45 @@ function LeadsPageContent() {
               </button>
             )}
 
-            {/* Upload MEs Button - Only in CO login */}
+            {/* Manage & Add ME Button - Only in CO login */}
             {isCO && (
               <button
                 onClick={() => setIsUploadMEModalOpen(true)}
                 title="Upload ME Roster or onboard new Marketing Executives"
                 className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
               >
-                <UserPlus className="w-3.5 h-3.5 text-amber-200" />
-                <span>Upload MEs</span>
+                <UserPlus className="w-3.5 h-3.5 text-white" />
+                <span>Manage & Add ME</span>
+              </button>
+            )}
+
+            {/* Manage & Add RO Button - Only in CO login */}
+            {isCO && (
+              <button
+                onClick={() => {
+                  setOfficersTargetRole('RO');
+                  setIsManageOfficersModalOpen(true);
+                }}
+                title="Manage and onboard Regional Officers (RO)"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+              >
+                <Building2 className="w-3.5 h-3.5 text-white" />
+                <span>Manage & Add RO</span>
+              </button>
+            )}
+
+            {/* Manage & Add DO Button - Only in CO login */}
+            {isCO && (
+              <button
+                onClick={() => {
+                  setOfficersTargetRole('DO');
+                  setIsManageOfficersModalOpen(true);
+                }}
+                title="Manage and onboard Divisional Officers (DO)"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-[#1B2A4A] to-[#24355A] hover:from-[#15223C] hover:to-[#1B2A4A] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+              >
+                <MapPin className="w-3.5 h-3.5 text-white" />
+                <span>Manage & Add DO</span>
               </button>
             )}
 
@@ -913,6 +948,15 @@ function LeadsPageContent() {
       <UploadMEModal
         isOpen={isUploadMEModalOpen}
         onClose={() => setIsUploadMEModalOpen(false)}
+      />
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL 5: MANAGE RO & DO POSTAL OFFICERS (CO ONLY)
+         ═══════════════════════════════════════════════════════════ */}
+      <ManageOfficersModal
+        isOpen={isManageOfficersModalOpen}
+        onClose={() => setIsManageOfficersModalOpen(false)}
+        targetRole={officersTargetRole}
       />
     </main>
   );

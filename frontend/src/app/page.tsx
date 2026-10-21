@@ -24,6 +24,7 @@ import {
 import { apiFetch, safeJson } from '@/lib/api';
 import { PINCODE_TERRITORY_CATALOG } from '@/lib/karnatakaTerritory';
 import UploadMEModal from './components/UploadMEModal';
+import ManageOfficersModal from './components/ManageOfficersModal';
 import {
   ResponsiveContainer,
   BarChart,
@@ -120,6 +121,8 @@ export default function MarketingExecutiveDashboard() {
   } | null>(null);
 
   const [isUploadMEModalOpen, setIsUploadMEModalOpen] = useState(false);
+  const [isManageOfficersModalOpen, setIsManageOfficersModalOpen] = useState(false);
+  const [officersTargetRole, setOfficersTargetRole] = useState<'RO' | 'DO' | 'ALL'>('ALL');
 
   // Analytics & Data State
   const [analytics, setAnalytics] = useState<AnalyticsData>({
@@ -541,8 +544,36 @@ export default function MarketingExecutiveDashboard() {
               title="Upload ME Roster or onboard new Marketing Executives"
               className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5 text-amber-200" />
-              <span>Upload MEs</span>
+              <UserPlus className="w-3.5 h-3.5 text-white" />
+              <span>Manage & Add ME</span>
+            </button>
+          )}
+
+          {isCO && (
+            <button
+              onClick={() => {
+                setOfficersTargetRole('RO');
+                setIsManageOfficersModalOpen(true);
+              }}
+              title="Manage and onboard Regional Officers (RO)"
+              className="flex items-center gap-1.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+            >
+              <Building2 className="w-3.5 h-3.5 text-white" />
+              <span>Manage & Add RO</span>
+            </button>
+          )}
+
+          {isCO && (
+            <button
+              onClick={() => {
+                setOfficersTargetRole('DO');
+                setIsManageOfficersModalOpen(true);
+              }}
+              title="Manage and onboard Divisional Officers (DO)"
+              className="flex items-center gap-1.5 bg-gradient-to-r from-[#1B2A4A] to-[#24355A] hover:from-[#15223C] hover:to-[#1B2A4A] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+            >
+              <MapPin className="w-3.5 h-3.5 text-white" />
+              <span>Manage & Add DO</span>
             </button>
           )}
 
@@ -1075,6 +1106,12 @@ export default function MarketingExecutiveDashboard() {
       <UploadMEModal
         isOpen={isUploadMEModalOpen}
         onClose={() => setIsUploadMEModalOpen(false)}
+      />
+
+      <ManageOfficersModal
+        isOpen={isManageOfficersModalOpen}
+        onClose={() => setIsManageOfficersModalOpen(false)}
+        targetRole={officersTargetRole}
       />
     </div>
   );

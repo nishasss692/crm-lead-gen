@@ -283,11 +283,11 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
       {/* Modal Container: perfectly centered horizontally and vertically */}
       <div className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-slate-200 z-10 overflow-hidden my-auto select-none animate-in fade-in zoom-in-95 duration-150">
         
-        {/* Modal Top Bar */}
-        <div className="bg-gradient-to-r from-[#1B2A4A] via-[#24355A] to-[#D1242F] p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
+        {/* Modal Top Bar - Dark Blue Theme */}
+        <div className="bg-gradient-to-r from-[#0B1528] via-[#1B2A4A] to-[#1E3A8A] p-4 sm:p-5 text-white flex items-center justify-between shrink-0 border-b border-[#24355A]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-[#FAB52C] shadow-inner border border-white/20">
-              <UserPlus className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white shadow-inner border border-white/20">
+              <UserPlus className="w-5 h-5 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -298,7 +298,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                   CO Admin
                 </span>
               </div>
-              <p className="text-xs text-slate-300 font-medium mt-0.5">
+              <p className="text-xs text-blue-100/80 font-medium mt-0.5">
                 Upload new MEs, update existing roster, or add individual executives with automatic login provisioning
               </p>
             </div>
@@ -313,26 +313,26 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
         </div>
 
         {/* Global Credentials Callout Banner */}
-        <div className="bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50/60 border-b border-amber-200/80 px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 text-xs">
-          <div className="flex items-center gap-2 text-amber-950 font-medium">
-            <KeyRound className="w-4 h-4 text-amber-700 shrink-0" />
+        <div className="bg-gradient-to-r from-blue-500/10 via-blue-50 to-indigo-50/60 border-b border-blue-200/80 px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 text-xs">
+          <div className="flex items-center gap-2 text-slate-900 font-medium">
+            <KeyRound className="w-4 h-4 text-[#1B2A4A] shrink-0" />
             <span>
               <strong>Default Login Password:</strong> All newly added MEs can sign in immediately using their <strong>Employee ID</strong> and password <span className="inline-block font-mono font-bold bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-900">Post@123</span>
             </span>
           </div>
-          <span className="hidden sm:inline-block text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
+          <span className="hidden sm:inline-block text-[10px] font-bold text-blue-900 bg-blue-100 border border-blue-300 px-2 py-0.5 rounded-md">
             Role: ME
           </span>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-200 bg-slate-50 px-4 sm:px-6 gap-2 shrink-0 pt-2">
+        {/* Navigation Tabs - Dark Blue Theme */}
+        <div className="flex border-b border-slate-300/80 bg-slate-100 px-4 sm:px-6 gap-2 shrink-0 pt-2.5">
           <button
             onClick={() => setActiveTab('upload')}
-            className={`flex items-center gap-2 py-2.5 px-3.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+            className={`flex items-center gap-2 py-2.5 px-3.5 text-xs font-bold transition-all cursor-pointer rounded-t-xl ${
               activeTab === 'upload'
-                ? 'border-[#D1242F] text-[#D1242F] bg-white rounded-t-xl shadow-xs'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+                ? 'bg-[#1B2A4A] text-white shadow-md'
+                : 'text-slate-600 hover:text-[#1B2A4A] hover:bg-slate-200/70'
             }`}
           >
             <Upload className="w-3.5 h-3.5" />
@@ -341,10 +341,10 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
 
           <button
             onClick={() => setActiveTab('single')}
-            className={`flex items-center gap-2 py-2.5 px-3.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+            className={`flex items-center gap-2 py-2.5 px-3.5 text-xs font-bold transition-all cursor-pointer rounded-t-xl ${
               activeTab === 'single'
-                ? 'border-[#D1242F] text-[#D1242F] bg-white rounded-t-xl shadow-xs'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+                ? 'bg-[#1B2A4A] text-white shadow-md'
+                : 'text-slate-600 hover:text-[#1B2A4A] hover:bg-slate-200/70'
             }`}
           >
             <UserPlus className="w-3.5 h-3.5" />
@@ -353,10 +353,10 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
 
           <button
             onClick={() => setActiveTab('directory')}
-            className={`flex items-center gap-2 py-2.5 px-3.5 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+            className={`flex items-center gap-2 py-2.5 px-3.5 text-xs font-bold transition-all cursor-pointer rounded-t-xl ${
               activeTab === 'directory'
-                ? 'border-[#D1242F] text-[#D1242F] bg-white rounded-t-xl shadow-xs'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
+                ? 'bg-[#1B2A4A] text-white shadow-md'
+                : 'text-slate-600 hover:text-[#1B2A4A] hover:bg-slate-200/70'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -382,9 +382,9 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                 <button
                   type="button"
                   onClick={handleDownloadTemplate}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 hover:border-[#D1242F] text-slate-700 hover:text-[#D1242F] bg-white text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 hover:border-[#1B2A4A] text-slate-700 hover:text-[#1B2A4A] bg-white text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5 text-[#D1242F]" />
+                  <Download className="w-3.5 h-3.5 text-[#1B2A4A]" />
                   <span>Download Template</span>
                 </button>
               </div>
@@ -397,10 +397,10 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
                   isDragging
-                    ? 'border-[#D1242F] bg-red-50/50 scale-[1.01]'
+                    ? 'border-[#1B2A4A] bg-blue-50/50 scale-[1.01]'
                     : uploadFile
                     ? 'border-emerald-500 bg-emerald-50/40'
-                    : 'border-slate-300 hover:border-[#D1242F] hover:bg-red-50/20'
+                    : 'border-slate-300 hover:border-[#1B2A4A] hover:bg-blue-50/20'
                 }`}
               >
                 <input
@@ -419,7 +419,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
 
                 <div className="flex flex-col items-center justify-center gap-2">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                    uploadFile ? 'bg-emerald-100 text-emerald-700' : 'bg-red-50 text-[#D1242F]'
+                    uploadFile ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-50 text-[#1B2A4A]'
                   }`}>
                     <FileSpreadsheet className="w-6 h-6" />
                   </div>
@@ -430,14 +430,14 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                       <p className="text-xs text-emerald-700 font-medium mt-0.5">
                         {(uploadFile.size / 1024).toFixed(1)} KB • Ready to onboard
                       </p>
-                      <span className="inline-block text-[11px] text-[#D1242F] underline mt-1 font-semibold">
+                      <span className="inline-block text-[11px] text-[#1B2A4A] underline mt-1 font-semibold">
                         Click or drop another file to replace
                       </span>
                     </div>
                   ) : (
                     <div>
                       <p className="text-sm font-bold text-slate-800">
-                        Drag & drop your Excel or CSV file here, or <span className="text-[#D1242F] underline">browse</span>
+                        Drag & drop your Excel or CSV file here, or <span className="text-[#1B2A4A] underline">browse</span>
                       </p>
                       <p className="text-xs text-slate-400 mt-1">
                         Required columns: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">Emp ID</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">Name</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">Division Name</code>, <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">Mobile Number</code>
@@ -494,7 +494,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                   type="button"
                   disabled={!uploadFile || isUploading}
                   onClick={handleBulkUpload}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#1B2A4A] via-blue-800 to-[#D1242F] hover:from-[#132038] hover:to-[#B01E28] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#0B1528] via-[#1B2A4A] to-[#1E3A8A] hover:from-[#15223C] hover:to-[#1B2A4A] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUploading ? (
                     <>
@@ -547,7 +547,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                 {/* Employee ID */}
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">
-                    Employee ID <span className="text-[#D1242F]">*</span>
+                    Employee ID <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -555,7 +555,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                     placeholder="e.g. 10099881"
                     value={singleEmpId}
                     onChange={(e) => setSingleEmpId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 outline-none font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#1B2A4A] focus:ring-2 focus:ring-blue-100 outline-none font-medium"
                   />
                   <span className="text-[10px] text-slate-400 mt-0.5 block">Used by ME to log in</span>
                 </div>
@@ -563,7 +563,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                 {/* Full Name */}
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">
-                    Full Name <span className="text-[#D1242F]">*</span>
+                    Full Name <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -571,19 +571,19 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                     placeholder="e.g. Ramesh Patil"
                     value={singleName}
                     onChange={(e) => setSingleName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 outline-none font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#1B2A4A] focus:ring-2 focus:ring-blue-100 outline-none font-medium"
                   />
                 </div>
 
                 {/* Assigned Division */}
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">
-                    Assigned Postal Division <span className="text-[#D1242F]">*</span>
+                    Assigned Postal Division <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={singleDivision}
                     onChange={(e) => handleDivisionChange(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 outline-none font-bold text-slate-800 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#1B2A4A] focus:ring-2 focus:ring-blue-100 outline-none font-bold text-slate-800 cursor-pointer"
                   >
                     {divisions.map((div) => (
                       <option key={div} value={div}>
@@ -620,7 +620,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                       placeholder="9876543210"
                       value={singleMobile}
                       onChange={(e) => setSingleMobile(e.target.value.replace(/\D/g, ''))}
-                      className="w-full pl-11 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#D1242F] focus:ring-2 focus:ring-red-100 outline-none font-medium"
+                      className="w-full pl-11 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-[#1B2A4A] focus:ring-2 focus:ring-blue-100 outline-none font-medium"
                     />
                   </div>
                   <span className="text-[10px] text-slate-400 mt-0.5 block">
@@ -680,15 +680,15 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                       placeholder="Search by ID, name, division..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs outline-none focus:border-[#D1242F] focus:bg-white w-48 sm:w-56 font-medium"
+                      className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs outline-none focus:border-[#1B2A4A] focus:bg-white w-48 sm:w-56 font-medium"
                     />
                   </div>
                   <button
                     onClick={fetchMEdirectory}
                     title="Refresh ME List"
-                    className="p-2 text-slate-500 hover:text-[#D1242F] hover:bg-red-50 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+                    className="p-2 text-slate-500 hover:text-[#1B2A4A] hover:bg-blue-50 rounded-xl border border-slate-200 transition-colors cursor-pointer"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingDirectory ? 'animate-spin text-[#D1242F]' : ''}`} />
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingDirectory ? 'animate-spin text-[#1B2A4A]' : ''}`} />
                   </button>
                 </div>
               </div>
@@ -697,7 +697,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
               <div className="max-h-[340px] overflow-y-auto border border-slate-200 rounded-2xl divide-y divide-slate-100 bg-white">
                 {isLoadingDirectory ? (
                   <div className="p-8 text-center text-slate-400 text-xs flex flex-col items-center gap-2">
-                    <div className="w-6 h-6 border-2 border-[#D1242F] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-[#1B2A4A] border-t-transparent rounded-full animate-spin" />
                     <span>Loading Marketing Executives...</span>
                   </div>
                 ) : filteredMEs.length === 0 ? (
@@ -708,7 +708,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                   filteredMEs.map((me) => (
                     <div key={me.employee_id} className="p-3 hover:bg-slate-50 flex items-center justify-between gap-3 text-xs transition-colors">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-red-50 text-[#D1242F] font-bold flex items-center justify-center shrink-0 text-xs border border-red-100">
+                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1B2A4A] font-bold flex items-center justify-center shrink-0 text-xs border border-blue-100">
                           {me.name ? me.name.charAt(0).toUpperCase() : 'M'}
                         </div>
                         <div className="min-w-0">
@@ -757,7 +757,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
         {/* Modal Footer */}
         <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 px-4 sm:px-6 shrink-0">
           <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#D1242F]" />
+            <ShieldCheck className="w-4 h-4 text-[#1B2A4A]" />
             <span>Official India Post CRM Access Control System</span>
           </div>
           <span className="font-semibold text-slate-600">Karnataka Postal Circle</span>
