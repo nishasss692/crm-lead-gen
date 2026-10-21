@@ -13,11 +13,43 @@ jobs:
     steps:
       - name: Ping Render Endpoint
         env:
-          # Reads from GitHub Secrets / Variables, or falls back to your URL if configured
           RENDER_APP_URL: ${{ secrets.RENDER_APP_URL || vars.RENDER_APP_URL }}
         run: |
-          TARGET_URL="${RENDER_APP_URL:-https://your-backend-app.onrender.com}"
-          echo "Sending keep-alive ping to: $TARGET_URL/api/health"
-          RESPONSE=$(curl -s -f -m 30 --retry 2 "$TARGET_URL/api/health" || curl -s -f -m 30 --retry 2 "$TARGET_URL/health" || curl -s -f -m 30 --retry 2 "$TARGET_URL/")
-          echo "Response: $RESPONSE"
-          echo "Keep-alive ping completed successfully!"
+          # 1. Check if RENDER_APP_URL is configured
+          if [ -z "$RENDER_APP_URL" ] || [ "$RENDER_APP_URL" = "https://your-backend-app.onrender.com" ]; then
+            echo "::error::RENDER_APP_URL is missing or still set to the placeholder!"
+            echo "Please go to GitHub Repo -> Settings -> Secrets and variables -> Actions -> Variables (or Secrets) and create RENDER_APP_URL with your actual Render URL."
+            exit 1
+          fi
+
+          # 2. Strip trailing slash if present
+          CLEAN_URL="${RENDER_APP_URL%/}"
+
+          echo "Target Render URL: $CLEAN_URL"
+          echo "Sending keep-alive ping (cold-starts may take up to 60s)..."
+
+          # 3. Ping /api/health with a 90s timeout (Render cold boot takes ~40-60s)
+          HTTP_STATUS=$(curl -s -o /tmp/response.txt -w "%{http_code}" -m 90 --retry 3 --retry-delay 5 "$CLEAN_URL/api/health" || echo "000")
+
+          if [ "$HTTP_STATUS" = "000" ] || [ "$HTTP_STATUS" -ge 400 ]; then
+            echo "Primary endpoint /api/health returned HTTP $HTTP_STATUS, trying /health fallback..."
+            HTTP_STATUS=$(curl -s -o /tmp/response.txt -w "%{http_code}" -m 90 --retry 2 "$CLEAN_URL/health" || echo "000")
+          fi
+
+          if [ "$HTTP_STATUS" = "000" ] || [ "$HTTP_STATUS" -ge 400 ]; then
+            echo "Fallback endpoint /health returned HTTP $HTTP_STATUS, trying root / fallback..."
+            HTTP_STATUS=$(curl -s -o /tmp/response.txt -w "%{http_code}" -m 90 --retry 2 "$CLEAN_URL/" || echo "000")
+          fi
+
+          echo "Response HTTP Status: $HTTP_STATUS"
+          echo "Response Body:"
+          cat /tmp/response.txt || true
+          echo ""
+
+          # 4. Any response from Render (even 200, 301, 302, 401, 403, 404) registers as incoming traffic and resets the 15-minute sleep timer!
+          if [ "$HTTP_STATUS" = "000" ]; then
+            echo "::error::Could not connect to $CLEAN_URL. Please verify the URL."
+            exit 1
+          fi
+
+          echo "Keep-alive ping successfully received by Render!"
