@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, func, case, or_, and_, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.exc import IntegrityError
 from contextlib import asynccontextmanager
 import sqlite3
 import json
@@ -767,6 +768,25 @@ def get_me_mobile_from_registry(agent_name_or_id: Optional[str]) -> str:
 
     return ""
 
+def normalize_emp_id(val: Any) -> str:
+    """Safely normalizes an employee ID to a clean stripped string without floating point '.0'."""
+    if val is None or bool(pd.isna(val)):
+        return ""
+    try:
+        if isinstance(val, (float, int)):
+            if isinstance(val, float) and val.is_integer():
+                return str(int(val)).strip()
+            elif isinstance(val, int):
+                return str(val).strip()
+    except Exception:
+        pass
+    s = str(val).strip()
+    if s.endswith(".0"):
+        s = s[:-2]
+    if s.lower() in ["nan", "none", "null"]:
+        return ""
+    return s
+
 def seed_mes_from_excel(db: Session):
     """Parses MEs DATA.xlsx and seeds all Marketing Executives with assigned division and default password Post@123."""
     me_file = get_me_excel_path()
@@ -778,20 +798,32 @@ def seed_mes_from_excel(db: Session):
         df = pd.read_excel(me_file)
         default_pwd_hash = get_password_hash("Post@123")
         count = 0
+
+        # Resolve employee ID column and deduplicate upfront
+        emp_col = "Emp ID" if "Emp ID" in df.columns else None
+        if not emp_col:
+            for c in df.columns:
+                if "emp" in str(c).lower() and "id" in str(c).lower():
+                    emp_col = c
+                    break
+
+        if emp_col:
+            df["_norm_emp_id"] = df[emp_col].apply(normalize_emp_id)
+            df = df[df["_norm_emp_id"] != ""]
+            df = df.drop_duplicates(subset=["_norm_emp_id"], keep="last")
+
         # In-memory map of existing users by lowercase employee_id to handle duplicates without integrity error
         existing_users_map: Dict[str, User] = {}
         for u in db.query(User).all():
-            if u.employee_id:
-                existing_users_map[u.employee_id.strip().lower()] = u
+            norm_id = normalize_emp_id(u.employee_id)
+            if norm_id:
+                existing_users_map[norm_id.lower()] = u
+
+        records_to_sync_dict = {}
 
         for _, row in df.iterrows():
-            emp_id_raw = row.get("Emp ID")
-            if bool(pd.isna(emp_id_raw)):
-                continue
-            emp_id = str(emp_id_raw).strip()
-            if emp_id.endswith(".0"):
-                emp_id = emp_id[:-2]
-            if not emp_id or emp_id.lower() in ["nan", "none", "null"]:
+            emp_id = row.get("_norm_emp_id") if "_norm_emp_id" in row else normalize_emp_id(row.get(emp_col if emp_col else "Emp ID"))
+            if not emp_id:
                 continue
 
             emp_key = emp_id.lower()
@@ -809,9 +841,8 @@ def seed_mes_from_excel(db: Session):
 
             # Record in fast registry
             if clean_mob:
-                if emp_id:
-                    ME_MOBILE_REGISTRY[emp_id] = clean_mob
-                    ME_MOBILE_REGISTRY[emp_key] = clean_mob
+                ME_MOBILE_REGISTRY[emp_id] = clean_mob
+                ME_MOBILE_REGISTRY[emp_key] = clean_mob
                 if name:
                     ME_MOBILE_REGISTRY[name] = clean_mob
                     ME_MOBILE_REGISTRY[name.lower()] = clean_mob
@@ -820,6 +851,16 @@ def seed_mes_from_excel(db: Session):
                         ME_MOBILE_REGISTRY[cn] = clean_mob
 
             existing = existing_users_map.get(emp_key)
+            if not existing:
+                existing = db.query(User).filter(
+                    or_(
+                        User.employee_id == emp_id,
+                        func.lower(User.employee_id) == emp_key,
+                        func.trim(User.employee_id) == emp_id
+                    )
+                ).first()
+                if existing:
+                    existing_users_map[emp_key] = existing
 
             if existing:
                 existing.name = name or existing.name
@@ -842,9 +883,53 @@ def seed_mes_from_excel(db: Session):
                 db.add(new_me)
                 existing_users_map[emp_key] = new_me
                 count += 1
+
+            records_to_sync_dict[emp_id] = {
+                "employee_id": emp_id,
+                "name": name,
+                "division": div_name,
+                "region": reg_name,
+                "mobile_number": clean_mob
+            }
             
-        db.commit()
-        print(f"[User Auth] Successfully loaded and synced {count} Marketing Executives from {me_file} with default password Post@123")
+        try:
+            db.commit()
+            print(f"[User Auth] Successfully loaded and synced {count} Marketing Executives from {me_file} with default password Post@123")
+        except (IntegrityError, Exception) as commit_err:
+            db.rollback()
+            # Failsafe row-by-row commit
+            for record in records_to_sync_dict.values():
+                eid = record["employee_id"]
+                u = db.query(User).filter(
+                    or_(
+                        User.employee_id == eid,
+                        func.lower(User.employee_id) == eid.lower(),
+                        func.trim(User.employee_id) == eid
+                    )
+                ).first()
+                if u:
+                    u.name = record["name"] or u.name
+                    u.role = "ME"
+                    u.assigned_division = record["division"] or u.assigned_division
+                    u.assigned_region = record["region"] or u.assigned_region
+                    u.mobile_number = record["mobile_number"] or u.mobile_number
+                    if not u.password:
+                        u.password = default_pwd_hash
+                else:
+                    db.add(User(
+                        employee_id=eid,
+                        name=record["name"],
+                        password=default_pwd_hash,
+                        role="ME",
+                        assigned_division=record["division"],
+                        assigned_region=record["region"],
+                        mobile_number=record["mobile_number"]
+                    ))
+                try:
+                    db.commit()
+                except Exception:
+                    db.rollback()
+            print(f"[User Auth] Successfully synced {len(records_to_sync_dict)} Marketing Executives via fallback row-by-row upsert.")
     except Exception as e:
         db.rollback()
         print(f"[User Auth] Error seeding MEs from Excel: {e}")
@@ -3579,16 +3664,23 @@ def persist_me_to_excel(records: List[Dict[str, Any]]):
     """Appends or updates newly registered MEs into the persistent MEs DATA.xlsx file."""
     me_file = get_me_excel_path() or os.path.join(BASE_DIR, "MEs DATA.xlsx")
     try:
+        columns_list = ['Emp ID', 'Name', 'Role', 'Division Name', 'Division ID', 'Region Name', 'Circle Name', 'Mobile Number']
         if os.path.exists(me_file):
             try:
                 df = pd.read_excel(me_file)
             except Exception:
-                df = pd.DataFrame(columns=['Emp ID', 'Name', 'Role', 'Division Name', 'Division ID', 'Region Name', 'Circle Name', 'Mobile Number'])
+                df = pd.DataFrame(columns=columns_list)
         else:
-            df = pd.DataFrame(columns=['Emp ID', 'Name', 'Role', 'Division Name', 'Division ID', 'Region Name', 'Circle Name', 'Mobile Number'])
+            df = pd.DataFrame(columns=columns_list)
 
-        if 'Emp ID' not in df.columns:
-            df['Emp ID'] = ""
+        # Ensure all standard columns exist and are string/object type so Pandas doesn't raise float64 dtype issues
+        for col in columns_list:
+            if col not in df.columns:
+                df[col] = ""
+            else:
+                df[col] = df[col].apply(
+                    lambda v: "" if bool(pd.isna(v)) else str(int(v)) if isinstance(v, (int, float)) and hasattr(v, 'is_integer') and v.is_integer() else str(v).strip().replace('.0', '') if str(v).endswith('.0') else str(v).strip()
+                ).astype(object)
 
         df['Emp ID_str'] = df['Emp ID'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
 
@@ -3605,25 +3697,25 @@ def persist_me_to_excel(records: List[Dict[str, Any]]):
             if mask.any():
                 idx = df[mask].index[0]
                 if name:
-                    df.at[idx, 'Name'] = name
+                    df.at[idx, 'Name'] = str(name)
                 if div:
-                    df.at[idx, 'Division Name'] = div
+                    df.at[idx, 'Division Name'] = str(div)
                 if reg:
-                    df.at[idx, 'Region Name'] = reg
+                    df.at[idx, 'Region Name'] = str(reg)
                 if mob:
-                    df.at[idx, 'Mobile Number'] = mob
+                    df.at[idx, 'Mobile Number'] = str(mob)
                 df.at[idx, 'Role'] = 'ME'
                 df.at[idx, 'Circle Name'] = 'Karnataka'
             else:
                 new_row = {
                     'Emp ID': emp_id,
-                    'Name': name,
+                    'Name': str(name),
                     'Role': 'ME',
-                    'Division Name': div,
+                    'Division Name': str(div),
                     'Division ID': '',
-                    'Region Name': reg,
+                    'Region Name': str(reg),
                     'Circle Name': 'Karnataka',
-                    'Mobile Number': mob,
+                    'Mobile Number': str(mob),
                     'Emp ID_str': emp_id
                 }
                 df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
@@ -3825,6 +3917,10 @@ async def upload_marketing_executives(
                 detail="Could not find 'Emp ID' column in the uploaded file. Required headers: 'Emp ID', 'Name', 'Division Name', 'Mobile Number'."
             )
 
+        df["_norm_emp_id"] = df[emp_id_col].apply(normalize_emp_id)
+        df = df[df["_norm_emp_id"] != ""]
+        df = df.drop_duplicates(subset=["_norm_emp_id"], keep="last")
+
         default_pwd_hash = get_password_hash("Post@123")
         records_to_sync_dict = {}
         created_count = 0
@@ -3833,20 +3929,16 @@ async def upload_marketing_executives(
         # Preload in-memory map of existing users by lowercase employee_id
         existing_users_map: Dict[str, User] = {}
         for u in db.query(User).all():
-            if u.employee_id:
-                existing_users_map[u.employee_id.strip().lower()] = u
+            norm_id = normalize_emp_id(u.employee_id)
+            if norm_id:
+                existing_users_map[norm_id.lower()] = u
 
         newly_created_in_batch = set()
         updated_in_batch = set()
 
         for row_idx, row in df.iterrows():
-            emp_id_raw = row.get(emp_id_col)
-            if bool(pd.isna(emp_id_raw)):
-                continue
-            emp_id = str(emp_id_raw).strip()
-            if emp_id.endswith(".0"):
-                emp_id = emp_id[:-2]
-            if not emp_id or emp_id.lower() in ["nan", "none", "null"]:
+            emp_id = normalize_emp_id(row.get(emp_id_col))
+            if not emp_id:
                 continue
 
             emp_key = emp_id.lower()
@@ -3882,6 +3974,16 @@ async def upload_marketing_executives(
                         ME_MOBILE_REGISTRY[cn] = clean_mob
 
             existing_user = existing_users_map.get(emp_key)
+            if not existing_user:
+                existing_user = db.query(User).filter(
+                    or_(
+                        User.employee_id == emp_id,
+                        func.lower(User.employee_id) == emp_key,
+                        func.trim(User.employee_id) == emp_id
+                    )
+                ).first()
+                if existing_user:
+                    existing_users_map[emp_key] = existing_user
 
             if existing_user:
                 existing_user.name = name or existing_user.name
@@ -3917,7 +4019,46 @@ async def upload_marketing_executives(
                 "mobile_number": clean_mob
             }
 
-        db.commit()
+        try:
+            db.commit()
+        except (IntegrityError, Exception):
+            db.rollback()
+            # Failsafe row-by-row upsert
+            created_count = 0
+            updated_count = 0
+            for record in records_to_sync_dict.values():
+                eid = record["employee_id"]
+                u = db.query(User).filter(
+                    or_(
+                        User.employee_id == eid,
+                        func.lower(User.employee_id) == eid.lower(),
+                        func.trim(User.employee_id) == eid
+                    )
+                ).first()
+                if u:
+                    u.name = record["name"] or u.name
+                    u.role = "ME"
+                    u.assigned_division = record["division"] or u.assigned_division
+                    u.assigned_region = record["region"] or u.assigned_region
+                    u.mobile_number = record["mobile_number"] or u.mobile_number
+                    if not u.password:
+                        u.password = default_pwd_hash
+                    updated_count += 1
+                else:
+                    db.add(User(
+                        employee_id=eid,
+                        name=record["name"],
+                        password=default_pwd_hash,
+                        role="ME",
+                        assigned_division=record["division"],
+                        assigned_region=record["region"],
+                        mobile_number=record["mobile_number"]
+                    ))
+                    created_count += 1
+                try:
+                    db.commit()
+                except Exception:
+                    db.rollback()
 
         records_to_sync = list(records_to_sync_dict.values())
         # Persist to disk Excel for permanent synchronization
