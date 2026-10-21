@@ -902,27 +902,23 @@ def seed_test_users():
                 "mobile_number": None
             })
 
-        for u_data in test_users:
-            emp_id = u_data.get("employee_id") or ""
-            existing = db.query(User).filter(
-                func.lower(func.trim(User.employee_id)) == emp_id.strip().lower()
-            ).first()
-            if existing:
-                u_name = u_data.get("name")
-                if u_name:
-                    existing.name = u_name
-                existing.role = u_data.get("role") or existing.role
-                existing.assigned_region = u_data.get("assigned_region") or existing.assigned_region
-                existing.assigned_division = u_data.get("assigned_division") or existing.assigned_division
-                if u_data.get("mobile_number"):
-                    existing.mobile_number = u_data["mobile_number"]
-                if not existing.password:
-                    existing.password = do_default_pwd_hash
-            else:
+        existing_officers_count = db.query(User).filter(User.role.in_(["DO", "RO"])).count()
+        if existing_officers_count == 0:
+            for u_data in test_users:
                 db.add(User(**u_data))
-
-        db.commit()
-        print(f"[User Auth] Seeded/verified all {len(KARNATAKA_TERRITORY_REGISTRY)} DO divisional accounts with password Post@123")
+            db.commit()
+            print(f"[User Auth] Seeded initial {len(test_users)} test accounts with password Post@123")
+        else:
+            # Ensure Circle Admin always exists
+            co_admin = db.query(User).filter(func.lower(User.employee_id) == "co_admin").first()
+            if not co_admin:
+                db.add(User(
+                    employee_id="CO_ADMIN",
+                    name="Circle Admin",
+                    password=default_pwd_hash,
+                    role="CO"
+                ))
+                db.commit()
         
         # Now seed all Marketing Executives from MEs DATA.xlsx
         seed_mes_from_excel(db)
@@ -1878,6 +1874,7 @@ def clear_all_leads(db: Session = Depends(get_db), current_user: dict = Depends(
 
 # Health Check & Database Diagnostic Endpoint
 @app.get("/api/health")
+@app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     try:
         lead_count = db.query(Lead).count()
@@ -3946,3 +3943,265 @@ def download_me_template():
             "Content-Disposition": "attachment; filename=ME_Upload_Template.csv"
         }
     )
+
+
+# ══════════════════════════════════════════════════════════════
+# 12. RO & DO Officer Management Endpoints (Circle Officer Exclusive)
+# ══════════════════════════════════════════════════════════════
+
+class OfficerCreateRequest(BaseModel):
+    employee_id: str
+    name: str
+    role: str  # 'RO' or 'DO'
+    assigned_region: Optional[str] = None
+    assigned_division: Optional[str] = None
+    mobile_number: Optional[str] = None
+    password: Optional[str] = None
+
+class OfficerUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    role: Optional[str] = None
+    assigned_region: Optional[str] = None
+    assigned_division: Optional[str] = None
+    mobile_number: Optional[str] = None
+    password: Optional[str] = None
+
+
+@app.get("/api/officers")
+def get_officers(
+    role: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Retrieve all Regional Officers (RO) and Divisional Officers (DO). Exclusive to Circle Officer (CO)."""
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Only Circle Officers (CO) can view and manage officer accounts."
+        )
+
+    query = db.query(User).filter(User.role.in_(["RO", "DO"]))
+    if role:
+        r_upper = role.upper().strip()
+        if r_upper in ["RO", "DO"]:
+            query = query.filter(User.role == r_upper)
+
+    officers = query.order_by(User.role.asc(), User.name.asc()).all()
+    results = []
+    for o in officers:
+        results.append({
+            "id": o.id,
+            "employee_id": o.employee_id,
+            "name": o.name or o.employee_id,
+            "role": o.role,
+            "assigned_region": o.assigned_region,
+            "assigned_division": o.assigned_division,
+            "mobile_number": o.mobile_number or ""
+        })
+    return results
+
+
+@app.post("/api/officers")
+def create_officer(
+    payload: OfficerCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Onboard a new Regional Officer (RO) or Divisional Officer (DO). Exclusive to Circle Officer (CO)."""
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Only Circle Officers (CO) can add new officers."
+        )
+
+    emp_id = str(payload.employee_id).strip()
+    if not emp_id:
+        raise HTTPException(status_code=400, detail="Employee ID is required.")
+
+    name = str(payload.name).strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Officer Name is required.")
+
+    role_upper = str(payload.role).upper().strip()
+    if role_upper not in ["RO", "DO"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Role must be either 'RO' (Regional Officer) or 'DO' (Divisional Officer)."
+        )
+
+    # Check for existing employee ID
+    existing = db.query(User).filter(
+        func.lower(func.trim(User.employee_id)) == emp_id.lower()
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"An account with Employee ID '{emp_id}' already exists ({existing.name}, role: {existing.role})."
+        )
+
+    assigned_div = normalize_division_name(payload.assigned_division) if payload.assigned_division else None
+    assigned_reg = payload.assigned_region.strip() if payload.assigned_region else None
+    if role_upper == "DO" and assigned_div and not assigned_reg:
+        assigned_reg = get_region_for_division(assigned_div)
+
+    raw_pwd = (payload.password or "").strip()
+    pwd_to_hash = raw_pwd if raw_pwd else "Post@123"
+    pwd_hash = get_password_hash(pwd_to_hash)
+
+    clean_mob = sanitize_contact_phone(str(payload.mobile_number).strip()) if payload.mobile_number else None
+
+    new_officer = User(
+        employee_id=emp_id,
+        name=name,
+        password=pwd_hash,
+        role=role_upper,
+        assigned_region=assigned_reg,
+        assigned_division=assigned_div if role_upper == "DO" else None,
+        mobile_number=clean_mob
+    )
+    db.add(new_officer)
+    try:
+        db.commit()
+        db.refresh(new_officer)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error creating officer: {str(e)}")
+
+    return {
+        "success": True,
+        "message": f"{role_upper} Officer '{name}' added successfully with Employee ID '{emp_id}'.",
+        "officer": {
+            "id": new_officer.id,
+            "employee_id": new_officer.employee_id,
+            "name": new_officer.name,
+            "role": new_officer.role,
+            "assigned_region": new_officer.assigned_region,
+            "assigned_division": new_officer.assigned_division,
+            "mobile_number": new_officer.mobile_number or ""
+        }
+    }
+
+
+@app.put("/api/officers/{employee_id}")
+@app.patch("/api/officers/{employee_id}")
+def update_officer(
+    employee_id: str,
+    payload: OfficerUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Modify an existing RO or DO officer profile or reset password. Exclusive to Circle Officer (CO)."""
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Only Circle Officers (CO) can modify officer accounts."
+        )
+
+    clean_id = employee_id.strip()
+    officer = db.query(User).filter(
+        func.lower(func.trim(User.employee_id)) == clean_id.lower()
+    ).first()
+    if not officer:
+        raise HTTPException(status_code=404, detail=f"Officer '{clean_id}' not found.")
+
+    if officer.role not in ["RO", "DO"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Safety restriction: Only Regional Officers (RO) and Divisional Officers (DO) can be modified here."
+        )
+
+    if payload.name is not None and payload.name.strip():
+        officer.name = payload.name.strip()
+
+    if payload.role is not None and payload.role.strip():
+        r_upper = payload.role.upper().strip()
+        if r_upper in ["RO", "DO"]:
+            officer.role = r_upper
+
+    if payload.assigned_division is not None:
+        div_str = payload.assigned_division.strip()
+        if div_str:
+            officer.assigned_division = normalize_division_name(div_str)
+            if not payload.assigned_region:
+                officer.assigned_region = get_region_for_division(officer.assigned_division)
+        else:
+            officer.assigned_division = None
+
+    if payload.assigned_region is not None:
+        reg_str = payload.assigned_region.strip()
+        officer.assigned_region = reg_str if reg_str else None
+
+    if payload.mobile_number is not None:
+        mob_str = payload.mobile_number.strip()
+        officer.mobile_number = sanitize_contact_phone(mob_str) if mob_str else None
+
+    if payload.password and payload.password.strip():
+        officer.password = get_password_hash(payload.password.strip())
+
+    try:
+        db.commit()
+        db.refresh(officer)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error updating officer: {str(e)}")
+
+    return {
+        "success": True,
+        "message": f"Officer '{officer.name or officer.employee_id}' updated successfully.",
+        "officer": {
+            "id": officer.id,
+            "employee_id": officer.employee_id,
+            "name": officer.name,
+            "role": officer.role,
+            "assigned_region": officer.assigned_region,
+            "assigned_division": officer.assigned_division,
+            "mobile_number": officer.mobile_number or ""
+        }
+    }
+
+
+@app.delete("/api/officers/{employee_id}")
+def delete_officer(
+    employee_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete an RO or DO officer account. Exclusive to Circle Officer (CO)."""
+    user_role = str(current_user.get("role") or "").upper().strip()
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Only Circle Officers (CO) can delete officer accounts."
+        )
+
+    clean_id = employee_id.strip()
+    officer = db.query(User).filter(
+        func.lower(func.trim(User.employee_id)) == clean_id.lower()
+    ).first()
+    if not officer:
+        raise HTTPException(status_code=404, detail=f"Officer '{clean_id}' not found.")
+
+    if officer.role not in ["RO", "DO"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Safety restriction: Cannot delete account with role '{officer.role}'. Only RO and DO officer accounts can be removed."
+        )
+
+    officer_name = officer.name or officer.employee_id
+    officer_role = officer.role
+
+    db.delete(officer)
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error deleting officer: {str(e)}")
+
+    return {
+        "success": True,
+        "message": f"{officer_role} Officer '{officer_name}' ({clean_id}) has been permanently deleted from the system."
+    }
+

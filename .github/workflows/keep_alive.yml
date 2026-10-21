@@ -1,0 +1,23 @@
+name: Keep Render Deployment Alive
+
+on:
+  schedule:
+    # Runs every 12 minutes to beat Render's 15-minute idle spin-down
+    - cron: '*/12 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping-render:
+    name: Ping Backend Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Endpoint
+        env:
+          # Reads from GitHub Secrets / Variables, or falls back to your URL if configured
+          RENDER_APP_URL: ${{ secrets.RENDER_APP_URL || vars.RENDER_APP_URL }}
+        run: |
+          TARGET_URL="${RENDER_APP_URL:-https://your-backend-app.onrender.com}"
+          echo "Sending keep-alive ping to: $TARGET_URL/api/health"
+          RESPONSE=$(curl -s -f -m 30 --retry 2 "$TARGET_URL/api/health" || curl -s -f -m 30 --retry 2 "$TARGET_URL/health" || curl -s -f -m 30 --retry 2 "$TARGET_URL/")
+          echo "Response: $RESPONSE"
+          echo "Keep-alive ping completed successfully!"
