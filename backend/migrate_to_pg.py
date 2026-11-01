@@ -10,8 +10,9 @@ import re
 
 # Ensure Windows terminal doesn't crash on print
 try:
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    reconfig = getattr(sys.stdout, 'reconfigure', None)
+    if callable(reconfig):
+        reconfig(encoding='utf-8', errors='replace')
 except Exception:
     pass
 

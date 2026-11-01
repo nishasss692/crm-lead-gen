@@ -19,7 +19,7 @@ import bcrypt
 import hashlib
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any, TypedDict
+from typing import Optional, List, Dict, Any, TypedDict, cast
 
 # Global ML Model for Lead Scoring
 ml_model = None
@@ -94,7 +94,8 @@ if raw_db_url and raw_db_url.startswith("postgresql"):
             raw_db_url,
             pool_pre_ping=True,
             pool_size=10,
-            max_overflow=20
+            max_overflow=20,
+            connect_args={"connect_timeout": 5}
         )
         with test_engine.connect() as conn:
             conn.execute(text("SELECT 1"))
@@ -716,15 +717,15 @@ def load_me_mobile_registry():
         df = pd.read_excel(me_file)
         for _, row in df.iterrows():
             emp_id_raw = row.get("Emp ID")
-            if bool(pd.isna(emp_id_raw)):
+            if pd.isna(emp_id_raw) is True:
                 continue
             emp_id = str(emp_id_raw).strip()
             if emp_id.endswith(".0"):
                 emp_id = emp_id[:-2]
             name_val = row.get("Name")
-            name = str(name_val).strip() if bool(pd.notna(name_val)) else ""
+            name = str(name_val).strip() if pd.notna(name_val) is True else ""
             mob_val = row.get("Mobile Number")
-            mob = str(mob_val).strip() if bool(pd.notna(mob_val)) else ""
+            mob = str(mob_val).strip() if pd.notna(mob_val) is True else ""
             clean_mob = sanitize_contact_phone(mob)
             if clean_mob:
                 if emp_id:
@@ -770,7 +771,7 @@ def get_me_mobile_from_registry(agent_name_or_id: Optional[str]) -> str:
 
 def normalize_emp_id(val: Any) -> str:
     """Safely normalizes an employee ID to a clean stripped string without floating point '.0'."""
-    if val is None or bool(pd.isna(val)):
+    if val is None or pd.isna(val) is True:
         return ""
     try:
         if isinstance(val, (float, int)):
@@ -803,14 +804,15 @@ def seed_mes_from_excel(db: Session):
         emp_col = "Emp ID" if "Emp ID" in df.columns else None
         if not emp_col:
             for c in df.columns:
-                if "emp" in str(c).lower() and "id" in str(c).lower():
+                if "emp" in c.lower() and "id" in c.lower():
                     emp_col = c
                     break
 
         if emp_col:
             df["_norm_emp_id"] = df[emp_col].apply(normalize_emp_id)
-            df = df[df["_norm_emp_id"] != ""]
-            df = df.drop_duplicates(subset=["_norm_emp_id"], keep="last")
+            filtered_df = df[df["_norm_emp_id"] != ""]
+            if isinstance(filtered_df, pd.DataFrame):
+                df = filtered_df.drop_duplicates(subset=["_norm_emp_id"], keep="last")
 
         # In-memory map of existing users by lowercase employee_id to handle duplicates without integrity error
         existing_users_map: Dict[str, User] = {}
@@ -828,15 +830,15 @@ def seed_mes_from_excel(db: Session):
 
             emp_key = emp_id.lower()
             name_val = row.get("Name")
-            name = str(name_val).strip() if bool(pd.notna(name_val)) else ""
+            name = str(name_val).strip() if pd.notna(name_val) is True else ""
             div_val = row.get("Division Name")
-            div_name = normalize_division_name(str(div_val).strip() if bool(pd.notna(div_val)) else "")
+            div_name = normalize_division_name(str(div_val).strip() if pd.notna(div_val) is True else "")
             reg_val = row.get("Region Name")
-            reg_name = str(reg_val).strip() if bool(pd.notna(reg_val)) else ""
+            reg_name = str(reg_val).strip() if pd.notna(reg_val) is True else ""
             if not reg_name or reg_name.lower() in ["nan", "none", ""]:
                 reg_name = get_region_for_division(div_name) or ""
             mob_val = row.get("Mobile Number")
-            mobile = str(mob_val).strip() if bool(pd.notna(mob_val)) else ""
+            mobile = str(mob_val).strip() if pd.notna(mob_val) is True else ""
             clean_mob = sanitize_contact_phone(mobile)
 
             # Record in fast registry
@@ -1008,8 +1010,24 @@ def seed_test_users():
                 ))
                 db.commit()
         
-        # Now seed all Marketing Executives from MEs DATA.xlsx
+        # Seed any Marketing Executives from MEs DATA.xlsx if present
         seed_mes_from_excel(db)
+
+        # Synchronize ME mobile registry directly from database ME users
+        me_users = db.query(User).filter(func.upper(User.role) == "ME").all()
+        for u in me_users:
+            if u.mobile_number:
+                clean_m = sanitize_contact_phone(u.mobile_number)
+                if clean_m:
+                    if u.employee_id:
+                        ME_MOBILE_REGISTRY[u.employee_id] = clean_m
+                        ME_MOBILE_REGISTRY[u.employee_id.lower()] = clean_m
+                    if u.name:
+                        ME_MOBILE_REGISTRY[u.name] = clean_m
+                        ME_MOBILE_REGISTRY[u.name.lower()] = clean_m
+                        cn = re.sub(r'[^a-z0-9]', '', u.name.lower())
+                        if cn:
+                            ME_MOBILE_REGISTRY[cn] = clean_m
         
     except Exception as e:
         db.rollback()
@@ -2438,14 +2456,14 @@ def get_divisions(
             if variants:
                 query = query.filter(Lead.region.in_(variants))
         divisions = query.distinct().all()
-        div_set = {normalize_division_name(div[0]) for div in divisions if div[0] and div[0].strip()}
+        div_set = {normalize_division_name(d) for (d,) in divisions if isinstance(d, str) and d.strip()}
         clean_list = [d for d in div_set if d and d.lower() not in ['nan', 'none', 'null', 'unassigned', 'commercial division']]
         return sorted(clean_list) if clean_list else ["BG East", "BG South", "BG West", "BG GPO", "Channapatna", "Kolar"]
 
     # CO / Admin: Circle-wide divisions (canonicalized and deduplicated)
     query = db.query(Lead.division)
     divisions = query.distinct().all()
-    div_set = {normalize_division_name(div[0]) for div in divisions if div[0] and div[0].strip()}
+    div_set = {normalize_division_name(d) for (d,) in divisions if isinstance(d, str) and d.strip()}
     for can_div in KARNATAKA_TERRITORY_REGISTRY.keys():
         div_set.add(can_div)
     
@@ -3560,7 +3578,7 @@ def get_division_pincodes(division_name: str, db: Session = Depends(get_db)):
             Lead.pincode != None
         ).distinct().all()
         for rec in db_records:
-            pin = re.sub(r'\D', '', str(rec[0] or "")).strip()
+            pin = re.sub(r'\D', '', rec[0] or "").strip()
             if pin and len(pin) == 6 and pin not in pins_dict:
                 office_name = PINCODE_OFFICE_MAP.get(pin, f"Post Office - {pin}")
                 pins_dict[pin] = [office_name]
@@ -3661,16 +3679,15 @@ def get_marketing_executives(db: Session = Depends(get_db), current_user: dict =
 
 
 def persist_me_to_excel(records: List[Dict[str, Any]]):
-    """Appends or updates newly registered MEs into the persistent MEs DATA.xlsx file."""
-    me_file = get_me_excel_path() or os.path.join(BASE_DIR, "MEs DATA.xlsx")
+    """Appends or updates newly registered MEs into persistent Excel file only if it already exists on disk."""
+    me_file = get_me_excel_path()
+    if not me_file or not os.path.exists(me_file):
+        return
     try:
         columns_list = ['Emp ID', 'Name', 'Role', 'Division Name', 'Division ID', 'Region Name', 'Circle Name', 'Mobile Number']
-        if os.path.exists(me_file):
-            try:
-                df = pd.read_excel(me_file)
-            except Exception:
-                df = pd.DataFrame(columns=columns_list)
-        else:
+        try:
+            df = pd.read_excel(me_file)
+        except Exception:
             df = pd.DataFrame(columns=columns_list)
 
         # Ensure all standard columns exist and are string/object type so Pandas doesn't raise float64 dtype issues
@@ -3751,22 +3768,22 @@ def create_marketing_executive(
             detail="Access denied. Only Circle Officer (CO) administrators can onboard Marketing Executives."
         )
 
-    emp_id = str(payload.employee_id).strip()
+    emp_id = payload.employee_id.strip()
     if emp_id.endswith(".0"):
         emp_id = emp_id[:-2]
     if not emp_id:
         raise HTTPException(status_code=400, detail="Employee ID is required.")
 
-    name = str(payload.name).strip()
+    name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Name is required.")
 
-    div_name = normalize_division_name(str(payload.division).strip()) if payload.division else ""
-    reg_name = str(payload.region).strip() if payload.region else ""
+    div_name = normalize_division_name(payload.division.strip()) if payload.division else ""
+    reg_name = payload.region.strip() if payload.region else ""
     if not reg_name or reg_name.lower() in ["nan", "none", ""]:
         reg_name = get_region_for_division(div_name) or "Karnataka Circle"
 
-    clean_mob = sanitize_contact_phone(str(payload.mobile_number).strip()) if payload.mobile_number else ""
+    clean_mob = sanitize_contact_phone(payload.mobile_number.strip()) if payload.mobile_number else ""
     default_pwd_hash = get_password_hash("Post@123")
 
     # Update in-memory registry
@@ -3893,13 +3910,14 @@ async def upload_marketing_executives(
             raise HTTPException(status_code=400, detail="The file contains no readable records.")
 
         df = df.dropna(how='all')
-        df.columns = [str(c).strip() for c in df.columns]
+        df_columns = [c.strip() for c in df.columns]
+        df.columns = df_columns
 
         # Column resolution helper
         def resolve_col(candidates: List[str]) -> Optional[str]:
             for cand in candidates:
                 cand_clean = re.sub(r'[^a-z0-9]', '', cand.lower())
-                for col in df.columns:
+                for col in df_columns:
                     col_clean = re.sub(r'[^a-z0-9]', '', col.lower())
                     if cand_clean == col_clean or cand_clean in col_clean:
                         return col
@@ -3918,8 +3936,9 @@ async def upload_marketing_executives(
             )
 
         df["_norm_emp_id"] = df[emp_id_col].apply(normalize_emp_id)
-        df = df[df["_norm_emp_id"] != ""]
-        df = df.drop_duplicates(subset=["_norm_emp_id"], keep="last")
+        filtered_df = df[df["_norm_emp_id"] != ""]
+        if isinstance(filtered_df, pd.DataFrame):
+            df = filtered_df.drop_duplicates(subset=["_norm_emp_id"], keep="last")
 
         default_pwd_hash = get_password_hash("Post@123")
         records_to_sync_dict = {}
@@ -3942,22 +3961,22 @@ async def upload_marketing_executives(
                 continue
 
             emp_key = emp_id.lower()
-            name = str(row.get(name_col)).strip() if name_col and bool(pd.notna(row.get(name_col))) else f"ME {emp_id}"
+            name = str(row.get(name_col)).strip() if name_col and pd.notna(row.get(name_col)) is True else f"ME {emp_id}"
             if name.lower() in ["nan", "none"]:
                 name = f"ME {emp_id}"
 
-            div_raw = str(row.get(div_col)).strip() if div_col and bool(pd.notna(row.get(div_col))) else ""
+            div_raw = str(row.get(div_col)).strip() if div_col and pd.notna(row.get(div_col)) is True else ""
             if div_raw.lower() in ["nan", "none"]:
                 div_raw = ""
             div_name = normalize_division_name(div_raw) if div_raw else ""
 
-            reg_raw = str(row.get(reg_col)).strip() if reg_col and bool(pd.notna(row.get(reg_col))) else ""
+            reg_raw = str(row.get(reg_col)).strip() if reg_col and pd.notna(row.get(reg_col)) is True else ""
             if reg_raw.lower() in ["nan", "none"]:
                 reg_raw = ""
             if not reg_raw and div_name:
                 reg_raw = get_region_for_division(div_name) or "Karnataka Circle"
 
-            mob_raw = str(row.get(mob_col)).strip() if mob_col and bool(pd.notna(row.get(mob_col))) else ""
+            mob_raw = str(row.get(mob_col)).strip() if mob_col and pd.notna(row.get(mob_col)) is True else ""
             if mob_raw.lower() in ["nan", "none"]:
                 mob_raw = ""
             clean_mob = sanitize_contact_phone(mob_raw)
@@ -4171,15 +4190,15 @@ def create_officer(
             detail="Access denied. Only Circle Officers (CO) can add new officers."
         )
 
-    emp_id = str(payload.employee_id).strip()
+    emp_id = payload.employee_id.strip()
     if not emp_id:
         raise HTTPException(status_code=400, detail="Employee ID is required.")
 
-    name = str(payload.name).strip()
+    name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Officer Name is required.")
 
-    role_upper = str(payload.role).upper().strip()
+    role_upper = payload.role.upper().strip()
     if role_upper not in ["RO", "DO"]:
         raise HTTPException(
             status_code=400,
@@ -4205,7 +4224,7 @@ def create_officer(
     pwd_to_hash = raw_pwd if raw_pwd else "Post@123"
     pwd_hash = get_password_hash(pwd_to_hash)
 
-    clean_mob = sanitize_contact_phone(str(payload.mobile_number).strip()) if payload.mobile_number else None
+    clean_mob = sanitize_contact_phone(payload.mobile_number.strip()) if payload.mobile_number else None
 
     new_officer = User(
         employee_id=emp_id,

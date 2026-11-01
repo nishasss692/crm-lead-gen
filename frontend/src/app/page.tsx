@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   Percent,
   Layers,
-  UserPlus
+  UserPlus,
+  Upload
 } from 'lucide-react';
 import { apiFetch, safeJson } from '@/lib/api';
 import { PINCODE_TERRITORY_CATALOG } from '@/lib/karnatakaTerritory';
@@ -541,11 +542,11 @@ export default function MarketingExecutiveDashboard() {
           {isCO && (
             <button
               onClick={() => setIsUploadMEModalOpen(true)}
-              title="Upload ME Roster or onboard new Marketing Executives"
-              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+              title="Upload ME File (.xlsx / .csv) or onboard Marketing Executives"
+              className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5 text-white" />
-              <span>Manage & Add ME</span>
+              <Upload className="w-3.5 h-3.5 text-white" />
+              <span>Upload ME File</span>
             </button>
           )}
 

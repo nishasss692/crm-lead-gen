@@ -19,7 +19,8 @@ import {
   UserPlus,
   ShieldCheck,
   Building2,
-  MapPin
+  MapPin,
+  Upload
 } from 'lucide-react';
 
 function SidebarContent() {
@@ -151,9 +152,9 @@ function SidebarContent() {
                   onClick={() => setIsUploadMEModalOpen(true)}
                   className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-white/5 hover:text-white font-medium cursor-pointer text-left"
                 >
-                  <UserPlus className="w-4 h-4 mr-3 shrink-0 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+                  <Upload className="w-4 h-4 mr-3 shrink-0 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
                   <div className="flex-1 flex items-center justify-between">
-                    <span className="text-sm">Manage & Add ME</span>
+                    <span className="text-sm">Upload ME File & Roster</span>
                     <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">ME</span>
                   </div>
                 </button>
