@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-function getNormalizedBackendUrl(): string | null {
+/** @type {import('next').NextConfig} */
+function getNormalizedBackendUrl() {
   const envUrl = (
     process.env.BACKEND_INTERNAL_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
@@ -8,14 +7,12 @@ function getNormalizedBackendUrl(): string | null {
   ).trim().replace(/\/+$/, '').replace(/\/api$/, '');
 
   if (!envUrl) {
-    // In local development, fall back to local FastAPI server
     if (process.env.NODE_ENV !== "production") {
       return "http://127.0.0.1:8000";
     }
     return null;
   }
 
-  // Ensure it has a valid protocol
   let normalized = envUrl;
   if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
     if (normalized.startsWith("localhost") || normalized.startsWith("127.0.0.1")) {
@@ -30,7 +27,7 @@ function getNormalizedBackendUrl(): string | null {
 
 const backend = getNormalizedBackendUrl();
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -47,4 +44,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
