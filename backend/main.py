@@ -854,13 +854,14 @@ def seed_mes_from_excel(db: Session):
 
             existing = existing_users_map.get(emp_key)
             if not existing:
-                existing = db.query(User).filter(
-                    or_(
-                        User.employee_id == emp_id,
-                        func.lower(User.employee_id) == emp_key,
-                        func.trim(User.employee_id) == emp_id
-                    )
-                ).first()
+                with db.no_autoflush:
+                    existing = db.query(User).filter(
+                        or_(
+                            User.employee_id == emp_id,
+                            func.lower(User.employee_id) == emp_key,
+                            func.trim(User.employee_id) == emp_id
+                        )
+                    ).first()
                 if existing:
                     existing_users_map[emp_key] = existing
 
@@ -872,19 +873,48 @@ def seed_mes_from_excel(db: Session):
                 existing.mobile_number = clean_mob or existing.mobile_number
                 if not existing.password:
                     existing.password = default_pwd_hash
+                try:
+                    db.commit()
+                except Exception:
+                    db.rollback()
             else:
-                new_me = User(
-                    employee_id=emp_id,
-                    name=name,
-                    password=default_pwd_hash,
-                    role="ME",
-                    assigned_division=div_name,
-                    assigned_region=reg_name,
-                    mobile_number=clean_mob
-                )
-                db.add(new_me)
-                existing_users_map[emp_key] = new_me
-                count += 1
+                try:
+                    new_me = User(
+                        employee_id=emp_id,
+                        name=name,
+                        password=default_pwd_hash,
+                        role="ME",
+                        assigned_division=div_name,
+                        assigned_region=reg_name,
+                        mobile_number=clean_mob
+                    )
+                    db.add(new_me)
+                    db.commit()
+                    existing_users_map[emp_key] = new_me
+                    count += 1
+                except (IntegrityError, Exception):
+                    db.rollback()
+                    with db.no_autoflush:
+                        existing = db.query(User).filter(
+                            or_(
+                                User.employee_id == emp_id,
+                                func.lower(User.employee_id) == emp_key,
+                                func.trim(User.employee_id) == emp_id
+                            )
+                        ).first()
+                    if existing:
+                        existing.name = name or existing.name
+                        existing.role = "ME"
+                        existing.assigned_division = div_name or existing.assigned_division
+                        existing.assigned_region = reg_name or existing.assigned_region
+                        existing.mobile_number = clean_mob or existing.mobile_number
+                        if not existing.password:
+                            existing.password = default_pwd_hash
+                        try:
+                            db.commit()
+                            existing_users_map[emp_key] = existing
+                        except Exception:
+                            db.rollback()
 
             records_to_sync_dict[emp_id] = {
                 "employee_id": emp_id,
@@ -894,44 +924,7 @@ def seed_mes_from_excel(db: Session):
                 "mobile_number": clean_mob
             }
             
-        try:
-            db.commit()
-            print(f"[User Auth] Successfully loaded and synced {count} Marketing Executives from {me_file} with default password Post@123")
-        except (IntegrityError, Exception) as commit_err:
-            db.rollback()
-            # Failsafe row-by-row commit
-            for record in records_to_sync_dict.values():
-                eid = record["employee_id"]
-                u = db.query(User).filter(
-                    or_(
-                        User.employee_id == eid,
-                        func.lower(User.employee_id) == eid.lower(),
-                        func.trim(User.employee_id) == eid
-                    )
-                ).first()
-                if u:
-                    u.name = record["name"] or u.name
-                    u.role = "ME"
-                    u.assigned_division = record["division"] or u.assigned_division
-                    u.assigned_region = record["region"] or u.assigned_region
-                    u.mobile_number = record["mobile_number"] or u.mobile_number
-                    if not u.password:
-                        u.password = default_pwd_hash
-                else:
-                    db.add(User(
-                        employee_id=eid,
-                        name=record["name"],
-                        password=default_pwd_hash,
-                        role="ME",
-                        assigned_division=record["division"],
-                        assigned_region=record["region"],
-                        mobile_number=record["mobile_number"]
-                    ))
-                try:
-                    db.commit()
-                except Exception:
-                    db.rollback()
-            print(f"[User Auth] Successfully synced {len(records_to_sync_dict)} Marketing Executives via fallback row-by-row upsert.")
+        print(f"[User Auth] Successfully loaded and synced Marketing Executives with default password Post@123")
     except Exception as e:
         db.rollback()
         print(f"[User Auth] Error seeding MEs from Excel: {e}")
@@ -3952,9 +3945,6 @@ async def upload_marketing_executives(
             if norm_id:
                 existing_users_map[norm_id.lower()] = u
 
-        newly_created_in_batch = set()
-        updated_in_batch = set()
-
         for row_idx, row in df.iterrows():
             emp_id = normalize_emp_id(row.get(emp_id_col))
             if not emp_id:
@@ -3992,15 +3982,25 @@ async def upload_marketing_executives(
                     if cn:
                         ME_MOBILE_REGISTRY[cn] = clean_mob
 
+            records_to_sync_dict[emp_id] = {
+                "employee_id": emp_id,
+                "name": name,
+                "division": div_name,
+                "region": reg_raw,
+                "mobile_number": clean_mob
+            }
+
+            # 1. Check if user already exists
             existing_user = existing_users_map.get(emp_key)
             if not existing_user:
-                existing_user = db.query(User).filter(
-                    or_(
-                        User.employee_id == emp_id,
-                        func.lower(User.employee_id) == emp_key,
-                        func.trim(User.employee_id) == emp_id
-                    )
-                ).first()
+                with db.no_autoflush:
+                    existing_user = db.query(User).filter(
+                        or_(
+                            User.employee_id == emp_id,
+                            func.lower(User.employee_id) == emp_key,
+                            func.trim(User.employee_id) == emp_id
+                        )
+                    ).first()
                 if existing_user:
                     existing_users_map[emp_key] = existing_user
 
@@ -4012,72 +4012,51 @@ async def upload_marketing_executives(
                 existing_user.mobile_number = clean_mob or existing_user.mobile_number
                 if not existing_user.password:
                     existing_user.password = default_pwd_hash
-                if emp_key not in newly_created_in_batch and emp_key not in updated_in_batch:
-                    updated_in_batch.add(emp_key)
-                    updated_count += 1
-            else:
-                new_user = User(
-                    employee_id=emp_id,
-                    name=name,
-                    password=default_pwd_hash,
-                    role="ME",
-                    assigned_division=div_name,
-                    assigned_region=reg_raw,
-                    mobile_number=clean_mob
-                )
-                db.add(new_user)
-                existing_users_map[emp_key] = new_user
-                newly_created_in_batch.add(emp_key)
-                created_count += 1
-
-            records_to_sync_dict[emp_id] = {
-                "employee_id": emp_id,
-                "name": name,
-                "division": div_name,
-                "region": reg_raw,
-                "mobile_number": clean_mob
-            }
-
-        try:
-            db.commit()
-        except (IntegrityError, Exception):
-            db.rollback()
-            # Failsafe row-by-row upsert
-            created_count = 0
-            updated_count = 0
-            for record in records_to_sync_dict.values():
-                eid = record["employee_id"]
-                u = db.query(User).filter(
-                    or_(
-                        User.employee_id == eid,
-                        func.lower(User.employee_id) == eid.lower(),
-                        func.trim(User.employee_id) == eid
-                    )
-                ).first()
-                if u:
-                    u.name = record["name"] or u.name
-                    u.role = "ME"
-                    u.assigned_division = record["division"] or u.assigned_division
-                    u.assigned_region = record["region"] or u.assigned_region
-                    u.mobile_number = record["mobile_number"] or u.mobile_number
-                    if not u.password:
-                        u.password = default_pwd_hash
-                    updated_count += 1
-                else:
-                    db.add(User(
-                        employee_id=eid,
-                        name=record["name"],
-                        password=default_pwd_hash,
-                        role="ME",
-                        assigned_division=record["division"],
-                        assigned_region=record["region"],
-                        mobile_number=record["mobile_number"]
-                    ))
-                    created_count += 1
                 try:
                     db.commit()
+                    updated_count += 1
                 except Exception:
                     db.rollback()
+            else:
+                try:
+                    new_user = User(
+                        employee_id=emp_id,
+                        name=name,
+                        password=default_pwd_hash,
+                        role="ME",
+                        assigned_division=div_name,
+                        assigned_region=reg_raw,
+                        mobile_number=clean_mob
+                    )
+                    db.add(new_user)
+                    db.commit()
+                    existing_users_map[emp_key] = new_user
+                    created_count += 1
+                except (IntegrityError, Exception):
+                    db.rollback()
+                    # Conflict / duplicate user found on insert -> update instead!
+                    with db.no_autoflush:
+                        existing_user = db.query(User).filter(
+                            or_(
+                                User.employee_id == emp_id,
+                                func.lower(User.employee_id) == emp_key,
+                                func.trim(User.employee_id) == emp_id
+                            )
+                        ).first()
+                    if existing_user:
+                        existing_user.name = name or existing_user.name
+                        existing_user.role = "ME"
+                        existing_user.assigned_division = div_name or existing_user.assigned_division
+                        existing_user.assigned_region = reg_raw or existing_user.assigned_region
+                        existing_user.mobile_number = clean_mob or existing_user.mobile_number
+                        if not existing_user.password:
+                            existing_user.password = default_pwd_hash
+                        try:
+                            db.commit()
+                            existing_users_map[emp_key] = existing_user
+                            updated_count += 1
+                        except Exception:
+                            db.rollback()
 
         records_to_sync = list(records_to_sync_dict.values())
         # Persist to disk Excel for permanent synchronization
