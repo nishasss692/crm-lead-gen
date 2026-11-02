@@ -578,6 +578,16 @@ export default function MarketingExecutiveDashboard() {
             </button>
           )}
 
+          {/* Direct Link to Leads Directory */}
+          <button
+            onClick={() => router.push('/leads')}
+            title="Open Full Leads Directory Table"
+            className="flex items-center gap-1.5 bg-[#D1242F] hover:bg-[#B01E28] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
+          >
+            <Layers className="w-3.5 h-3.5 text-white" />
+            <span>View Leads Directory</span>
+          </button>
+
           <button
             onClick={handleRefreshAll}
             title="Refresh All Metrics"

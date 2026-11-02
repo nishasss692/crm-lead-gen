@@ -26,6 +26,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { apiFetch, safeJson, getApiBaseUrl } from '@/lib/api';
+import { normalizeDivision } from '@/lib/karnatakaTerritory';
 import AddRowModal from '../components/AddRowModal';
 import UploadMEModal from '../components/UploadMEModal';
 import ManageOfficersModal from '../components/ManageOfficersModal';
@@ -43,14 +44,39 @@ function LeadsPageContent() {
     division?: string;
     assigned_region?: string;
     region?: string;
-  } | null>(null);
+  } | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const u = localStorage.getItem('user');
+        return u ? JSON.parse(u) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
 
   const [isAddRowModalOpen, setIsAddRowModalOpen] = useState(false);
   const [isUploadMEModalOpen, setIsUploadMEModalOpen] = useState(false);
   const [isManageOfficersModalOpen, setIsManageOfficersModalOpen] = useState(false);
   const [officersTargetRole, setOfficersTargetRole] = useState<'RO' | 'DO' | 'ALL'>('ALL');
 
-  const [selectedDivision, setSelectedDivision] = useState('');
+  const [selectedDivision, setSelectedDivision] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const u = localStorage.getItem('user');
+        if (u) {
+          const parsed = JSON.parse(u);
+          const role = (parsed.role || '').toUpperCase();
+          const assignedDiv = parsed.assigned_division || parsed.division;
+          if (['ME', 'MARKETING EXECUTIVE', 'DO', 'EXECUTIVE', 'DIVISION', 'DIV'].includes(role) && assignedDiv) {
+            return assignedDiv;
+          }
+        }
+      } catch (e) {}
+    }
+    return '';
+  });
   const [selectedPincode, setSelectedPincode] = useState('');
   const [selectedOutcome, setSelectedOutcome] = useState('');
   const [selectedRecordScope, setSelectedRecordScope] = useState('All Records');
@@ -59,11 +85,12 @@ function LeadsPageContent() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const fetchRequestId = useRef(0);
 
-  // Upload Modal State
+  // Upload Modal State - Defaults to clearExisting = false to preserve all leads
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [clearExisting, setClearExisting] = useState<boolean>(true);
+  const [clearExisting, setClearExisting] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
   const [uploadSummary, setUploadSummary] = useState<{ count?: number; skipped_empty?: number; data_quality_pct?: number; total_rows?: number } | null>(null);
@@ -85,7 +112,7 @@ function LeadsPageContent() {
         setUser(u);
         const role = (u.role || '').toUpperCase();
         const assignedDiv = u.assigned_division || u.division;
-        if ((role === 'ME' || role === 'MARKETING EXECUTIVE' || role === 'DO' || role === 'EXECUTIVE') && assignedDiv) {
+        if ((role === 'ME' || role === 'MARKETING EXECUTIVE' || role === 'DO' || role === 'EXECUTIVE' || role === 'DIVISION' || role === 'DIV') && assignedDiv) {
           setSelectedDivision(assignedDiv);
         }
       } catch (e) {}
@@ -109,6 +136,7 @@ function LeadsPageContent() {
   };
 
   const fetchLeads = async (token: string, division = selectedDivision) => {
+    const currentReqId = ++fetchRequestId.current;
     setLoading(true);
     setFetchError(null);
     try {
@@ -121,6 +149,9 @@ function LeadsPageContent() {
       const res = await apiFetch(`/api/leads?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (currentReqId !== fetchRequestId.current) {
+        return;
+      }
       if (res.ok) {
         const data = await safeJson(res);
         if (Array.isArray(data)) {
@@ -336,10 +367,13 @@ function LeadsPageContent() {
 
   let filtered = selectedDivision && !selectedDivision.toLowerCase().startsWith('all')
     ? leads.filter(d => {
+        const normLead = normalizeDivision(d.division).toLowerCase();
+        const normSelected = normalizeDivision(selectedDivision).toLowerCase();
+        if (normLead === normSelected) return true;
         const divA = (d.division || '').trim().toLowerCase();
         const divB = selectedDivision.trim().toLowerCase();
         const cleanB = divB.replace(/ division/i, '').trim();
-        return divA === divB || divA === cleanB || (cleanB && divA.includes(cleanB));
+        return divA === divB || divA === cleanB || (cleanB && divA.includes(cleanB)) || (divA && normSelected.includes(divA));
       })
     : leads;
 
@@ -432,6 +466,7 @@ function LeadsPageContent() {
   const isCO = roleUpper === 'CO' || roleUpper === 'ADMIN' || roleUpper === 'CO_ADMIN';
   const isME = roleUpper === 'ME' || roleUpper === 'MARKETING EXECUTIVE' || roleUpper === 'EXECUTIVE';
   const isRO = roleUpper === 'RO';
+  const isDO = roleUpper === 'DO' || roleUpper === 'DIVISION' || roleUpper === 'DIV';
 
   const getTitle = () => {
     const regionName = user?.assigned_region || 'Regional';
@@ -509,10 +544,11 @@ function LeadsPageContent() {
               </button>
             )}
 
-            {/* Upload File Button - Only in CO login */}
-            {isCO && (
+            {/* Upload File Button - Available to CO, DO, and RO */}
+            {(isCO || isDO || isRO) && (
               <button
                 onClick={() => setIsUploadModalOpen(true)}
+                title="Upload lead spreadsheets (.xlsx / .xls / .csv)"
                 className="flex items-center gap-1.5 bg-[#1B2A4A] hover:bg-[#283044] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
               >
                 <Upload className="w-3.5 h-3.5 text-[#FAB52C]" />
@@ -757,8 +793,8 @@ function LeadsPageContent() {
                 </button>
               </div>
 
-              {/* Replace existing data option */}
-              <label className="flex items-start gap-2.5 p-3 bg-red-50/40 hover:bg-red-50/70 rounded-xl border border-red-100 cursor-pointer transition-colors">
+              {/* Append vs Replace option */}
+              <label className="flex items-start gap-2.5 p-3 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200 cursor-pointer transition-colors">
                 <input
                   type="checkbox"
                   checked={clearExisting}
@@ -766,8 +802,8 @@ function LeadsPageContent() {
                   className="mt-0.5 rounded text-[#D1242F] focus:ring-[#D1242F] cursor-pointer"
                 />
                 <div className="text-xs">
-                  <span className="font-bold text-slate-800 block">Replace existing data with this upload</span>
-                  <span className="text-slate-500 text-[11px]">Wipes previous leads so ONLY your uploaded file&apos;s data is visible.</span>
+                  <span className="font-bold text-slate-800 block">Replace all existing database records with this file</span>
+                  <span className="text-slate-500 text-[11px]">Unchecked (Recommended): Appends and merges new records while keeping all existing leads safe. Checked: Clears previous leads.</span>
                 </div>
               </label>
 

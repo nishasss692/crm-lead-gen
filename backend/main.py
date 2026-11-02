@@ -48,8 +48,9 @@ def load_ml_model():
 async def lifespan(app: FastAPI):
     load_ml_model()
     seed_test_users()
-    cleanup_and_standardize_database()
     sync_pincode_master_data()
+    init_pincode_cache()
+    cleanup_and_standardize_database()
     yield
 
 # 1. Setup & Config
@@ -573,20 +574,182 @@ def get_divisions_for_region(region_str: Optional[str]) -> list[str]:
             matched_divisions.append(canonical)
     return matched_divisions
 
+PINCODE_TERRITORY_CACHE: Dict[str, tuple[str, str]] = {}
+
+def init_pincode_cache():
+    """Caches all pincode -> (division, region) in memory for instant territory resolution."""
+    global PINCODE_TERRITORY_CACHE
+    try:
+        with SessionLocal() as db:
+            records = db.query(PincodeMaster).all()
+            for r in records:
+                if r.pincode and r.division:
+                    p_str = str(r.pincode).strip()
+                    c_div = normalize_division_name(r.division)
+                    c_reg = r.region or get_region_for_division(c_div) or "Bengaluru HQ Region"
+                    PINCODE_TERRITORY_CACHE[p_str] = (c_div, c_reg)
+            print(f"[Pincode Cache] Loaded {len(PINCODE_TERRITORY_CACHE)} pincodes into memory.")
+    except Exception as e:
+        print(f"[Pincode Cache] Notice: {e}")
+
+def infer_territory_from_lead(lead_data: dict, current_user: Optional[dict] = None) -> tuple[str, str]:
+    """
+    Infers (division, region) for a lead record from existing fields, pincode, address, or user context.
+    Ensures that uploaded records have clean, normalized division and region metadata so data is visible everywhere.
+    """
+    raw_div = (lead_data.get("division") or "").strip()
+    raw_reg = (lead_data.get("region") or "").strip()
+    raw_pin = str(lead_data.get("pincode") or "").strip()
+    raw_addr = str(lead_data.get("address") or "").strip()
+    raw_name = str(lead_data.get("exporter_name") or "").strip()
+
+    division = ""
+    region = ""
+
+    # 1. If raw division provided and valid (not empty / not commercial division placeholder)
+    if raw_div and raw_div.lower() not in ["commercial division", "nan", "none", "null", "unassigned", ""]:
+        canon_div = get_canonical_division(raw_div) or normalize_division_name(raw_div)
+        if canon_div and canon_div.lower() != "commercial division":
+            division = canon_div
+            region = get_region_for_division(division) or raw_reg
+
+    # 2. Pincode lookup via in-memory PINCODE_TERRITORY_CACHE
+    if not division:
+        clean_pin = re.sub(r'\D', '', raw_pin)
+        if len(clean_pin) == 5 and clean_pin.startswith("560"):
+            clean_pin = "5600" + clean_pin[3:]
+        
+        if len(clean_pin) == 6:
+            if clean_pin in PINCODE_TERRITORY_CACHE:
+                division, region = PINCODE_TERRITORY_CACHE[clean_pin]
+            else:
+                p3 = clean_pin[:3]
+                if p3 in ["560", "561", "562"]:
+                    division, region = "BG East", "Bengaluru HQ Region"
+                elif p3 == "570":
+                    division, region = "Mysuru", "South Karnataka Region"
+                elif p3 == "571":
+                    division, region = "Chamarajanagar", "South Karnataka Region"
+                elif p3 == "572":
+                    division, region = "Tumakuru", "South Karnataka Region"
+                elif p3 == "573":
+                    division, region = "Hassan", "South Karnataka Region"
+                elif p3 in ["574", "575"]:
+                    division, region = "Mangaluru", "South Karnataka Region"
+                elif p3 == "576":
+                    division, region = "Udupi", "South Karnataka Region"
+                elif p3 == "577":
+                    division, region = "Shivamogga", "South Karnataka Region"
+                elif p3 == "580":
+                    division, region = "Dharwad", "North Karnataka Region"
+                elif p3 == "581":
+                    division, region = "Haveri", "North Karnataka Region"
+                elif p3 == "582":
+                    division, region = "Gadag", "North Karnataka Region"
+                elif p3 == "583":
+                    division, region = "Ballari", "North Karnataka Region"
+                elif p3 == "584":
+                    division, region = "Raichur", "North Karnataka Region"
+                elif p3 == "585":
+                    division, region = "Kalaburagi", "North Karnataka Region"
+                elif p3 == "586":
+                    division, region = "Vijayapura", "North Karnataka Region"
+                elif p3 == "587":
+                    division, region = "Bagalkote", "North Karnataka Region"
+                elif p3 in ["590", "591"]:
+                    division, region = "Belagavi", "North Karnataka Region"
+
+    # 3. Check for 6-digit pincode in address if still unresolved
+    if not division and raw_addr:
+        addr_pins = re.findall(r'\b(5[6-9]\d{4})\b', raw_addr)
+        for ap in addr_pins:
+            if ap in PINCODE_TERRITORY_CACHE:
+                division, region = PINCODE_TERRITORY_CACHE[ap]
+                break
+
+    # 4. Check address and exporter name for known territory keywords
+    if not division:
+        combined_text = f"{raw_name} {raw_addr}".lower()
+        for c_div, info in KARNATAKA_TERRITORY_REGISTRY.items():
+            if c_div.lower() in combined_text:
+                division = c_div
+                region = info["region"]
+                break
+            matched = False
+            for alias in info.get("aliases", []):
+                if len(alias) >= 4 and alias.lower() in combined_text:
+                    division = c_div
+                    region = info["region"]
+                    matched = True
+                    break
+            if matched:
+                break
+
+    # 5. User context fallback (if uploaded by DO or RO)
+    if not division and current_user:
+        u_div = current_user.get("assigned_division")
+        if u_div:
+            division = normalize_division_name(u_div)
+            region = current_user.get("assigned_region") or get_region_for_division(division) or ""
+        elif current_user.get("assigned_region"):
+            region = current_user.get("assigned_region")
+
+    # 6. Fallback defaults - ensure NEVER "Commercial Division" and NEVER empty!
+    if not division:
+        division = "BG East"
+    if not region:
+        region = get_region_for_division(division) or "Bengaluru HQ Region"
+
+    return division, region
+
 def cleanup_and_standardize_database():
-    """Runs a database cleanup to standardize legacy division names and infer missing regions."""
+    """Runs a database cleanup to standardize legacy division names, resolve orphans, and infer missing regions."""
     try:
         with SessionLocal() as db:
             replacement_map = {
                 'BG EAST': 'BG East',
                 'bg east': 'BG East',
+                'Bengaluru East': 'BG East',
+                'bengaluru east': 'BG East',
+                'Bangalore East': 'BG East',
+                'bangalore east': 'BG East',
                 'BG SOUTH': 'BG South',
                 'bg south': 'BG South',
+                'Bengaluru South': 'BG South',
+                'bengaluru south': 'BG South',
+                'Bangalore South': 'BG South',
+                'bangalore south': 'BG South',
                 'BG WEST': 'BG West',
                 'bg west': 'BG West',
+                'Bengaluru West': 'BG West',
+                'bengaluru west': 'BG West',
+                'Bangalore West': 'BG West',
+                'bangalore west': 'BG West',
+                'BG CENTRAL': 'BG Central',
+                'bg central': 'BG Central',
+                'Bengaluru Central': 'BG Central',
+                'bengaluru central': 'BG Central',
+                'Bangalore Central': 'BG Central',
+                'bangalore central': 'BG Central',
                 'BG GPO': 'BG GPO',
                 'bg gpo': 'BG GPO',
+                'Bengaluru GPO': 'BG GPO',
+                'bengaluru gpo': 'BG GPO',
+                'Bangalore GPO': 'BG GPO',
+                'bangalore gpo': 'BG GPO',
                 'channapatna': 'Channapatna',
+                'Mysore': 'Mysuru',
+                'mysore': 'Mysuru',
+                'mysuru': 'Mysuru',
+                'Belgaum': 'Belagavi',
+                'belgaum': 'Belagavi',
+                'belagavi': 'Belagavi',
+                'Gulbarga': 'Kalaburagi',
+                'gulbarga': 'Kalaburagi',
+                'kalaburagi': 'Kalaburagi',
+                'Bellary': 'Ballari',
+                'bellary': 'Ballari',
+                'ballari': 'Ballari',
                 'Bagalkot': 'Bagalkote',
                 'bagalkot': 'Bagalkote',
                 'Shimoga': 'Shivamogga',
@@ -598,7 +761,19 @@ def cleanup_and_standardize_database():
                 'Chikmagalur': 'Chikkamagaluru',
                 'chikmagalur': 'Chikkamagaluru',
                 'Vijayapur': 'Vijayapura',
-                'vijayapur': 'Vijayapura'
+                'vijayapur': 'Vijayapura',
+                'Bijapur': 'Vijayapura',
+                'bijapur': 'Vijayapura',
+                'Hubli': 'Dharwad',
+                'hubli': 'Dharwad',
+                'Hubballi': 'Dharwad',
+                'hubballi': 'Dharwad',
+                'Coorg': 'Kodagu',
+                'coorg': 'Kodagu',
+                'Mangalore': 'Mangaluru',
+                'mangalore': 'Mangaluru',
+                'Putturu': 'Puttur',
+                'putturu': 'Puttur'
             }
             for old_div, new_div in replacement_map.items():
                 db.execute(text("UPDATE leads SET division = :new WHERE division = :old"), {"new": new_div, "old": old_div})
@@ -607,6 +782,27 @@ def cleanup_and_standardize_database():
             db.execute(text("UPDATE leads SET division = TRIM(division) WHERE division IS NOT NULL"))
             db.execute(text("UPDATE users SET assigned_division = TRIM(assigned_division) WHERE assigned_division IS NOT NULL"))
             db.execute(text("UPDATE users SET assigned_region = TRIM(assigned_region) WHERE assigned_region IS NOT NULL"))
+
+            # Resolve any leads with empty or invalid/commercial division
+            orphans = db.query(Lead).filter(
+                or_(
+                    Lead.division.is_(None),
+                    Lead.division == '',
+                    func.lower(func.trim(Lead.division)) == 'commercial division'
+                )
+            ).all()
+
+            if orphans:
+                print(f"[DB Standardize] Resolving {len(orphans)} orphaned/empty division leads...")
+                for o_lead in orphans:
+                    lead_dict = {
+                        "pincode": o_lead.pincode,
+                        "address": o_lead.address,
+                        "exporter_name": o_lead.exporter_name
+                    }
+                    div, reg = infer_territory_from_lead(lead_dict)
+                    o_lead.division = div
+                    o_lead.region = reg
 
             db.execute(text("UPDATE leads SET region = 'Bengaluru HQ Region' WHERE region = 'BG'"))
             db.execute(text("UPDATE leads SET region = 'South Karnataka Region' WHERE region = 'SK'"))
@@ -620,8 +816,10 @@ def cleanup_and_standardize_database():
             db.execute(text("UPDATE users SET mobile_number = NULL WHERE mobile_number IN ('9999999999', '0000000000', '1234567890') OR mobile_number LIKE '999999%'"))
 
             db.commit()
+            print("[DB Standardize] Database standardization complete.")
     except Exception as e:
         print(f"[DB Standardize] Notice: {e}")
+
 
 def sync_pincode_master_data():
     """Ensures all 1,345 Karnataka pincodes are present in the PincodeMaster table."""
@@ -1669,102 +1867,6 @@ def generate_lead_dedup_key(lead_data: dict, criteria: str = "composite") -> str
             return f"name:{norm_name}"
         return ""
 
-def infer_territory_from_lead(lead_data: dict, current_user: Optional[dict] = None) -> tuple[str, str]:
-    """
-    Infers (division, region) for a lead record from existing fields, pincode, or user context.
-    Ensures that uploaded records have clean, normalized division and region metadata so data is visible everywhere.
-    """
-    raw_div = (lead_data.get("division") or "").strip()
-    raw_reg = (lead_data.get("region") or "").strip()
-    pincode = re.sub(r'\D', '', str(lead_data.get("pincode") or "")).strip()
-
-    # Normalize division if provided
-    division = normalize_division_name(raw_div) if raw_div else ""
-    region = raw_reg
-
-    # If division is known, immediately resolve region from our territory registry if region is missing/generic
-    if division:
-        mapped_reg = get_region_for_division(division)
-        if mapped_reg and (not region or region.lower() in ["karnataka circle", "circle", "state", "karnataka", ""]):
-            region = mapped_reg
-
-    # If pincode is 6 digits, infer division/region if either is still missing
-    if len(pincode) == 6:
-        p3 = pincode[:3]
-        if not division or not region:
-            if p3 in ["560", "561", "562"]:
-                region = region or "Bengaluru HQ Region"
-                division = division or "BG East"
-            elif p3 == "570":
-                region = region or "South Karnataka Region"
-                division = division or "Mysuru"
-            elif p3 == "571":
-                region = region or "South Karnataka Region"
-                division = division or "Chamarajanagar"
-            elif p3 == "572":
-                region = region or "South Karnataka Region"
-                division = division or "Tumakuru"
-            elif p3 == "573":
-                region = region or "South Karnataka Region"
-                division = division or "Hassan"
-            elif p3 in ["574", "575"]:
-                region = region or "South Karnataka Region"
-                division = division or "Mangaluru"
-            elif p3 == "576":
-                region = region or "South Karnataka Region"
-                division = division or "Udupi"
-            elif p3 == "577":
-                region = region or "South Karnataka Region"
-                division = division or "Shivamogga"
-            elif p3 == "580":
-                region = region or "North Karnataka Region"
-                division = division or "Dharwad"
-            elif p3 == "581":
-                region = region or "North Karnataka Region"
-                division = division or "Haveri"
-            elif p3 == "582":
-                region = region or "North Karnataka Region"
-                division = division or "Gadag"
-            elif p3 == "583":
-                region = region or "North Karnataka Region"
-                division = division or "Ballari"
-            elif p3 == "584":
-                region = region or "North Karnataka Region"
-                division = division or "Raichur"
-            elif p3 == "585":
-                region = region or "North Karnataka Region"
-                division = division or "Kalaburagi"
-            elif p3 == "586":
-                region = region or "North Karnataka Region"
-                division = division or "Vijayapura"
-            elif p3 == "587":
-                region = region or "North Karnataka Region"
-                division = division or "Bagalkote"
-            elif p3 in ["590", "591"]:
-                region = region or "North Karnataka Region"
-                division = division or "Belagavi"
-
-    # User context fallback
-    if not division and current_user and current_user.get("assigned_division"):
-        division = normalize_division_name(current_user.get("assigned_division"))
-    if not region and current_user and current_user.get("assigned_region"):
-        region = current_user.get("assigned_region")
-
-    # If division is now set, ensure region is resolved
-    if division and (not region or region.lower() in ["karnataka circle", "circle", "state", "karnataka", ""]):
-        mapped_reg = get_region_for_division(division)
-        if mapped_reg:
-            region = mapped_reg
-
-    # Fallbacks so records are never empty strings
-    if not division:
-        division = "Commercial Division"
-    if not region:
-        region = "Bengaluru HQ Region" if "BG" in division else "Karnataka Circle"
-
-    return division, region
-
-
 @app.post("/api/upload-excel")
 async def upload_excel(
     file: UploadFile = File(...), 
@@ -1773,10 +1875,10 @@ async def upload_excel(
     current_user: dict = Depends(get_current_user)
 ):
     user_role = str(current_user.get("role") or "").upper().strip()
-    if user_role not in ["CO", "ADMIN", "CO_ADMIN"]:
+    if user_role not in ["CO", "ADMIN", "CO_ADMIN", "DO", "RO", "DIVISION"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Only Circle Officer (CO) administrators are authorized to upload lead files."
+            detail="Access denied. Authorized officers (CO, RO, DO) can upload lead files."
         )
 
     filename = (file.filename or "").lower()
