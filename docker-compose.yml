@@ -4,13 +4,53 @@ services:
     container_name: crm_postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: localpassword
-      POSTGRES_DB: crm_leads
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-crm_leads}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crm_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crm_backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-localpassword}@db:5432/${POSTGRES_DB:-crm_leads}
+      - SECRET_KEY=${SECRET_KEY:-lead-management-crm-production-secret-key-2026}
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - crm_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crm_frontend
+    restart: always
+    environment:
+      - BACKEND_INTERNAL_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=/api
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - crm_net
 
 volumes:
   postgres_data:
+
+networks:
+  crm_net:
+    driver: bridge
