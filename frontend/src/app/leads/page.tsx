@@ -493,16 +493,7 @@ function LeadsPageContent() {
         {/* Header Title Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
-                <BadgeCheck className="w-3 h-3 text-emerald-600" />
-                Postal CRM Directory
-              </span>
-              <span className="text-xs font-bold text-slate-400">•</span>
-              <span className="text-[11px] font-black text-[#D1242F] uppercase tracking-wider">
-                {user?.assigned_region || (user?.role === 'CO' ? 'Karnataka Circle' : (user?.assigned_division ? `${user.assigned_division} Division` : 'Karnataka Postal Circle'))}
-              </span>
-            </div>
+
             <h1 className="text-3xl font-black text-[#1B2A4A] tracking-tight">{getTitle()}</h1>
             <p className="text-sm font-medium text-slate-500 mt-1">
               {filtered.length.toLocaleString()} records matching active filters
@@ -556,47 +547,7 @@ function LeadsPageContent() {
               </button>
             )}
 
-            {/* Upload ME File Button - Only in CO login */}
-            {isCO && (
-              <button
-                onClick={() => setIsUploadMEModalOpen(true)}
-                title="Upload ME File (.xlsx / .csv) or onboard Marketing Executives"
-                className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5 text-white" />
-                <span>Upload ME File</span>
-              </button>
-            )}
 
-            {/* Manage & Add RO Button - Only in CO login */}
-            {isCO && (
-              <button
-                onClick={() => {
-                  setOfficersTargetRole('RO');
-                  setIsManageOfficersModalOpen(true);
-                }}
-                title="Manage and onboard Regional Officers (RO)"
-                className="flex items-center gap-1.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-              >
-                <Building2 className="w-3.5 h-3.5 text-white" />
-                <span>Manage & Add RO</span>
-              </button>
-            )}
-
-            {/* Manage & Add DO Button - Only in CO login */}
-            {isCO && (
-              <button
-                onClick={() => {
-                  setOfficersTargetRole('DO');
-                  setIsManageOfficersModalOpen(true);
-                }}
-                title="Manage and onboard Divisional Officers (DO)"
-                className="flex items-center gap-1.5 bg-gradient-to-r from-[#1B2A4A] to-[#24355A] hover:from-[#15223C] hover:to-[#1B2A4A] text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-              >
-                <MapPin className="w-3.5 h-3.5 text-white" />
-                <span>Manage & Add DO</span>
-              </button>
-            )}
 
             {/* Export CSV Button */}
             <button 

@@ -539,54 +539,7 @@ export default function MarketingExecutiveDashboard() {
             </div>
           )}
 
-          {isCO && (
-            <button
-              onClick={() => setIsUploadMEModalOpen(true)}
-              title="Upload ME File (.xlsx / .csv) or onboard Marketing Executives"
-              className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-            >
-              <Upload className="w-3.5 h-3.5 text-white" />
-              <span>Upload ME File</span>
-            </button>
-          )}
 
-          {isCO && (
-            <button
-              onClick={() => {
-                setOfficersTargetRole('RO');
-                setIsManageOfficersModalOpen(true);
-              }}
-              title="Manage and onboard Regional Officers (RO)"
-              className="flex items-center gap-1.5 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-            >
-              <Building2 className="w-3.5 h-3.5 text-white" />
-              <span>Manage & Add RO</span>
-            </button>
-          )}
-
-          {isCO && (
-            <button
-              onClick={() => {
-                setOfficersTargetRole('DO');
-                setIsManageOfficersModalOpen(true);
-              }}
-              title="Manage and onboard Divisional Officers (DO)"
-              className="flex items-center gap-1.5 bg-gradient-to-r from-[#1B2A4A] to-[#24355A] hover:from-[#15223C] hover:to-[#1B2A4A] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-            >
-              <MapPin className="w-3.5 h-3.5 text-white" />
-              <span>Manage & Add DO</span>
-            </button>
-          )}
-
-          {/* Direct Link to Leads Directory */}
-          <button
-            onClick={() => router.push('/leads')}
-            title="Open Full Leads Directory Table"
-            className="flex items-center gap-1.5 bg-[#D1242F] hover:bg-[#B01E28] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all cursor-pointer"
-          >
-            <Layers className="w-3.5 h-3.5 text-white" />
-            <span>View Leads Directory</span>
-          </button>
 
           <button
             onClick={handleRefreshAll}
