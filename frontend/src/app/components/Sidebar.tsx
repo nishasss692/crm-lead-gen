@@ -149,9 +149,9 @@ function SidebarContent() {
               <li>
                 <button
                   onClick={() => setIsUploadMEModalOpen(true)}
-                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-[#132038] hover:text-white font-medium cursor-pointer text-left"
+                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-white/5 hover:text-white font-medium cursor-pointer text-left"
                 >
-                  <Upload className="w-4 h-4 mr-3 shrink-0 text-slate-300 group-hover:text-white transition-colors" />
+                  <Upload className="w-4 h-4 mr-3 shrink-0 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
                   <span className="text-sm">Upload ME File & Roster</span>
                 </button>
               </li>
@@ -161,9 +161,9 @@ function SidebarContent() {
                     setOfficersTargetRole('RO');
                     setIsManageOfficersModalOpen(true);
                   }}
-                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-[#132038] hover:text-white font-medium cursor-pointer text-left"
+                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-white/5 hover:text-white font-medium cursor-pointer text-left"
                 >
-                  <Building2 className="w-4 h-4 mr-3 shrink-0 text-slate-300 group-hover:text-white transition-colors" />
+                  <Building2 className="w-4 h-4 mr-3 shrink-0 text-blue-400 group-hover:text-blue-300 transition-colors" />
                   <span className="text-sm">Manage & Add RO</span>
                 </button>
               </li>
@@ -173,9 +173,9 @@ function SidebarContent() {
                     setOfficersTargetRole('DO');
                     setIsManageOfficersModalOpen(true);
                   }}
-                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-[#132038] hover:text-white font-medium cursor-pointer text-left"
+                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-white/5 hover:text-white font-medium cursor-pointer text-left"
                 >
-                  <MapPin className="w-4 h-4 mr-3 shrink-0 text-slate-300 group-hover:text-white transition-colors" />
+                  <MapPin className="w-4 h-4 mr-3 shrink-0 text-purple-400 group-hover:text-purple-300 transition-colors" />
                   <span className="text-sm">Manage & Add DO</span>
                 </button>
               </li>
