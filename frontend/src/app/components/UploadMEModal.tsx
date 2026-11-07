@@ -641,7 +641,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                 <button
                   type="submit"
                   disabled={isSubmittingSingle}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#1B2A4A] hover:bg-[#24355A] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingSingle ? (
                     <>
