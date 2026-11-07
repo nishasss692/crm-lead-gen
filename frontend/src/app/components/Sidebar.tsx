@@ -144,19 +144,15 @@ function SidebarContent() {
           <div>
             <div className="px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
               <span>Circle Operations</span>
-              <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">CO</span>
             </div>
             <ul className="space-y-1">
               <li>
                 <button
                   onClick={() => setIsUploadMEModalOpen(true)}
-                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-white/5 hover:text-white font-medium cursor-pointer text-left"
+                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-[#132038] hover:text-white font-medium cursor-pointer text-left"
                 >
-                  <Upload className="w-4 h-4 mr-3 shrink-0 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-sm">Upload ME File & Roster</span>
-                    <span className="text-[10px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">ME</span>
-                  </div>
+                  <Upload className="w-4 h-4 mr-3 shrink-0 text-slate-300 group-hover:text-white transition-colors" />
+                  <span className="text-sm">Upload ME File & Roster</span>
                 </button>
               </li>
               <li>
@@ -165,13 +161,10 @@ function SidebarContent() {
                     setOfficersTargetRole('RO');
                     setIsManageOfficersModalOpen(true);
                   }}
-                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-white/5 hover:text-white font-medium cursor-pointer text-left"
+                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-[#132038] hover:text-white font-medium cursor-pointer text-left"
                 >
-                  <Building2 className="w-4 h-4 mr-3 shrink-0 text-sky-400 group-hover:text-sky-300 transition-colors" />
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-sm">Manage & Add RO</span>
-                    <span className="text-[10px] bg-sky-500/15 text-sky-300 border border-sky-500/30 px-1.5 py-0.5 rounded font-bold">RO</span>
-                  </div>
+                  <Building2 className="w-4 h-4 mr-3 shrink-0 text-slate-300 group-hover:text-white transition-colors" />
+                  <span className="text-sm">Manage & Add RO</span>
                 </button>
               </li>
               <li>
@@ -180,13 +173,10 @@ function SidebarContent() {
                     setOfficersTargetRole('DO');
                     setIsManageOfficersModalOpen(true);
                   }}
-                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-white/5 hover:text-white font-medium cursor-pointer text-left"
+                  className="w-full flex items-center px-3.5 py-2.5 rounded-xl group transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] text-slate-300 hover:bg-[#132038] hover:text-white font-medium cursor-pointer text-left"
                 >
-                  <MapPin className="w-4 h-4 mr-3 shrink-0 text-amber-400 group-hover:text-amber-300 transition-colors" />
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-sm">Manage & Add DO</span>
-                    <span className="text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-bold">DO</span>
-                  </div>
+                  <MapPin className="w-4 h-4 mr-3 shrink-0 text-slate-300 group-hover:text-white transition-colors" />
+                  <span className="text-sm">Manage & Add DO</span>
                 </button>
               </li>
             </ul>
@@ -197,7 +187,7 @@ function SidebarContent() {
       {/* User Account Info */}
       <div className="p-4 border-t border-white/10 bg-black/15">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md bg-gradient-to-tr from-blue-600 to-indigo-600 border border-blue-400/30">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md bg-[#132038] border border-blue-400/20">
             {user?.username?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div className="min-w-0 flex-1">

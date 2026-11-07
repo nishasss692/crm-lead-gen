@@ -317,8 +317,8 @@ export default function ManageOfficersModal({
         style={{ fontFamily: "var(--font-inter), 'Inter', system-ui, sans-serif" }}
       >
         
-        {/* Modal Top Header - Dark Blue Theme */}
-        <div className="px-6 py-4 bg-gradient-to-r from-[#0B1528] via-[#1B2A4A] to-[#1E3A8A] text-white flex items-center justify-between border-b border-[#24355A]">
+        {/* Modal Top Header - Solid Dark Blue */}
+        <div className="px-6 py-4 bg-[#1B2A4A] text-white flex items-center justify-between border-b border-[#24355A]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-md">
               {targetRole === 'RO' ? <Building2 className="w-5 h-5 text-white" /> : <ShieldCheck className="w-5 h-5 text-white" />}
@@ -623,7 +623,7 @@ export default function ManageOfficersModal({
           {activeTab === 'add' && (
             <div className="max-w-2xl mx-auto bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3 pb-4 mb-6 border-b border-slate-100">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[#1B2A4A] flex items-center justify-center text-white shadow-sm">
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>

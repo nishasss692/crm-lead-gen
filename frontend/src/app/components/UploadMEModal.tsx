@@ -283,8 +283,8 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
       {/* Modal Container: perfectly centered horizontally and vertically */}
       <div className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-slate-200 z-10 overflow-hidden my-auto select-none animate-in fade-in zoom-in-95 duration-150">
         
-        {/* Modal Top Bar - Dark Blue Theme */}
-        <div className="bg-gradient-to-r from-[#0B1528] via-[#1B2A4A] to-[#1E3A8A] p-4 sm:p-5 text-white flex items-center justify-between shrink-0 border-b border-[#24355A]">
+        {/* Modal Top Bar - Solid Dark Blue */}
+        <div className="bg-[#1B2A4A] p-4 sm:p-5 text-white flex items-center justify-between shrink-0 border-b border-[#24355A]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white shadow-inner border border-white/20">
               <UserPlus className="w-5 h-5 text-white" />
@@ -313,7 +313,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
         </div>
 
         {/* Global Credentials Callout Banner */}
-        <div className="bg-gradient-to-r from-blue-500/10 via-blue-50 to-indigo-50/60 border-b border-blue-200/80 px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 text-xs">
+        <div className="bg-slate-100 border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 text-xs">
           <div className="flex items-center gap-2 text-slate-900 font-medium">
             <KeyRound className="w-4 h-4 text-[#1B2A4A] shrink-0" />
             <span>
@@ -494,7 +494,7 @@ export default function UploadMEModal({ isOpen, onClose, onSuccess }: UploadMEMo
                   type="button"
                   disabled={!uploadFile || isUploading}
                   onClick={handleBulkUpload}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#0B1528] via-[#1B2A4A] to-[#1E3A8A] hover:from-[#15223C] hover:to-[#1B2A4A] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#1B2A4A] hover:bg-[#24355A] text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUploading ? (
                     <>
